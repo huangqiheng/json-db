@@ -189,7 +189,7 @@ function jsonp(url, data, cb_done, cb_fail)
 
 function render_onebox(data, finish)
 {
-	jsonp('onebox.php', 
+	jsonp('onebox/index.php', 
 		{url:data[0], type:'json'}, function(d){
 		if (d.status === 'ok') {
 			var content = d.description.substring(0,82);
