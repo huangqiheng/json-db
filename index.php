@@ -39,17 +39,8 @@ env.init_table = "<?php echo $init_table; ?>";
 
 env.db_captions = <?php echo json_encode($db_captions); ?>;
 env.table_captions = <?php echo json_encode($table_captions); ?>;
-env.db_captions.push(
-	    {'name':'NEWITEM', 'image':'images/new-database.ico', 'title':T('New Database')},
-	    {'name':'EDITITEM','image':'images/new-database.ico','title':T('Edit DB Description')}
-	);
-for (var db in env.table_captions) {
-	var captions = env.table_captions[db];
-	captions.push(
-	    {'name':'NEWITEM', 'image':'images/new-table.png','title':T('Create New Table')},
-	    {'name':'EDITITEM','image':'images/new-table.png','title':T('Edit Table Description')}
-	);
-}
+init_db_captions();
+for (var db_name in env.table_captions) {init_table_captions(db_name);}
 
 env.db_index = get_index(env.db_captions, env.init_db);
 env.table_index = get_index(env.table_captions[env.init_db], env.init_table);
@@ -59,6 +50,49 @@ env.popup = function (title, content){$.gritter.add({title: title, text: content
 
 $(document).ready(jsondb_main);
 
+function init_db_captions()
+{
+	env.db_captions.push(
+	    {'name':'NEWITEM', 'image':'images/new-database.ico', 'title':T('New Database')},
+	    {'name':'EDITITEM','image':'images/new-database.ico','title':T('Edit DB Description')},
+	    {'name':'DELITEM','image':'images/new-database.ico','title':T('Delete Database')}
+	);
+}
+
+function init_table_captions(db_name)
+{
+	var captions = env.table_captions[db_name];
+	if (captions === undefined) {
+		env.table_captions[db_name] = [];
+		captions = env.table_captions[db_name];
+	}
+
+	captions.push(
+	    {'name':'NEWITEM', 'image':'images/new-table.png','title':T('Create New Table')},
+	    {'name':'EDITITEM','image':'images/new-table.png','title':T('Edit Table Description')},
+	    {'name':'DELITEM','image':'images/new-table.png','title':T('Delete Table')}
+	);
+}
+
+function del_db_captions(db_name)
+{
+	var found_index = -1;
+	for (var index in env.db_captions) {
+		var caption = env.db_captions[index];
+		if (caption.name === db_name) {
+			found_index = index;
+			break;
+		}
+	}
+	if (found_index !== -1) {
+		env.db_captions.splice(found_index, 1);
+	}
+}
+
+function del_table_captions(db_name)
+{
+	env.table_captions[db_name] = [];
+}
 
 function jsondb_main() 
 {
@@ -112,7 +146,7 @@ function jsondb_main()
 	{
 		if (!d) {return d;}
 		var image = 'images/database.png';
-		var counter = env.db_captions.length-2;
+		var counter = env.db_captions.length-3;
 		return '<table style="border:none; border-spacing:0px; font-size:12;"><tr>'+
 			'<td><img height="16" width="16" src="'+image+'"/></td>'+
 			'<td>x'+ counter +'&nbsp;</td>'+
@@ -126,7 +160,7 @@ function jsondb_main()
 		var image = 'images/table.png';
 		var db_name = get_db_name();
 		var captions = env.table_captions;
-		var counter = captions[db_name].length-2;
+		var counter = captions[db_name].length-3;
 		return '<table style="border:none; border-spacing:0px; font-size:12;"><tr>'+
 			'<td><img height="16" width="16" src="'+image+'"/></td>'+
 			'<td>x'+ counter +'&nbsp;</td>'+
@@ -150,9 +184,64 @@ function jsondb_main()
 		return table;
 	}
 
+	function delete_caption_item(cb_done)
+	{
+		db_name = get_db_name();
+		table_name = get_table_name();
+		var data = {};
+		data.db_name = db_name;
+		if (table_name) {
+			data.cmd = 'del_table';
+			data.table_name = table_name;
+		} else {
+			data.cmd = 'del_database';
+		}
+
+		$.ajax({
+			type : "GET",
+			dataType : "jsonp",
+			data: data,
+			url : 'caption.php', 
+		}).done(function(d){
+			if (d.hasOwnProperty('status')) {
+				if (d.status === 'ok') {
+					if (table_name) {
+						cb_done(db_name, table_name);
+					} else {
+						cb_done(db_name);
+					}
+				} else {
+					env.popup(T('ERROR'), T(d.error));
+				}
+			}
+		}).fail(function(e){
+			env.popup(T('ERROR'), T('network request failure.'));
+		});
+	}
+
 	function on_create_db(mode)
 	{
 		if ((mode==='EDITITEM') && (env.db_last_unselect===-1)) {
+			return;
+		}
+
+		if (mode === 'DELITEM') {
+			delete_caption_item(function(){
+				var index = $('#db_captions').jqxDropDownList('getSelectedIndex'); 
+				var db_name = $('#db_captions').jqxDropDownList('val'); 
+				$('#db_captions').jqxDropDownList('clearSelection'); 
+				$('#db_captions').jqxDropDownList('removeAt', index); 
+
+				del_db_captions(db_name);
+				del_table_captions(db_name);
+				table_dataAdapter = new $.jqx.dataAdapter({
+					localdata: env.table_captions[db_name],
+					datatype: "array"
+				});
+				$('#table_captions').jqxDropDownList('clearSelection'); 
+				$('#table_captions').jqxDropDownList('clear'); 
+				$('#table_captions').jqxDropDownList({source:table_dataAdapter});
+			});
 			return;
 		}
 
@@ -187,18 +276,31 @@ function jsondb_main()
 					caption.image = data.image;
 					caption.name = data.name;
 					var captions = env.db_captions;
-					captions.splice(captions.length-2,0, caption);
+					captions.splice(captions.length-3,0, caption);
+					init_table_captions(data.name);
 				}
 				db_dataAdapter.dataBind();
+				table_dataAdapter.dataBind();
 			});
 		}, init_data);
 	}
 
 	function on_create_table(mode, db_name)
 	{
+		var table_name = get_table_name();
 		if ((mode==='EDITITEM') && (env.table_last_unselect === -1)) {
 			return;
 		}
+
+		if (mode === 'DELITEM') {
+			delete_caption_item(function(){
+				var index = $('#table_captions').jqxDropDownList('getSelectedIndex'); 
+				$('#table_captions').jqxDropDownList('clearSelection'); 
+				$('#table_captions').jqxDropDownList('removeAt', env.table_index); 
+			});
+			return;
+		}
+
 		var title = db_name;
 		for(var index in env.db_captions) {
 			var caption = env.db_captions[index];
@@ -230,7 +332,7 @@ function jsondb_main()
 		new_schema_window(title_str, function(data){
 			data.cmd = opt_cmd;
 			data.db_name = db_name;
-			data.ori_name = get_table_name();
+			data.ori_name = table_name;
 			submit_caption(data, function(){
 				if (opt_cmd === 'edit_table') {
 					var caption = env.table_captions[db_name][env.table_index];
@@ -245,7 +347,7 @@ function jsondb_main()
 					caption.image = data.image;
 					caption.name = data.name;
 					var captions = env.table_captions[db_name];
-					captions.splice(captions.length-2,0, caption);
+					captions.splice(captions.length-3,0, caption);
 				}
 				table_dataAdapter.dataBind();
 			});
@@ -365,7 +467,7 @@ function where_default(db_name)
 
 function is_operate_item(name) 
 {
-	return ((name === 'NEWITEM') || (name === 'EDITITEM'));
+	return ((name === 'NEWITEM') || (name === 'EDITITEM') || (name === 'DELITEM'));
 }
 
 function submit_caption(data, cb_done)

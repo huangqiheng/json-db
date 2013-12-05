@@ -23,7 +23,9 @@ var langdata = {
     'Create new database':			{cn:'创建新数据库'},
     'Create new table':				{cn:'创建新的数据表格'},
     'Edit current table':			{cn:'编辑当前数据表格'},
-    'network request failure.':			{cn:'网络请求失败了。'}
+    'network request failure.':			{cn:'网络请求失败了。'},
+    'Delete Database':				{cn:'删除数据库'},
+    'Delete Table':				{cn:'删除数据表格'}
 };
 
 var lang_selected = null;

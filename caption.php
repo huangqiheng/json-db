@@ -8,7 +8,39 @@ switch($req['cmd']) {
     case 'edit_database': edit_database_exit($req);
     case 'new_table': create_table_exit($req);
     case 'edit_table': edit_table_exit($req);
-    case 'default': jsonp_nocache_exit(['status'=>'error', 'error'=>'unknow command.']);
+    case 'del_database': del_database_exit($req);
+    case 'del_table': del_table_exit($req);
+    default: jsonp_nocache_exit(['status'=>'error', 'error'=>'unknow command.']);
+}
+
+function del_database_exit($req)
+{
+	$db_name = $req['db_name'];
+	$filename = db_path()."/{$db_name}";
+	rmdir_Rf($filename);
+	jsonp_nocache_exit(['status'=>'ok']); 
+}
+
+function del_table_exit($req)
+{
+	$db_name = $req['db_name'];
+	$table_name = $req['table_name'];
+	$filename = db_path()."/{$db_name}/{$table_name}";
+	rmdir_Rf($filename);
+	jsonp_nocache_exit(['status'=>'ok']); 
+}
+
+function rmdir_Rf($directory)
+{
+	foreach(glob("{$directory}/*") as $file)
+	{
+		if(is_dir($file)) { 
+			rmdir_Rf($file);
+		} else {
+			unlink($file);
+		}
+	}
+	rmdir($directory);
 }
 
 function create_database_exit($req)
