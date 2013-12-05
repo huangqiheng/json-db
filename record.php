@@ -13,20 +13,20 @@ $is_new = empty($target);
 ?>
 <html><head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<link rel="shortcut icon" type="image/ico" href="<?php echo $web_root; ?>/images/favicon.ico" />
+<link rel="shortcut icon" type="image/ico" href="images/favicon.ico" />
 <title>JsonDB</title>
 
 <!--加载css-->
-<link rel="stylesheet" href="jqwidgets/styles/jqx.base.css" type="text/css" />
+<link rel="stylesheet" href="client/jqwidgets/styles/jqx.base.css" type="text/css" />
 
 <!--加载js-->
-<script type="text/javascript" language="javascript" src="js/jquery-2.0.3.min.js"></script>
-<script type="text/javascript" language="javascript" src="js/md5.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/jquery-2.0.3.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/md5.min.js"></script>
 
-<script type="text/javascript" language="javascript" src="jqwidgets/jqx-all.js"></script> 
-<script type="text/javascript" language="javascript" src="jqwidgets/globalization/globalize.js"></script>
-<script type="text/javascript" language="javascript" src="jqwidgets/globalization/globalize.culture.zh-CN.js"></script> 
-<script type="text/javascript" language="javascript" src="js/json-db-lib.js"></script>
+<script type="text/javascript" language="javascript" src="client/jqwidgets/jqx-all.js"></script> 
+<script type="text/javascript" language="javascript" src="client/jqwidgets/globalization/globalize.js"></script>
+<script type="text/javascript" language="javascript" src="client/jqwidgets/globalization/globalize.culture.zh-CN.js"></script> 
+<script type="text/javascript" language="javascript" src="client/json-db-lib.js"></script>
 
 <!--动态生成的js变量-->
 <script type="text/javascript" charset="utf-8">

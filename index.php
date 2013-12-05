@@ -15,19 +15,19 @@ $init_table = get_param('table', 'default');
 <title>JsonDB</title>
 
 <!--加载css-->
-<link rel="stylesheet" href="jqwidgets/styles/jqx.base.css" type="text/css" />
-<link rel="stylesheet" href="js/jquery.gritter.css" type="text/css" />
+<link rel="stylesheet" href="client/jqwidgets/styles/jqx.base.css" type="text/css" />
+<link rel="stylesheet" href="client/gritter/jquery.gritter.css" type="text/css" />
 
 <!--加载js-->
-<script type="text/javascript" language="javascript" src="js/jquery-2.0.3.min.js"></script>
-<script type="text/javascript" language="javascript" src="js/jquery.gritter.min.js"></script>
-<script type="text/javascript" language="javascript" src="js/md5.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/jquery-2.0.3.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/gritter/jquery.gritter.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/md5.min.js"></script>
 
-<script type="text/javascript" language="javascript" src="jqwidgets/jqx-all.js"></script> 
-<script type="text/javascript" language="javascript" src="jqwidgets/globalization/globalize.js"></script>
-<script type="text/javascript" language="javascript" src="jqwidgets/globalization/globalize.culture.zh-CN.js"></script> 
-<script type="text/javascript" language="javascript" src="js/json-db-lib.js"></script>
-<script type="text/javascript" language="javascript" src="js/language.js"></script>
+<script type="text/javascript" language="javascript" src="client/jqwidgets/jqx-all.js"></script> 
+<script type="text/javascript" language="javascript" src="client/jqwidgets/globalization/globalize.js"></script>
+<script type="text/javascript" language="javascript" src="client/jqwidgets/globalization/globalize.culture.zh-CN.js"></script> 
+<script type="text/javascript" language="javascript" src="client/json-db-lib.js"></script>
+<script type="text/javascript" language="javascript" src="client/language.js"></script>
 
 <!--动态生成的js变量-->
 <script type="text/javascript" charset="utf-8">
