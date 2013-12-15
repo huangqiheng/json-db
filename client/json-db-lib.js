@@ -1,3 +1,722 @@
+/******************************
+  datatables
+******************************/
+
+
+function edit_data_window(title, input, cb_done)
+{
+	var fields=input[0], data=input[1];
+
+	var seed = new Date().getTime();
+	var window_id = 'win_'+seed.toString(); 
+	var ok_id = window_id+'_ok';
+	var no_id = window_id+'_no';
+	var collapse_id = window_id+'_col';
+	var notify_id = window_id+'_notify';
+	var tabs_id = window_id+'_tab';
+	var header_id = window_id+'_header';
+	var btn_width = 50;
+
+	$('body').append([
+            '<div id="'+window_id+'">',
+                '<div id="'+header_id+'">',
+		    '<table style="width:100% !important;"><tr><td>',
+                    '<img width="20" height="20" src="images/new-table.png" alt="" style="float:left;" />',
+		    '</td><td>',
+		    	'<strong style="font-size:13px;line-height:23px;">'+title+'</strong>',
+		    '</td><td align="right">',
+			    '<div style="float:right;">',
+				'<input type="button" id="'+ok_id+'" value="'+T('OK')+'" style="margin-right: 1px" />',
+				'<input type="button" id="'+no_id+'" value="'+T('Cancel')+'" />',
+				'<input type="button" id="'+collapse_id+'" value="'+T('Collapse')+'" />',
+			    '</div>',
+		    '</td></tr></table>',
+		'</div>',
+                '<div>',
+                    '<div align="center"><table>',
+			'<tr><td vlign="bottom">',
+			    '<div id="'+notify_id+'" style="color:red; text-align:center;"></div>',
+			'</td></tr>',
+		        '<tr><td><div id="'+tabs_id+'" style="margin:auto;"></div></td></tr>',
+                    '</table></div>',
+                '</div>',
+            '</div>'].join(''));
+
+	var show_notify = function(msg){
+		$('#'+notify_id).text(msg);
+	};
+
+	init_component();
+
+	$('#'+window_id).jqxWindow({
+			height: 'auto', width: 'auto',
+			minHeight: 250, minWidth: 400,
+			resizable: true,  
+			modalOpacity: 0.3,
+			showCollapseButton: false,
+			showCloseButton: false,
+			cancelButton: $('#'+no_id),
+	});
+
+	$('#'+window_id).on('close', function (event) {  
+		if (event.target.id === window_id) {
+			$('#'+window_id).jqxWindow('destroy'); 
+		}
+	}); 
+
+	$('#'+header_id+' div:first').attr('style', 'width:100% !important');
+
+	function init_component()
+	{
+		$('#'+ok_id).jqxButton({width: btn_width, height:23});
+		$('#'+no_id).jqxButton({width: btn_width, height:23});
+		$('#'+ok_id).on('click', function(e){
+			cb_done(grep_data());
+			$('#'+window_id).jqxWindow('close');
+		});
+
+		$('#'+collapse_id).jqxButton({width: btn_width, height:23});
+		$('#'+collapse_id).on('click', function(e){
+			if ($('#'+window_id).jqxWindow('collapsed')) {
+				$('#'+window_id).jqxWindow('expand');
+				$('#'+collapse_id).jqxButton('val', T('Collapse'));
+			} else {
+				$('#'+window_id).jqxWindow('collapse');
+				$('#'+collapse_id).jqxButton('val', T('Expand'));
+			}
+		});
+
+		init_data_component();
+	}
+
+	function grep_data()
+	{
+		var res_data = {};
+		for (var tab_name in fields) {
+			res_data[tab_name] = {};
+			var val_obj = fields[tab_name];
+			var ids = get_tabtable_id(tabs_id, tab_name);
+			var tab_id=ids[0], table_id=ids[1];
+			for (var field_name in val_obj) {
+				var field_value = val_obj[field_name];
+				var field_id = get_tableitem_id(window_id, tab_name, field_name);
+				var p = [tab_id, table_id, field_id, field_name];
+				var res_val = '';
+
+				do{
+				if (field_value === 'jqxInput') 	   {res_val=getval_jqxInput(p);break;}
+				if (field_value === 'jqxInput-id') 	   {res_val=getval_jqxInput_id(p);break;}
+				if (field_value === 'jqxInput-text') 	   {res_val=getval_jqxInput_text(p);break;}
+				if (field_value === 'jqxInput-name') 	   {res_val=getval_jqxInput_name(p);break;}
+				if (field_value === 'jqxListBox') 	   {res_val=getval_jqxListBox(p);break;}
+				if (field_value === 'jqxListBox-name') 	   {res_val=getval_jqxListBox_name(p);break;}
+				if (field_value === 'jqxListBox-onebox')   {res_val=getval_jqxListBox(p);break;}
+				if (field_value === 'jqxListBox-images')   {res_val=getval_jqxListBox_images(p);break;}
+				if (field_value === 'jqxComboBox') 	   {res_val=getval_jqxComboBox(p);break;}
+				if (field_value === 'jqxNumberInput-size') {res_val=getval_jqxNumberInput(p);break;}
+				if (field_value === 'jqxNumberInput-price'){res_val=getval_jqxNumberInput(p);break;}
+				if (field_value === 'jqxDateTimeInput')    {res_val=getval_jqxDateTimeInput(p);break;}
+				}while(false);
+				res_data[tab_name][field_name] = res_val;
+			}
+		}
+		return res_data;
+	}
+
+	function init_data_component()
+	{
+		init_tab(fields, tabs_id);
+
+		for (var tab_name in fields) {
+			var val_obj = fields[tab_name];
+			var ids = get_tabtable_id(tabs_id, tab_name);
+			var tab_id=ids[0], table_id=ids[1];
+			for (var field_name in val_obj) {
+				var field_value = val_obj[field_name];
+				var field_id = get_tableitem_id(window_id, tab_name, field_name);
+				var p = [tab_id, table_id, field_id, field_name];
+
+				var init_val = undefined;
+				var option_val = undefined;
+
+				if (field_value === 'jqxInput') 	{addItem_jqxInput(p, init_val);continue;}
+				if (field_value === 'jqxInput-id') 	{addItem_jqxInput_id(p, env.id);continue;}
+				if (field_value === 'jqxInput-text') 	{addItem_jqxInput_text(p, init_val);continue;}
+				if (field_value === 'jqxInput-name') 	{addItem_jqxInput_name(p, init_val);continue;}
+				if (field_value === 'jqxListBox') 	{addItem_jqxListBox(p, init_val);continue;}
+				if (field_value === 'jqxListBox-name') 	{addItem_jqxListBox_name(p, init_val);continue;}
+				if (field_value === 'jqxListBox-onebox'){addItem_jqxListBox_onebox(p, init_val);continue;}
+				if (field_value === 'jqxListBox-images'){addItem_jqxListBox_images(p, init_val);continue;}
+				if (field_value === 'jqxComboBox') 	{addItem_jqxComboBox(p, init_val, option_val);continue;}
+				if (field_value === 'jqxNumberInput-size') 	{addItem_jqxNumberInput(p, init_val,0,' KB');continue;}
+				if (field_value === 'jqxNumberInput-price') 	{addItem_jqxNumberInput(p, init_val, 2);continue;}
+				if (field_value === 'jqxDateTimeInput') {addItem_jqxDateTimeInput(p, init_val);continue;}
+			}
+		}
+	}
+}
+
+function new_datatable(listview_id, aDataSet, aoColumns, event)
+{
+	datatables_css();
+	var table_id = get_datatalbe_id(listview_id);
+
+	var table_obj = $('#'+table_id);
+	if (table_obj.length === 0) {
+		$('#'+listview_id).html('<table cellpadding="0" cellspacing="0" border="0" class="display" id="'+table_id+'"></table>');
+	}
+
+	var oTable = $('#'+table_id).dataTable( {
+		'bJQueryUI': true,
+		'sPaginationType': 'full_numbers',
+		'iDisplayLength': 10,
+		"bLengthChange": true,
+		"bPaginate": true,
+		'aaData': aDataSet,
+		'aaSorting': [[0,'desc']],
+		'bStateSave': true,
+		"iCookieDuration": 3600*24*30, // 30day
+		'aoColumns': aoColumns,
+		"sDom": '<"H"Tfrl>t<"F"ip>',
+		//"sDom": 'T<"clear">lfrtip',
+		'oTableTools': {
+			'sRowSelect': 'multi',
+			'aButtons': [
+				{"sExtends": "select_all", "sButtonText": T('select all')},
+				{"sExtends": "select_none", "sButtonText": T('select none')},
+				{"sExtends": "text", "sButtonText": T('refresh'), "fnClick": 
+					function (nButton, oConfig, oFlash) {event.on_refresh();}},
+				{"sExtends": "text", "sButtonText": T('add'), "fnClick": 
+					function (nButton, oConfig, oFlash) {event.on_add();}},
+				{"sExtends": "text", "sButtonText": T('edit'), "fnClick": 
+					function (nButton, oConfig, oFlash) {event.on_edit();}},
+				{"sExtends": "text", "sButtonText": T('delete'),"fnClick": 
+					function (nButton, oConfig, oFlash) {event.on_delete();}}
+			],
+		},
+		"oLanguage": {
+			"oPaginate": {
+				'sFirst': '首页',
+				'sLast': '尾页',
+				'sNext': '下页',
+				'sPrevious': '前页',
+			},
+			'sSearch': T('Search:'),
+			'sEmptyTable': T('No data available in table'),
+			'sInfoFiltered': T(' - filtering from _MAX_ records'),
+			'sInfoEmpty': T('No entries to show'),
+			'sInfo': T('Showing _START_ to _END_ of _TOTAL_ entries'),
+			'sLengthMenu': T('Display _MENU_ records')
+		}
+
+	});	
+
+	$('#'+table_id).on('click','tr', function(event) {
+		var oTT = TableTools.fnGetInstance(table_id);
+		var obj = $(this);
+
+		if (oTT.fnIsSelected(this)) {
+			oTT.fnDeselect(obj);
+		} else {
+			oTT.fnSelect(obj);
+		}
+	});
+
+}
+
+function clear_datatables(listview_id)
+{
+	var table_id = get_datatalbe_id(listview_id);
+
+	var is_datatables =  $.fn.DataTable.fnIsDataTable(document.getElementById(table_id)) ;
+	if (is_datatables) {
+		var oTable = $('#'+table_id).dataTable();
+		oTable.fnDestroy();
+		$('#'+listview_id).html('');
+	}
+}
+
+function get_datatalbe_id(listview_id)
+{
+	return listview_id + '_table';
+}
+
+
+function datatables_css()
+{
+	if (window.datatables_css_init === undefined) {
+		window.datatables_css_init = true;
+	} else {
+		return;
+	}
+	
+	var html_str = hereDoc(function() {/*!
+<style type='text/css'>
+	div.DTTT_container.ui-buttonset {
+		margin-bottom:0px !important;
+	}
+	a#ToolTables_listview_table_2 {
+		margin-right: 3px !important;
+	}
+	div#listview_table_info {
+		margin-top: 3px;
+	}
+	a.fg-button {
+		height: 18px !important;
+	}
+	div.ui-toolbar {
+		padding: 2px !important;
+	}
+	table.dataTable {
+		font-size:13px !important;
+		width:100% !important; 
+	}
+	div.dataTables_filter input {
+		width: 260px !important;
+		height: 23px !important;
+	}
+	div#listview_table_length {
+		width: 180px !important;
+	}
+	div#listview_table_filter {
+		width: 320px !important;
+	}
+</style>
+	*/});
+	$('body').append(html_str);
+}
+/**********************/
+
+
+function hereDoc(f) 
+{
+	return f.toString().
+		replace(/^[^\/]+\/\*!?/, '').
+		replace(/\*\/[^\/]+$/, '');
+};
+
+function edit_fields_windows(title, input, cb_done)
+{
+	var listview = input[0];
+	var fields = input[1];
+	var fields_types = input[2];
+
+	var time = new Date().getTime();
+	var window_id = 'win_'+time.toString(); 
+	var ok_id = window_id+'_ok';
+	var no_id = window_id+'_no';
+	var list_id = window_id+'_list';
+	var name_id = window_id+'_name';
+	var view_id = window_id+'_view';
+	var category_id = window_id+'_cate';
+	var type_id = window_id+'_type';
+	var image_id = window_id+'_image';
+	var add_id = window_id+'_add';
+	var notify_id = window_id+'_notify';
+
+	var delbtn_id = window_id+'_del';
+	var upbtn_id = window_id+'_up';
+	var downbtn_id = window_id+'_down';
+
+	$('body').append([
+            '<div id="'+window_id+'">',
+                '<div>',
+                    '<img width="20" height="20" src="images/new-table.png" alt="" style="float:left;" /><strong style="font-size:16px;">'+title+'</strong></div>',
+                '<div>',
+                    '<div align="center"><p><table>',
+		        '<tr><td rowspan="2"><div id="'+list_id+'"></div>',
+			    '<div style="width:230px; height:25px; border: 1px solid rgb(224, 224, 224);"><div style="float:right;">',
+				'<input type="button" id="'+delbtn_id+'" value="✖︎" />',
+				'<input type="button" id="'+upbtn_id+'" value="⬆︎" />',
+				'<input type="button" id="'+downbtn_id+'" value="⬇︎" />',
+			    '</div></div></td>',
+			'<td><table>',
+			    '<tr><td colspan="2"><input type="button" id="'+add_id+'" value="'+T('Add/Modify')+'" /></td></tr>',
+			    '<tr><td align="right">'+T('category')+':</td><td><input type="text" id="'+category_id+'" /></td></tr>',
+			    '<tr><td align="right">'+T('name')+':</td><td><input type="text" id="'+name_id+'" /></td></tr>',
+			    '<tr><td align="right">'+T('view')+':</td><td><div id="'+view_id+'"><img height="15" width="30" src="images/eye.png"/></div></td></tr>',
+			    '<tr><td align="right">'+T('type')+':</td><td><div id="'+type_id+'"></div></td></tr>',
+			    '<tr><td></td><td><div style="width:300px; height:200px; border: 1px solid rgb(224, 224, 224);" id="'+image_id+'" /></td></tr>',
+			'</table></td><tr><td vlign="bottom">',
+			    '<div id="'+notify_id+'" style="color:red; text-align:center;"></div>',
+			    '<div style="float:right; margin-top:15px; margin-right:40px;">',
+				'<input type="button" id="'+ok_id+'" value="'+T('OK')+'" style="margin-right: 10px" />',
+				'<input type="button" id="'+no_id+'" value="'+T('Cancel')+'" />',
+			    '</div>',
+			'</td></tr>',
+                    '</table></div>',
+                '</div>',
+            '</div>'].join(''));
+
+	var show_notify = function(msg){
+		$('#'+notify_id).text(msg);
+	};
+
+	$('#'+window_id).jqxWindow({height: 510, width: 660,
+			resizable: false, isModal: true, modalOpacity: 0.3,
+			cancelButton: $('#'+no_id),
+			initContent: tree_render
+	});
+
+
+	function tree_render() {
+		$('#'+delbtn_id).jqxButton({width:25, height:25});
+		$('#'+upbtn_id).jqxButton({width:25, height:25});
+		$('#'+downbtn_id).jqxButton({width:25, height:25});
+		$('#'+delbtn_id).on('click', event_tree_delete);
+		$('#'+upbtn_id).on('click', event_tree_up);
+		$('#'+downbtn_id).on('click', event_tree_down);
+
+		$('#'+category_id).jqxInput({width:300, height: 25});
+		$('#'+name_id).jqxInput({width:300, height: 25});
+		$('#'+view_id).jqxCheckBox({width: 300, height: 25});
+		$('#'+type_id).jqxDropDownList({source:fields_types, autoDropDownHeight:true,  
+					placeHolder: T('Please choose field type'),
+					width:300, height: 25});
+		$('#'+type_id).on('select', function (event){
+			var args = event.args;
+			if (args) {
+				var index = args.index;
+				if (index !== -1) {
+					var item = args.item;
+					var value = item.value;
+					var image = '<img height="200" width="300" src="images/'+value+'.png"/>';
+					$('#'+image_id).html(image);
+				}
+			}                        
+		});
+
+
+		$('#'+ok_id).jqxButton({width: 65, height:35});
+		$('#'+no_id).jqxButton({width: 65, height:35});
+		$('#'+ok_id).on('click', function(e){
+			var items = $('#'+list_id).jqxTree('getItems');
+			var listview = [];
+			var fields = {};
+			for(var index in items) {
+				var item = items[index];
+				if (item.parentElement === null){//这是标签
+
+				} else {//这是字段
+					var p_item = $('#'+list_id).jqxTree('getItem', item.parentElement);
+					var group_items = fields[p_item.label];
+					if (group_items === undefined) {
+						fields[p_item.label] = {};
+						group_items = fields[p_item.label];
+					}
+					group_items[item.label] = item.value;
+
+					if (item.checked) {
+						listview.push(item.label);
+					}
+				}
+			}
+			cb_done([listview, fields]);
+			$('#'+window_id).jqxWindow('close');
+		});
+
+
+		$('#'+window_id).on('close', function (event) {  
+			if (event.target.id === window_id) {
+				$('#'+window_id).jqxWindow('destroy'); 
+			}
+		}); 
+
+
+		var source_data = [];
+		var id_iter = 1;
+		for (var group in fields) {
+			var group_obj = {};
+			id_iter++;
+			group_obj.id = id_iter.toString();
+			group_obj.parentid = '0';
+			group_obj.label = group;
+			source_data.push(group_obj);
+
+			var items = fields[group];
+			for (var key in items) {
+				var value = items[key];
+				var item_obj = {};
+				id_iter++;
+				item_obj.id = id_iter.toString();
+				item_obj.parentid = group_obj.id;
+				item_obj.label = key;
+				item_obj.value = value;
+				item_obj.checked = (listview.indexOf(key) !== -1);
+				source_data.push(item_obj);
+			}
+		}
+
+		var dataAdapter = new $.jqx.dataAdapter({
+			datatype: "json",
+			datafields: [
+				{name: 'id'},
+				{name: 'parentid'},
+				{name: 'label'},
+				{name: 'value'},
+				{name: 'checked'}
+			],
+			id: 'id',
+			localdata: source_data
+		});
+		dataAdapter.dataBind();
+		var records = dataAdapter.getRecordsHierarchy('id', 'parentid', 'items');
+		$('#'+list_id).jqxTree({source: records, width:'230px', height:'400px', 
+					hasThreeStates:true, checkboxes:true,
+					allowDrag:false
+					});
+		$('#'+list_id).jqxTree('expandAll');
+
+		$('#'+list_id).on('checkChange', function (event) {
+			var args = event.args;
+			var element = args.element;
+			var item = $('#'+list_id).jqxTree('getItem', element);
+			if ((item.label === 'ID') && (!args.checked)) {
+				setTimeout(function(){
+					$('#'+list_id).jqxTree('checkItem', element, true);
+				},1);
+			}
+		});
+
+		$('#'+list_id).on('select', function (event) {
+			$('#'+name_id).jqxInput({disabled:false});
+			$('#'+view_id).jqxCheckBox({disabled:false});
+			var args = event.args;
+			if (args) {
+				$('#'+category_id).val('');
+				$('#'+name_id).val('');
+				$('#'+view_id).jqxCheckBox('val', false);
+				$('#'+type_id).jqxDropDownList('selectIndex', -1); 
+				$('#'+image_id).html('');
+
+				var item = $('#'+list_id).jqxTree('getItem', args.element);
+				if (item.parentElement === null) {
+					$('#'+category_id).val(item.label);
+					return;
+				}
+				var item_root = $('#'+list_id).jqxTree('getItem', item.parentElement);
+
+				$('#'+category_id).val(item_root.label);
+				$('#'+name_id).val(item.label);
+				$('#'+type_id).val(item.value);
+				$('#'+view_id).jqxCheckBox('val', item.checked);
+
+				if (item.label==='ID') {
+					$('#'+name_id).jqxInput({disabled:true});
+					$('#'+view_id).jqxCheckBox({disabled:true});
+				}
+			}
+		});
+
+		$('#'+add_id).jqxButton({width: 65, height:35});
+		$('#'+add_id).on('click', function(e){
+			var same_name = function(name){
+				var treeItems = $('#'+list_id).jqxTree('getItems');
+				for (var index in treeItems) {
+					var item = treeItems[index];
+					if (item.parentElement === null) {continue;}
+					if (item.label === name) {
+						return item;
+					}
+				}
+				return null;
+			};
+
+			var d_name = $('#'+name_id).val();
+			var d_group = $('#'+category_id).val();
+			var d_type_i = $('#'+type_id).jqxDropDownList('getSelectedIndex'); 
+			var d_view = $('#'+view_id).jqxCheckBox('val');
+
+			if (d_group == ''){
+				$('#'+category_id).jqxInput('focus'); 
+				show_notify(T('please fill in "tab name"'));
+				return;
+			}
+
+			if (d_name == ''){
+				var selected = $('#'+list_id).jqxTree('getSelectedItem');
+				if (selected.parentElement === null) {
+					$('#'+list_id).jqxTree('updateItem', selected.element, {label:d_group});
+					return;
+				} else {
+					show_notify(T('please fill in "field name"'));
+					$('#'+name_id).jqxInput('focus'); 
+					return;
+				}
+			}
+
+                        if (d_type_i===-1){
+				show_notify(T('please select field type'));
+				return;
+			} else {
+				var item = $('#'+type_id).jqxDropDownList('getSelectedItem');
+				var d_type = item.value;
+			}
+
+			var new_item = {label:d_name, value:d_type, checked:d_view};
+			var update_item = same_name(d_name);
+			if (update_item){
+				$('#'+list_id).jqxTree('updateItem', update_item, new_item);
+				$('#'+list_id).jqxTree('checkItem', update_item, new_item.checked);
+				show_notify('');
+				return;
+			}
+
+			var get_group = function(group){
+				var treeItems = $('#'+list_id).jqxTree('getItems');
+				var res_item = null;
+				for (var index in treeItems) {
+					var item = treeItems[index];
+					if (item.parentElement === null) {
+						if (group === undefined) {
+							res_item = item;
+						} else {
+							if (item.label === group) {
+								return item;
+							}
+						}
+					}
+				}
+				return res_item;
+			};
+
+			var group = get_group(d_group);
+			if (group === null) {
+				$('#'+list_id).jqxTree('addTo', {label:d_group}, null, false);
+				var group = get_group(d_group);
+			}
+
+			$('#'+list_id).jqxTree('addTo', new_item, group.element, false);
+			$('#'+list_id).jqxTree('render');
+			show_notify('');
+			return;
+		});
+
+		function event_tree_delete(){
+			var item = $('#'+list_id).jqxTree('getSelectedItem');
+			if (item === null){return;}
+			$('#'+list_id).jqxTree('removeItem', item.element);
+		}
+
+		function replace_item(first, second)
+		{
+			var first_data = {};
+			first_data.label = first.label;
+			first_data.checked = first.checked;
+			first_data.value = first.value;
+
+			var second_data = {};
+			second_data.label = second.label;
+			second_data.checked = second.checked;
+			second_data.value = second.value;
+
+			$('#'+list_id).jqxTree('updateItem', first, second_data);
+			$('#'+list_id).jqxTree('updateItem', second, first_data);
+			$('#'+list_id).jqxTree('selectItem', second);
+			$('#'+list_id).jqxTree('render');
+		}
+
+		function replace_group(item, updown)
+		{
+			if (item.isExpanded === false) {
+				$('#'+list_id).jqxTree('expandItem', item.element);
+				show_notify(T('expands the item, please click again.'));
+				return;
+			}
+			show_notify('');
+
+			var me_group = {
+				label: item.label,
+				value: item.value
+			};
+
+			var me_data = [];
+			var iter_item = item;
+			do {
+				iter_item = $('#'+list_id).jqxTree('getNextItem', iter_item.element);
+				if (iter_item===null){break;}
+				if (iter_item.parentElement === null){break;}
+				me_data.push({label:iter_item.label, value:iter_item.value, checked: iter_item.checked});
+			} while(true);
+
+			console.log(me_group);
+			console.log(me_data);
+
+			var next_group = function(input){
+				var iter_item = input;
+				do {
+					if (updown === 'up') {
+						iter_item = $('#'+list_id).jqxTree('getPrevItem', iter_item.element);
+					} else {
+						iter_item = $('#'+list_id).jqxTree('getNextItem', iter_item.element);
+					}
+					if (iter_item===null){break;}
+				} while(iter_item.parentElement !== null);
+				return iter_item;
+			}
+
+			var target_item = next_group(item);
+			if (target_item === null) {return;}
+
+			console.log(target_item);
+
+			if (updown === 'up') {
+				$('#'+list_id).jqxTree('addBefore', me_group, target_item);
+				var new_group = $('#'+list_id).jqxTree('getPrevItem', target_item.element);
+			} else {
+				var target_item = next_group(target_item);
+				if (target_item){
+					$('#'+list_id).jqxTree('addBefore', me_group, target_item);
+					var new_group = $('#'+list_id).jqxTree('getPrevItem', target_item.element);
+				} else {
+					$('#'+list_id).jqxTree('addTo', me_group, null);
+					var items = $('#'+list_id).jqxTree('getItems'); 
+					var new_group = items[items.length-1];
+				}
+			}
+
+			var data = me_data.shift();
+			do {
+				$('#'+list_id).jqxTree('addTo', data, new_group.element);
+			} while(data = me_data.shift());
+
+			$('#'+list_id).jqxTree('removeItem', item.element);
+			$('#'+list_id).jqxTree('expandAll');
+			$('#'+list_id).jqxTree('selectItem', new_group);
+		}
+
+		function event_tree_up(){
+			var item = $('#'+list_id).jqxTree('selectedItem');
+			var prevItem = $('#'+list_id).jqxTree('getPrevItem', item.element);
+
+			if (item.parentElement === null) {
+				replace_group(item, 'up');
+				return;
+			}
+
+			if (prevItem === null) {return;}
+			if (prevItem.parentElement === null) {return;}
+			replace_item(item, prevItem);
+		}
+
+		function event_tree_down(){
+			var item = $('#'+list_id).jqxTree('selectedItem');
+			var nextItem = $('#'+list_id).jqxTree('getNextItem', item.element);
+
+			$('#'+list_id).jqxTree('expandAll');
+
+			if (item.parentElement === null) {
+				replace_group(item, 'down');
+				return;
+			}
+
+			if (nextItem === null) {return;}
+			if (nextItem.parentElement === null) {return;}
+			replace_item(item, nextItem);
+		}
+	}
+}
+
 function new_schema_window(title, cb_done, init_data)
 {
 	var time = new Date().getTime();
@@ -33,7 +752,7 @@ function new_schema_window(title, cb_done, init_data)
 
 	$('#'+window_id).jqxWindow({height: 320, width: 450,
 			resizable: false, isModal: true, modalOpacity: 0.3,
-			okButton: $('#'+ok_id), cancelButton: $('#'+no_id),
+			cancelButton: $('#'+no_id),
 			initContent: function () {
 				$('#'+name_id).jqxInput({width:300, height: 25});
 				$('#'+title_id).jqxInput({width:300, height: 25});
@@ -53,10 +772,11 @@ function new_schema_window(title, cb_done, init_data)
 				focus_on_blank([name_id,title_id,content_id,image_id]);
 
 				$('#'+ok_id).on('click', function(e){
-					var d_name = $('#'+name_id).val();
-					var d_title = $('#'+title_id).val();
-					var d_content = $('#'+content_id).val();
-					var d_image = $('#'+image_id).val();
+					var d_name = $('#'+name_id).jqxInput('val');
+					var d_title = $('#'+title_id).jqxInput('val');
+					var d_content = $('#'+content_id).jqxInput('val');
+					var d_image = $('#'+image_id).jqxInput('val');
+
 					if ((d_title==='')||(d_content==='')||(d_image==='')) {
 						var d_init = {
 							'name': d_name,
@@ -74,11 +794,15 @@ function new_schema_window(title, cb_done, init_data)
 						'content': d_content,
 						'image': d_image
 					});
-					$('#'+window_id).jqxWindow('destroy'); 
+
+					$('#'+window_id).jqxWindow('close');
 				});
-				$('#'+no_id).on('click', function(e){
-					$('#'+window_id).jqxWindow('destroy'); 
-				});
+
+				$('#'+window_id).on('close', function (event) {  
+					if (event.target.id === window_id) {
+						$('#'+window_id).jqxWindow('destroy'); 
+					}
+				}); 
 			}
 	});
 
@@ -96,39 +820,41 @@ function new_schema_window(title, cb_done, init_data)
 
 }
 
-function init_tab(vaild_fields, container_id, width)
+function init_tab(fields, container_id)
 {
 	var tabul_id = container_id+'_tabul';
-	$('#'+container_id).append('<ul style="margin-left: 30px;" id="'+tabul_id+'"></ul>');
+	$('#'+container_id).append('<ul style="margin-left: 20px;" id="'+tabul_id+'"></ul>');
 
-	for (var tab_name in vaild_fields) {
-		var tabitem_id = get_tabitem_id(container_id, tab_name);
-		var tabtable_id = tabitem_id+'_table';
+	for (var tab_name in fields) {
+		var ids = get_tabtable_id(container_id, tab_name);
+		var tab_id=ids[0], table_id=ids[1];
 		$('#'+tabul_id).append('<li>'+tab_name+'</li>');
-		$('#'+container_id).append('<div id="'+tabitem_id+'"><p><table id="'+tabtable_id+'" style="margin:auto;"></table></div>');
+		$('#'+container_id).append('<div id="'+tab_id+'"><p><table id="'+table_id+'" style="margin:auto; font-size:12px;"></table></div>');
 	}
 
-	width = width || 640;
 	$('#'+container_id).jqxTabs({ 
 		position: 'top', 
-		width: width, 
+		width: 'auto', 
 		scrollable:false,
 	});
 }
 
-function get_tabitem_id(parent_id, input_str)
+function get_tabtable_id(parent_id, input_str)
 {
-	return parent_id+'_'+md5(input_str);
+	var tab_item_id = parent_id+'_'+md5(input_str);
+	var table_id = tab_item_id+'_table';
+	return [tab_item_id, table_id];
 }
 
-function get_tableitem_id(tab_name, field_name)
+function get_tableitem_id(window_id, tab_name, field_name)
 {
-	return 'field_'+md5(tab_name+field_name);
+	return 'field_'+md5(window_id+tab_name+field_name);
 }
+
 
 function addItem_jqxInput_id(p, id, width, height)
 {
-	tabitem_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
 	width = width || 200;
 	addItem_jqxInput(p, id, [], height, width);
 	$('#'+field_id).jqxInput({disabled: true});
@@ -140,9 +866,10 @@ function addItem_jqxInput_name(p, init_val, source, height, width)
 	addItem_jqxInput(p, init_val, source, height, width);
 }
 
+
 function addItem_jqxInput_text(p, init_val, source, height, width)
 {
-	tabitem_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
 	width = width || 400; height = height || 50;
 	source = source || []; 
 
@@ -157,8 +884,8 @@ function addItem_jqxInput_text(p, init_val, source, height, width)
 
 function addItem_jqxInput(p, init_val, source, height, width)
 {
-	tabitem_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
-	width = width || 400; height = height || 25;
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	width = width || 300; height = height || 23;
 	source = source || []; 
 
 	var html = '<tr><td align="right">'+caption+'：</td>';
@@ -170,11 +897,36 @@ function addItem_jqxInput(p, init_val, source, height, width)
 	}
 }
 
+
+function getval_jqxInput_id(p){return getval_jqxInput(p);}
+function getval_jqxInput_name(p){return getval_jqxInput(p);}
+function getval_jqxInput_text(p){return getval_jqxInput(p);}
+function getval_jqxInput(p)
+{
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	return $('#'+field_id).jqxInput('val');
+}
+
 function render_null(data, finish)
 {
 	data.push(data[0]);
 	data.push(data[0]);
 	finish(data);
+}
+
+function json(url, cb_done, cb_fail)
+{
+	$.getJSON(url).done(cb_done).fail(cb_fail);
+}
+
+function post(url, data, cb_done, cb_fail)
+{
+	$.ajax({
+		type : 'POST',
+		dataType : "jsonp",
+		data: data,
+		url : url, 
+	}).done(cb_done).fail(cb_fail);
 }
 
 function jsonp(url, data, cb_done, cb_fail)
@@ -217,7 +969,7 @@ function render_onebox(data, finish)
 
 function addItem_jqxListBox_images(p, init_val, height, width)
 {
-	tabitem_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
 	width = width || 400; height = height || 250;
 	var img_width = 332;
 
@@ -282,15 +1034,38 @@ function addItem_jqxListBox_images(p, init_val, height, width)
 	});
 }
 
+function addItem_jqxListBox_onebox(p, init_val, render, height, width)
+{
+	render = render || render_onebox;
+	height = height || 250;
+	addItem_jqxListBox(p, init_val, render, height, width)
+}
+
 function addItem_jqxListBox_name(p, init_val, render, height, width)
 {
 	width = width || 300;
 	addItem_jqxListBox(p, init_val, render, height, width)
 }
 
+function getval_jqxListBox_name(p){return getval_jqxListBox(p);}
+function getval_jqxListBox_onebox(p){return getval_jqxListBox(p);}
+function getval_jqxListBox_images(p){return getval_jqxListBox(p);}
+function getval_jqxListBox(p)
+{
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+
+	var res_objs = [];
+	var items = $('#'+field_id).jqxListBox('getItems'); 
+	for (var index in items) {
+		var item = items[index];
+		res_objs.push(item.value);
+	}
+	return res_objs;
+}
+
 function addItem_jqxListBox(p, init_val, render, height, width)
 {
-	tabitem_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
 	width = width || 400; height = height || 90;
 	render = render || render_null;
 
@@ -393,9 +1168,15 @@ function cp(old)
 	return $.extend(true, {}, old);
 }
 
+function getval_jqxComboBox(p)
+{
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	return $('#'+field_id).jqxComboBox('val');
+}
+
 function addItem_jqxComboBox(p, init_val, source, height, width)
 {
-	tabitem_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
 	width = width || 200; height = height || 25;
 	source = source || []; 
 
@@ -407,9 +1188,17 @@ function addItem_jqxComboBox(p, init_val, source, height, width)
 	}
 }
 
+function getval_jqxNumberInput_size(p){return getval_jqxNumberInput(p);}
+function getval_jqxNumberInput_price(p){return getval_jqxNumberInput(p);}
+function getval_jqxNumberInput(p)
+{
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	return $('#'+field_id).jqxNumberInput('val');
+}
+
 function addItem_jqxNumberInput(p, init_val, digits, symbol, height, width)
 {
-	tabitem_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
 	width = width || 200; height = height || 25;
 	symbol = symbol || '';
 	$('#'+table_id).append(['<tr><td align="right">'+caption+'：</td>',
@@ -420,9 +1209,15 @@ function addItem_jqxNumberInput(p, init_val, digits, symbol, height, width)
 	}
 }
 
+function getval_jqxDateTimeInput(p)
+{
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	return $('#'+field_id).jqxDateTimeInput('val');
+}
+
 function addItem_jqxDateTimeInput(p, init_val, height, width)
 {
-	tabitem_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
 	width = width || 200; height = height || 25;
 	$('#'+table_id).append(['<tr><td align="right">'+caption+'：</td>',
 		'<td align="left"><div id="'+field_id+'"></div></td></tr>'].join(''));

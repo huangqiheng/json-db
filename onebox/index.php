@@ -37,7 +37,7 @@ function process_bbs_appgame_url($req_url)
 		return false;
 	}
 
-	$user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36';
+	$user_agent = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36';
 	$html = curl_get_content($req_url, $user_agent);
 	if (empty($html)) {
 		return false;

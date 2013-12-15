@@ -1,8 +1,241 @@
 <?php
+require_once 'config.php';
 
-function db_path()
+/*****************************************
+	系统常量
+*****************************************/
+
+$mapper_types = [
+	'jqxInput-name',
+	'jqxListBox-name'
+];
+
+$options_types = [
+	'jqxComboBox'
+];
+
+$field_types = [
+	'jqxInput-id',
+	'jqxInput',
+	'jqxInput-text',
+	'jqxInput-name',
+	'jqxListBox',
+	'jqxListBox-name',
+	'jqxListBox-onebox',
+	'jqxListBox-images',
+	'jqxComboBox',
+	'jqxNumberInput-price',
+	'jqxNumberInput-size',
+	'jqxDateTimeInput'
+];
+
+
+/*****************************************
+	共享函数
+*****************************************/
+
+function refresh_data($db_name, $table_name, $append_data_file=null)
+{
+	$data_path = table_root($db_name, $table_name);
+	$schema = object_read("{$data_path}/schema.json");
+	$listview = $schema['listview'];
+	$fields = $schema['fields'];
+	$merged_fields = merge_fields($fields);
+	$mapper_fields = get_mapper_fields($merged_fields);
+	$options_fields = get_options_fields($merged_fields);
+
+	$listview_data = [];
+	$mapper_data = [];
+	$options_data = [];
+
+	do {
+		if (empty($listview)) {break;}
+		$glob_files = [];
+
+		//更新单个文件
+		if ($append_data_file) {
+			$listview_data = object_read("{$data_path}/listview.json");
+			$mapper_data = object_read("{$data_path}/mapper.json");
+			$options_data = object_read("{$data_path}/options.json");
+			$merge_items = merge_fields(object_read($append_data_file));
+
+			$id_input = $merge_items['ID'];
+			$id_index = array_search('ID', $listview);
+			if ($id_index !== false) {
+				foreach($listview_data as &$subitem) {
+					$id_cmp = $subitem[$id_index];
+					if ($id_cmp !== $id_input) {
+						continue;
+					}
+
+					//替换listview
+					$replace_item = [];
+					foreach($listview as $view_item) {
+						$value = @$merge_items[$view_item];
+						if ($value) {
+							$replace_item[] = $value;
+						} else {
+							$replace_item[] = '';
+						}
+					}
+					$subitem = $replace_item;
+
+					//更新mapper
+					foreach($mapper_fields as $map_name) {
+						$map_key = @$merge_items[$map_name];
+						if (empty($map_key)) {continue;}
+
+						if (is_string($map_key)) {
+							$mapper_data[$map_key] = $item_id;
+							continue;
+						}
+
+						if (is_array($map_key)) {
+							foreach($map_key as $key) {
+								$mapper_data[$map_key] = $item_id;
+							}
+						}
+					}
+
+					//更新options
+
+
+					break 2;
+				}
+			}
+
+			$glob_files[] = $append_data_file;
+		} else {
+			$glob_files = glob("{$data_path}/*.json");
+		}
+
+		foreach($glob_files as $file) {
+			if (is_dir($file)) {continue;}
+			if (!preg_match('~/(\d+)\.json$~',$file, $matches)){continue;}
+			$item_id = $matches[1];
+
+			$data_obj = object_read($file);
+			if (empty($data_obj)) {continue;}
+
+			$merge_items = merge_fields($data_obj);
+
+			//生成listview
+			$output = [];
+			foreach($listview as $view_item) {
+				$value = @$merge_items[$view_item];
+				if ($value) {
+					$output[] = $value;
+				} else {
+					$output[] = '';
+				}
+			}
+			$listview_data[] = $output;
+
+			//生成mapper
+			foreach($mapper_fields as $map_name) {
+				$map_key = @$merge_items[$map_name];
+				if (empty($map_key)) {continue;}
+
+				if (is_string($map_key)) {
+					$mapper_data[$map_key] = $item_id;
+					continue;
+				}
+
+				if (is_array($map_key)) {
+					foreach($map_key as $key) {
+						$mapper_data[$map_key] = $item_id;
+					}
+				}
+			}
+		}
+
+	}while(false);
+
+	object_save("{$data_path}/mapper.json", $mapper_data);
+	object_save("{$data_path}/listview.json", $listview_data);
+	object_save("{$data_path}/options.json", $options_data);
+	return count($listview_data);
+}
+
+function get_options_fields($merge_fields)
+{
+	$mappers = [];
+	global $options_types;
+	foreach($merge_fields as $field=>$value) {
+		if (in_array($value, $options_types)) {
+			$mappers[] = $field;
+		}
+	}
+	return $mappers;
+}
+
+function get_mapper_fields($merge_fields)
+{
+	$mappers = [];
+	global $mapper_types;
+	foreach($merge_fields as $field=>$value) {
+		if (in_array($value, $mapper_types)) {
+			$mappers[] = $field;
+		}
+	}
+	return $mappers;
+}
+
+function merge_fields($group_obj)
+{
+	$merge_items = [];
+	foreach($group_obj as $group=>$items) {
+		foreach($items as $name=>$value) {
+			$merge_items[$name] = $value;
+		}
+	}
+	return $merge_items;
+}
+
+function rmdir_Rf($directory)
+{
+	foreach(glob("{$directory}/*") as $file)
+	{
+		if(is_dir($file)) { 
+			rmdir_Rf($file);
+		} else {
+			unlink($file);
+		}
+	}
+	rmdir($directory);
+}
+
+function table_root($db_name, $table_name)
+{
+	return db_root($db_name)."/{$table_name}";
+}
+
+function db_root($db_name)
+{
+	return dbs_path()."/{$db_name}";
+}
+
+function dbs_path()
 {
 	return dirname(__FILE__).'/databases';
+}
+
+function object_save($filename, $data)
+{
+	file_put_contents($filename, prety_json($data));
+}
+
+function object_read($filename)
+{
+	if (!file_exists($filename)) {
+		return [];
+	}
+
+	$data_str = file_get_contents($filename);
+	if ($data_str === null) {
+		return [];
+	}
+	return json_decode($data_str, true);
 }
 
 function prety_json($obj)
@@ -64,7 +297,7 @@ function indent_json($json)
 function get_db_captions()
 {
 	$result = [];
-	foreach (glob(db_path().'/*', GLOB_ONLYDIR) as $db_path) { 
+	foreach (glob(dbs_path().'/*', GLOB_ONLYDIR) as $db_path) { 
 		$db_name = basename($db_path);
 		$filename = $db_path.'/schema.json';
 		$schema_str = file_get_contents($filename);
@@ -89,7 +322,7 @@ function get_table_captions($db_name=null)
 		}
 		return $result;
 	} else {
-		foreach (glob(db_path()."/{$db_name}/*", GLOB_ONLYDIR) as $table_path) { 
+		foreach (glob(dbs_path()."/{$db_name}/*", GLOB_ONLYDIR) as $table_path) { 
 			$table_name = basename($table_path);
 			$filename = $table_path.'/schema.json';
 			$schema_str = file_get_contents($filename);
@@ -136,16 +369,22 @@ function get_basetime()
 	return mktime(0,0,0,7,21,2012);
 }
 
+function get_random_id()
+{
+	$ran_val = time()-get_basetime();
+	return strval($ran_val);
+}
+
 function get_selected_db()
 {
-	return [get_param('db', 'default'), get_param('table', 'default'), get_param('id', time()-get_basetime())];
+	return [get_param('db', 'default'), get_param('table', 'default'), get_param('id', get_random_id())];
 }
 
 function json_file($file_name)
 {
 	do {
 		list($database,$table,$id) = get_selected_db();
-		$full_name = db_path()."/{$database}/{$table}/{$file_name}";
+		$full_name = dbs_path()."/{$database}/{$table}/{$file_name}";
 		if (!file_exists($full_name)) {
 			break;
 		}
@@ -239,5 +478,44 @@ function is_valid_jsonp_callback($subject)
 	return preg_match($identifier_syntax, $subject)
 		&& ! in_array(mb_strtolower($subject, 'UTF-8'), $reserved_words);
 }
+
+/****/
+/***************  curl ********************/
+/****/
+
+function curl_get_content($url, $user_agent=null)
+{
+	$headers = array(
+		"Accept: application/json",
+		"Accept-Encoding: deflate,sdch",
+		"Accept-Charset: utf-8;q=1"
+		);
+
+	if ($user_agent === null) {
+		$user_agent = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36';
+	}
+	$headers[] = $user_agent;
+
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+	curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+
+	$res = curl_exec($ch);
+	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	$err = curl_errno($ch);
+	curl_close($ch);
+
+	if (($err) || ($httpcode !== 200)) {
+		return null;
+	}
+
+	return $res;
+}
+
 
 ?>

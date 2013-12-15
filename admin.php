@@ -14,18 +14,35 @@ $init_table = get_param('table', 'default');
 <link rel="shortcut icon" type="image/ico" href="images/favicon.ico" />
 <title>JsonDB</title>
 
-<!--加载css-->
-<link rel="stylesheet" href="client/jqwidgets/styles/jqx.base.css" type="text/css" />
+
+<!--加载jquery-->
+<script type="text/javascript" language="javascript" src="client/jquery/jquery-2.0.3.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/jquery/md5.min.js"></script>
+
+<!--加载gritter-->
 <link rel="stylesheet" href="client/gritter/jquery.gritter.css" type="text/css" />
-
-<!--加载js-->
-<script type="text/javascript" language="javascript" src="client/jquery-2.0.3.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/gritter/jquery.gritter.min.js"></script>
-<script type="text/javascript" language="javascript" src="client/md5.min.js"></script>
 
+<!--加载jqwidgets-->
+<link rel="stylesheet" href="client/jqwidgets/styles/jqx.base.css" type="text/css" />
 <script type="text/javascript" language="javascript" src="client/jqwidgets/jqx-all.js"></script> 
 <script type="text/javascript" language="javascript" src="client/jqwidgets/globalization/globalize.js"></script>
 <script type="text/javascript" language="javascript" src="client/jqwidgets/globalization/globalize.culture.zh-CN.js"></script> 
+
+<!--加载datatables-->
+<style type="text/css" title="currentStyle">
+	@import "client/datatables/demo_table_jui.css";
+	@import "client/datatables/jquery-ui-1.8.4.custom.css";
+	@import "client/datatables/demo_page.css";
+	@import "client/datatables/header.css";
+	@import "client/datatables/demo_table.css";
+	@import "client/datatables/TableTools.css";
+</style>
+<script type="text/javascript" language="javascript" src="client/datatables/jquery.dataTables.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/datatables/TableTools.js"></script>
+<script type="text/javascript" language="javascript" src="client/datatables/ZeroClipboard.js"></script>
+
+<!--加载自己的js-->
 <script type="text/javascript" language="javascript" src="client/json-db-lib.js"></script>
 <script type="text/javascript" language="javascript" src="client/language.js"></script>
 
@@ -36,6 +53,8 @@ set_language('cn');
 env.web_root = "<?php echo $web_root; ?>";
 env.init_db = "<?php echo $init_db; ?>";
 env.init_table = "<?php echo $init_table; ?>";
+
+env.field_types = <?php echo json_encode($field_types); ?>;
 
 env.db_captions = <?php echo json_encode($db_captions); ?>;
 env.table_captions = <?php echo json_encode($table_captions); ?>;
@@ -50,52 +69,11 @@ env.popup = function (title, content){$.gritter.add({title: title, text: content
 
 $(document).ready(jsondb_main);
 
-function init_db_captions()
-{
-	env.db_captions.push(
-	    {'name':'NEWITEM', 'image':'images/new-database.ico', 'title':T('New Database')},
-	    {'name':'EDITITEM','image':'images/new-database.ico','title':T('Edit DB Description')},
-	    {'name':'DELITEM','image':'images/new-database.ico','title':T('Delete Database')}
-	);
-}
-
-function init_table_captions(db_name)
-{
-	var captions = env.table_captions[db_name];
-	if (captions === undefined) {
-		env.table_captions[db_name] = [];
-		captions = env.table_captions[db_name];
-	}
-
-	captions.push(
-	    {'name':'NEWITEM', 'image':'images/new-table.png','title':T('Create New Table')},
-	    {'name':'EDITITEM','image':'images/new-table.png','title':T('Edit Table Description')},
-	    {'name':'DELITEM','image':'images/new-table.png','title':T('Delete Table')}
-	);
-}
-
-function del_db_captions(db_name)
-{
-	var found_index = -1;
-	for (var index in env.db_captions) {
-		var caption = env.db_captions[index];
-		if (caption.name === db_name) {
-			found_index = index;
-			break;
-		}
-	}
-	if (found_index !== -1) {
-		env.db_captions.splice(found_index, 1);
-	}
-}
-
-function del_table_captions(db_name)
-{
-	env.table_captions[db_name] = [];
-}
 
 function jsondb_main() 
 {
+	$.ajaxSetup({ cache: false });
+
 	var db_dataAdapter = new $.jqx.dataAdapter({
 		localdata: env.db_captions,
 		datatype: "array"
@@ -108,7 +86,7 @@ function jsondb_main()
 		autoDropDownHeight: true,
 		displayMember: "title", 
 		valueMember: "name", 
-		itemHeight: -1, height: 25, width: 200,
+		itemHeight: -1, height: 25, width: 280,
 		renderer: render_captions
 	};
 
@@ -116,31 +94,82 @@ function jsondb_main()
 		selectedIndex:env.db_index, 
 		selectionRenderer: render_db_selection,
 		placeHolder: T('Please Choose DB:'),
-		dropDownWidth:200, 
+		dropDownWidth:280, 
 		source:db_dataAdapter}, dropdown_opt));
 	$('#table_captions').jqxDropDownList($.extend({
 		selectedIndex:env.table_index, 
 		selectionRenderer: render_table_selection,
 		placeHolder: T('Please Choose Table:'),
-		dropDownWidth:295, 
+		dropDownWidth:376, 
 		source:table_dataAdapter}, dropdown_opt));
-	$('#reflash_btn').jqxButton({width: 46, height: 25});
-	$('#new_btn').jqxButton({width: 46, height: 25});
-	$('#config_btn').jqxButton({width: 32, height: 25});
+	$('#refresh_btn').jqxButton({width: 46, height: 25});
+	$('#config_btn').jqxButton({width: 46, height: 25});
 
-	$('#reflash_btn').on('click', function(e){
+	$('#refresh_btn').on('click', function(e){
 		var db_name = get_db_name();
 		var table_name = get_table_name();
 		if (table_name === '') {
 			env.popup(T('ERROR'), T('Please select or create table'));
 			return;
 		}
-		var listview_url = 'databases/'+db_name+'/'+table_name+'/listview.json';
-
-		console.log(listview_url);
-
+		refresh_listview(db_name, table_name);
 	});
 
+	$('#config_btn').on('click', function(e){
+		var db_name = get_db_name();
+		var table_name = get_table_name();
+		if (table_name === '') {
+			env.popup(T('ERROR'), T('Please select or create table'));
+			return;
+		}
+		edit_fields(db_name, table_name);
+	});
+
+	function trigger_refresh() {
+		if (env.dont_refresh) {
+			env.dont_refresh = false;
+			return;
+		}
+		env.dont_refresh = false;
+
+		if ((env.db_index!==-1) && (env.table_index!==-1)) {
+			console.log('trigger refresh');
+			$('#refresh_btn').trigger('click');
+		}
+	}
+
+	function edit_fields(db_name, table_name)
+	{
+		var schema_url = get_url(db_name, table_name, 'schema.json');
+
+		json(schema_url, schema_done, function(e) {
+			env.popup(T('ERROR'), T('no data filed is set, please add new.'));
+		});
+
+		function schema_done(schema_data) {
+			var input = [schema_data.listview, schema_data.fields, env.field_types];
+			edit_fields_windows(T('Edit fields'), input, function(p){
+				var data = {
+					cmd:'update_fields', 
+					db_name: db_name, 
+					table_name: table_name,
+					listview:p[0], 
+					fields:p[1]
+				};
+				post('schema.php', data, function(d){
+					if (d.hasOwnProperty('status')) {
+						if (d.status === 'ok') {
+							trigger_refresh();
+						} else {
+							env.popup(T('ERROR'), T(d.error));
+						}
+					}
+				},function(){
+					env.popup(T('ERROR'), T('network request failure.'));
+				});
+			});
+		};
+	}
 
 	function render_db_selection(d,index,label,value) 
 	{
@@ -197,25 +226,12 @@ function jsondb_main()
 			data.cmd = 'del_database';
 		}
 
-		$.ajax({
-			type : "GET",
-			dataType : "jsonp",
-			data: data,
-			url : 'caption.php', 
-		}).done(function(d){
-			if (d.hasOwnProperty('status')) {
-				if (d.status === 'ok') {
-					if (table_name) {
-						cb_done(db_name, table_name);
-					} else {
-						cb_done(db_name);
-					}
-				} else {
-					env.popup(T('ERROR'), T(d.error));
-				}
+		submit_schema(data, function(d){
+			if (table_name) {
+				cb_done(db_name, table_name);
+			} else {
+				cb_done(db_name);
 			}
-		}).fail(function(e){
-			env.popup(T('ERROR'), T('network request failure.'));
 		});
 	}
 
@@ -262,7 +278,7 @@ function jsondb_main()
 		new_schema_window(title_str, function(data){
 			data.cmd = opt_cmd;
 			data.ori_name = get_db_name();
-			submit_caption(data, function(){
+			submit_schema(data, function(){
 				if (opt_cmd === 'edit_database') {
 					var caption= env.db_captions[env.db_index];
 					caption.title = data.title;
@@ -333,7 +349,7 @@ function jsondb_main()
 			data.cmd = opt_cmd;
 			data.db_name = db_name;
 			data.ori_name = table_name;
-			submit_caption(data, function(){
+			submit_schema(data, function(){
 				if (opt_cmd === 'edit_table') {
 					var caption = env.table_captions[db_name][env.table_index];
 					caption.title = data.title;
@@ -363,6 +379,7 @@ function jsondb_main()
 			if (is_operate_item(value)) {
 				$("#db_captions").jqxDropDownList('selectIndex', env.db_last_unselect); 
 				on_create_db(value);
+				env.dont_refresh = true;
 			} else {
 				var db_name = value;
 				var default_index = where_default(db_name);
@@ -386,6 +403,11 @@ function jsondb_main()
 		var args = event.args;
 		if (args) {
 			env.db_last_unselect = args.index;
+
+			var counter = env.db_captions.length-3;
+			if (env.db_last_unselect >= counter) {
+				env.dont_refresh = true;
+			}
 		}        
 	});
 
@@ -401,6 +423,7 @@ function jsondb_main()
 			} else {
 				var table_name = value;
 				env.table_index = args.index;
+				trigger_refresh();
 			}
 		}                        
 	});
@@ -413,8 +436,7 @@ function jsondb_main()
 		}        
 	});
 
-
-
+	trigger_refresh();
 }
 
 function get_index(captions, target_name) 
@@ -434,6 +456,17 @@ function get_db_name()
 	return caption.name;
 }
 
+function get_db_desc(db_name)
+{
+	for (var index in env.db_captions) {
+		var item = env.db_captions[index];
+		if (db_name === item.name) {
+			return item.title;
+		}
+	}
+	return '';
+}
+
 function get_table_name()
 {
 	if (env.table_index === -1) {
@@ -445,12 +478,24 @@ function get_table_name()
 	return caption[env.table_index].name;
 }
 
+function get_table_desc(db_name, table_name)
+{
+	var captions = env.table_captions[db_name];
+	for (var index in captions) {
+		var item = captions[index];
+		if (table_name === item.name) {
+			return item.title;
+		}
+	}
+	return '';
+}
+
 function where_default(db_name)
 {
 	var find_default = function(captions) {
 		for (var index in captions) {
 			var caption = captions[index];
-			if (caption.name === 'default') {
+			if (/default/.test(caption.name.toLowerCase())) {
 				return index;
 			}
 		}
@@ -470,9 +515,11 @@ function is_operate_item(name)
 	return ((name === 'NEWITEM') || (name === 'EDITITEM') || (name === 'DELITEM'));
 }
 
-function submit_caption(data, cb_done)
+function submit_data(data, cb_done){return submit_jsonp('data.php', data, cb_done);}
+function submit_schema(data, cb_done){return submit_jsonp('schema.php', data, cb_done);}
+function submit_jsonp(url, data, cb_done)
 {
-	jsonp('caption.php', data, function(d){
+	jsonp(url, data, function(d){
 		if (d.hasOwnProperty('status')) {
 			if (d.status === 'ok') {
 				cb_done();
@@ -486,18 +533,150 @@ function submit_caption(data, cb_done)
 	});
 }
 
+
+
+function init_db_captions()
+{
+	env.db_captions.push(
+	    {'name':'NEWITEM', 'image':'images/new-database.ico', 'title':T('New Database')},
+	    {'name':'EDITITEM','image':'images/new-database.ico','title':T('Edit DB Description')},
+	    {'name':'DELITEM','image':'images/new-database.ico','title':T('Delete Database')}
+	);
+}
+
+function init_table_captions(db_name)
+{
+	var captions = env.table_captions[db_name];
+	if (captions === undefined) {
+		env.table_captions[db_name] = [];
+		captions = env.table_captions[db_name];
+	}
+
+	captions.push(
+	    {'name':'NEWITEM', 'image':'images/new-table.png','title':T('Create New Table')},
+	    {'name':'EDITITEM','image':'images/new-table.png','title':T('Edit Table Description')},
+	    {'name':'DELITEM','image':'images/new-table.png','title':T('Delete Table')}
+	);
+}
+
+function del_db_captions(db_name)
+{
+	var found_index = -1;
+	for (var index in env.db_captions) {
+		var caption = env.db_captions[index];
+		if (caption.name === db_name) {
+			found_index = index;
+			break;
+		}
+	}
+	if (found_index !== -1) {
+		env.db_captions.splice(found_index, 1);
+	}
+}
+
+function del_table_captions(db_name)
+{
+	env.table_captions[db_name] = [];
+}
+
+function get_url(db_name, table_name, filename)
+{
+	return 'databases/'+db_name+'/'+table_name+'/'+filename;
+}
+
+function refresh_listview(db_name, table_name)
+{
+	var table_desc = get_table_desc(db_name, table_name);
+	var listview_id = 'listview';
+	clear_datatables(listview_id);
+
+	var data_url = get_url(db_name, table_name, 'listview.json');
+	var schema_url = get_url(db_name, table_name, 'schema.json');
+
+	var get_data = function(item_id, cb_done){
+		var item_url = get_url(db_name, table_name, item_id.toString()+'.json');
+		json(item_url, cb_done, function(e) {
+			env.popup(T('ERROR'), T('no data is found, item id error.'));
+		});
+	};
+
+	json(schema_url, schema_done, function(e) {
+		env.popup(T('ERROR'), T('no data field is set, please add new.'));
+	});
+
+	function schema_done(schema_data) {
+		var list = schema_data.listview;
+		var aoColumns = [];
+		for (var index in list) {
+			aoColumns.push({'sTitle': list[index]});
+		}
+
+		var event = {};
+		event.on_delete = function(d){
+
+		};
+		event.on_refresh = function(){
+			$('#refresh_btn').trigger('click');
+		};
+		event.on_add = function(){
+			var input = [schema_data.fields, null];
+			var title = T('Create new data')+'('+table_desc+')';
+			edit_data_window(title, input, function(new_data){
+				var req_data = {};
+				req_data['cmd'] = 'create';
+				req_data['data'] = new_data;
+				req_data['db_name'] = db_name;
+				req_data['table_name'] = table_name;
+				submit_data(req_data, function(){
+				
+				});
+			});
+		};
+		event.on_edit = function(item_ids){
+			var item_ready = function(old_data){
+				var input = [schema_data.fields, old_data];
+				var title = T('Edit data')+'('+table_desc+')';
+				edit_data_window(title, input, function(new_data){
+					var req_data = {};
+					req_data['cmd'] = 'update';
+					req_data['data'] = new_data;
+					req_data['data'] = new_data;
+					req_data['db_name'] = db_name;
+					req_data['table_name'] = table_name;
+					submit_data(req_data, function(){
+					
+					});
+				});
+			};
+
+			if (item_ids instanceof Array) {
+				for (var i in item_ids) {
+					get_data(item_ids[i], item_ready);
+				}
+			} else {
+				get_data(item_ids[i], item_ids);
+			}
+		};
+
+		json(data_url, function(data){
+			new_datatable(listview_id, data, aoColumns, event);
+		}, function() {
+			new_datatable(listview_id, [], aoColumns, event);
+		});
+	};
+}
+
 </script>
 </head>
 <body background="images/bg_tile.jpg">
-<table style="width:100%;">
+<table style="width:100%; font-size:12px;">
 <tr><td>
 	<div id="db_captions" style="float:left;"></div>
 	<div id="table_captions" style="float:left;"></div>
-	<div id="reflash_btn" style="float:left; padding:0px"><img height="25" width="25" src="images/refresh.png"/></div>
-	<div id="new_btn" style="float:left; padding:0px"><img height="25" width="25" src="images/new_record.png"/></div>
-	<div id="config_btn" style="float:right; padding:0px"><img height="25" width="25" src="images/setting.png"/></div>
+	<div id="refresh_btn" style="float:left; padding:0px"><img height="25" width="25" src="images/refresh.png"/></div>
+	<div id="config_btn" style="float:left; padding:0px"><img height="25" width="25" src="images/setting.png"/></div>
 </td></tr><tr><td>
-
+	<div id="listview" style="width:100%%;"></div>
 </td></tr>
 </table>
 </body></html>

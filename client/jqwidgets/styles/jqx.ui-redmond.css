@@ -40,10 +40,8 @@
 .jqx-window-collapse-button-ui-redmond{background-position:0 -16px; background-image:url(images/redmond/ui-icons_d8e7f3_256x240.png)}
 .jqx-window-collapse-button-hover-ui-redmond{background-image:url(images/redmond/ui-icons_217bc0_256x240.png); background-color:#fff; border-radius:5px; moz-border-radius:5px; webkit-border-radius:5px}
 .jqx-window-collapse-button-collapsed-ui-redmond, .jqx-window-collapse-button-collapsed-hover-ui-redmond{background-position:-65px -16px}
-.jqx-window-modal-ui-redmond{background: #aaaaaa url(images/redmond/ui-bg_flat_0_aaaaaa_40x100.png) 50% 50% repeat-x; opacity: .30;filter:Alpha(Opacity=30);}
+.jqx-window-modal-ui-redmond{background: #aaaaaa; opacity: .30;filter:Alpha(Opacity=30);}
 .jqx-window-close-button-hover-ui-redmond{background-color:#fff; background-position:-96px -128px; background-image:url(images/redmond/ui-icons_217bc0_256x240.png); cursor:pointer; width:16px; height:16px}
-/*Splitter*/
-.jqx-splitter-ui-redmond .jqx-widget-content-ui-redmond{border-width:0px; background: #fff;}
 
 /*Icons*/
 .jqx-icon-arrow-up-ui-redmond{background-position:0 -16px; background-image:url(images/redmond/ui-icons_6da8d5_256x240.png)}
@@ -155,3 +153,15 @@ font-weight: bold;
 .jqx-scrollbar-ui-redmond .jqx-icon-arrow-down-ui-redmond{width: 16px; height: 16px; margin-left: auto;}
 .jqx-scrollbar-ui-redmond .jqx-icon-arrow-left-ui-redmond{width: 16px; height: 16px; position: relative; top: 50%; margin-top: -8px;}
 .jqx-scrollbar-ui-redmond .jqx-icon-arrow-right-ui-redmond{width: 16px; height: 16px; position: relative; top: 50%; margin-top: -8px;}
+.jqx-icon-arrow-first-ui-redmond
+{
+    background-image: url('images/redmond/icon-first.png');
+    background-repeat: no-repeat;
+    background-position: center;
+}
+.jqx-icon-arrow-last-ui-redmond
+{
+    background-image: url('images/redmond/icon-last.png');
+    background-repeat: no-repeat;
+    background-position: center;
+}

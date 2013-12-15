@@ -39,3 +39,15 @@
 /*applied to the progressbar's value element*/
 .jqx-progressbar-value-shinyblack{background: #555;}
 .jqx-progressbar-value-vertical-shinyblack{background: #555;}
+.jqx-icon-arrow-first-shinyblack
+{
+    background-image: url('images/icon-first-white.png');
+    background-repeat: no-repeat;
+    background-position: center;
+}
+.jqx-icon-arrow-last-shinyblack
+{
+    background-image: url('images/icon-last-white.png');
+    background-repeat: no-repeat;
+    background-position: center;
+}

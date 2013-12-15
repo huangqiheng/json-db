@@ -72,14 +72,17 @@
     -webkit-border-radius: 5px;
     border-radius: 5px;
 }
+.jqx-widget-black {
+    color: inherit;
+}
  .jqx-grid-selectionarea-black{background-color:#262626; border:1px solid #262626; opacity:0.5}
 .jqx-grid-group-cell-black{border-color:#262626; background-color:#fff}
 .jqx-grid-cell-sort-black, .jqx-grid-cell-filter-black, .jqx-grid-cell-pinned-black{ background-color:#eaf8ff}
 .jqx-grid-cell-alt-black, .jqx-grid-cell-sort-alt-black, .jqx-grid-cell-filter-alt-black{ background-color:#deedf5}
 .jqx-widget-black .jqx-grid-cell-black{background: #000; border-color:#555}
 .jqx-widget-black .jqx-grid-group-cell-black{background-color: #000; border-color: #555;}
-.jqx-widget-black .jqx-grid-cell-selected-black{color:#fff}
-.jqx-widget-black .jqx-grid-cell-hover-black{color:#fff}
+.jqx-widget-black .jqx-grid-cell-selected-black{color:#fff !important}
+.jqx-widget-black .jqx-grid-cell-hover-black{color:#fff !important}
 .jqx-widget-black{font-family:Tahoma,"Lucida Sans",Verdana,Helvetica,Arial,sans-serif; border-color:#222;}
 .jqx-widget-content-black{font-family:Tahoma,"Lucida Sans",Verdana,Helvetica,Arial,sans-serif; color:#fff; border-color:#262626; background: #111;}
 .jqx-fill-state-normal-black, .jqx-widget-header-black, .jqx-input-button-content-black{font-family:Tahoma,"Lucida Sans",Verdana,Helvetica,Arial,sans-serif; color:#fff; border-color:#000; background: #a4a4a4;
@@ -147,5 +150,17 @@ background: linear-gradient(top, #f87948 0%,#fb4e0b 4%,#f44501 11%,#e24000 19%,#
 .jqx-listbox-feedback-black{ border-top: 1px dashed #ccc;}
 .jqx-combobox-input-black, .jqx-combobox-content-black, .jqx-input-black, .jqx-input-content-black{background: #f7f7f7; color: #000;}
 .jqx-widget-black, .jqx-widget-header-black, .jqx-widget-content-black{-webkit-background-clip: padding-box; background-clip: padding-box;}
-.jqx-fill-state-focus-black .jqx-widget-content{background: #fff; border-color: #000;}   
+.jqx-fill-state-focus-black .jqx-widget-content{border-color: #000;}   
 .jqx-radiobutton-check-checked-black{background: #fff;}
+.jqx-icon-arrow-first-black
+{
+    background-image: url('images/icon-first-white.png');
+    background-repeat: no-repeat;
+    background-position: center;
+}
+.jqx-icon-arrow-last-black
+{
+    background-image: url('images/icon-last-white.png');
+    background-repeat: no-repeat;
+    background-position: center;
+}

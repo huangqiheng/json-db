@@ -10,14 +10,52 @@ switch($req['cmd']) {
     case 'edit_table': edit_table_exit($req);
     case 'del_database': del_database_exit($req);
     case 'del_table': del_table_exit($req);
+    case 'update_fields': update_fields_exit($req);
+    case 'refresh_data': refresh_data_exit($req);
     default: jsonp_nocache_exit(['status'=>'error', 'error'=>'unknow command.']);
 }
+
+function update_fields_exit($req)
+{
+	$db_name = @$req['db_name'];
+	$table_name = @$req['table_name'];
+	$table_root = table_root($db_name, $table_name);
+	$schema_file = "{$table_root}/schema.json";
+	$schema = object_read($schema_file);
+
+	$fields_req = $req['fields'];
+	$listview_req = $req['listview'];
+	$listview = $schema['listview'];
+
+	$diff1 = array_diff($listview_req, $listview);
+	$diff2 = array_diff($listview, $listview_req);
+	$is_same = (empty($diff1) && empty($diff2));
+
+	$schema['fields'] = $fields_req;
+	$schema['listview'] = $listview_req;
+	object_save($schema_file, $schema);
+
+	if (!$is_same) {
+		refresh_data($db_name, $table_name);
+	}
+
+	jsonp_nocache_exit(['status'=>'ok']); 
+}
+
+function refresh_data_exit($req)
+{
+	$db_name = @$req['db_name'];
+	$table_name = @$req['table_name'];
+	$counter = refresh_data($db_name, $table_name);
+	jsonp_nocache_exit(['status'=>'ok', 'counter'=>$counter]); 
+}
+
 
 function del_database_exit($req)
 {
 	$db_name = $req['db_name'];
-	$filename = db_path()."/{$db_name}";
-	rmdir_Rf($filename);
+	$db_root = db_root($db_name);
+	rmdir_Rf($db_root);
 	jsonp_nocache_exit(['status'=>'ok']); 
 }
 
@@ -25,39 +63,26 @@ function del_table_exit($req)
 {
 	$db_name = $req['db_name'];
 	$table_name = $req['table_name'];
-	$filename = db_path()."/{$db_name}/{$table_name}";
-	rmdir_Rf($filename);
+	$table_root = table_root($db_name, $table_name);
+	rmdir_Rf($table_root);
 	jsonp_nocache_exit(['status'=>'ok']); 
-}
-
-function rmdir_Rf($directory)
-{
-	foreach(glob("{$directory}/*") as $file)
-	{
-		if(is_dir($file)) { 
-			rmdir_Rf($file);
-		} else {
-			unlink($file);
-		}
-	}
-	rmdir($directory);
 }
 
 function create_database_exit($req)
 {
-	$filename = db_path()."/{$req['name']}";
+	$db_root = db_root($req['name']);
 
-	if (file_exists($filename)) {
+	if (file_exists($db_root)) {
 		jsonp_nocache_exit(['status'=>'error', 
 			'error'=>'The request database already exists.',
 			'ori_cmd'=> $req]);
 	} else {
-		mkdir($filename, 0744);
+		mkdir($db_root, 0744);
 	}
 
-	$filename = "{$filename}/schema.json";
-	if (file_exists($filename)) {
-		unlink($filename);
+	$db_schema = "{$db_root}/schema.json";
+	if (file_exists($db_schema)) {
+		unlink($db_schema);
 	}
 
 	$caption = [];
@@ -68,27 +93,26 @@ function create_database_exit($req)
 	$schema = [];
 	$schema['caption'] = $caption;
 
-	file_put_contents($filename, prety_json($schema));
+	object_save($db_schema, $schema);
 	jsonp_nocache_exit(['status'=>'ok']); 
 }
 
 function edit_database_exit($req)
 {
-	$old_name = db_path()."/{$req['ori_name']}";
+	$old_name = dbs_path()."/{$req['ori_name']}";
 	if (!file_exists($old_name)) {
 		jsonp_nocache_exit(['status'=>'error', 
 			'error'=>'The request database not found.',
 			'ori_cmd'=> $req]);
 	}
 
-	$filename = db_path()."/{$req['name']}";
+	$filename = dbs_path()."/{$req['name']}";
 	if ($req['ori_name'] !== $req['name']) {
 		rename($old_name, $filename);
 	}
 
 	$filename = "{$filename}/schema.json";
-	$schema = file_get_contents($filename);
-	$schema = json_decode($schema, true);
+	$schema = object_read($filename);
 
 	$caption = [];
 	$caption['title'] = $req['title']; 
@@ -96,13 +120,13 @@ function edit_database_exit($req)
 	$caption['image'] = $req['image']; 
 	$schema['caption'] = $caption;
 
-	file_put_contents($filename, prety_json($schema));
+	object_save($filename, $schema);
 	jsonp_nocache_exit(['status'=>'ok']); 
 }
 
 function create_table_exit($req)
 {
-	$filename = db_path()."/{$req['db_name']}";
+	$filename = dbs_path()."/{$req['db_name']}";
 	if (!file_exists($filename)) {
 		jsonp_nocache_exit(['status'=>'error', 
 			'error'=>'The request database not found.',
@@ -128,8 +152,10 @@ function create_table_exit($req)
 	array_push($listview, 'ID', 'Name');
 
 	$fields = [];
-	$fields['ID'] = 'jqxInput-id';
-	$fields['Name'] = 'jqxInput-name';
+	$general = [];
+	$general['ID'] = 'jqxInput-id';
+	$general['Name'] = 'jqxInput-name';
+	$fields['general'] = $general;
 
 	$schema = [];
 	$schema['caption'] = $caption;
@@ -137,13 +163,13 @@ function create_table_exit($req)
 	$schema['fields'] = $fields;
 
 	$filename = "{$filename}/schema.json";
-	file_put_contents($filename, prety_json($schema));
+	object_save($filename, $schema);
 	jsonp_nocache_exit(['status'=>'ok']); 
 }
 
 function edit_table_exit($req)
 {
-	$filename = db_path()."/{$req['db_name']}";
+	$filename = dbs_path()."/{$req['db_name']}";
 	if (!file_exists($filename)) {
 		jsonp_nocache_exit(['status'=>'error', 
 			'error'=>'The request database not found.',
@@ -163,8 +189,7 @@ function edit_table_exit($req)
 	}
 
 	$filename = "{$filename}/schema.json";
-	$schema = file_get_contents($filename);
-	$schema = json_decode($schema, true);
+	$schema = object_read($filename);
 
 	$caption = [];
 	$caption['title'] = $req['title']; 
@@ -172,7 +197,7 @@ function edit_table_exit($req)
 	$caption['image'] = $req['image']; 
 	$schema['caption'] = $caption;
 
-	file_put_contents($filename, prety_json($schema));
+	object_save($filename, $schema);
 	jsonp_nocache_exit(['status'=>'ok']); 
 }
 

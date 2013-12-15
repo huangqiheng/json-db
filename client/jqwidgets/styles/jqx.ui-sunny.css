@@ -25,7 +25,7 @@
 .jqx-radiobutton-ui-sunny .jqx-fill-state-pressed-ui-sunny{background:#222; border:1px solid #000}
 /*Calendar*/
 .jqx-calendar-cell-ui-sunny{font-size: 11px; border-color: #d19405; background: #fece2f url(images/sunny/ui-bg_gloss-wave_60_fece2f_500x100.png) 50% 50% repeat-x; color: #4c3000; padding:.2em; text-align:right; text-decoration:none; moz-border-radius:0px !important; webkit-border-radius:0px !important; border-radius:0px !important}
-.jqx-calendar-cell-today-ui-sunny{background:#ffe45c url(images/sunny/ui-bg_highlight-soft_75_ffe45c_1x100.png) 50% top repeat-x; border:1px solid #fed22f; color:#363636}
+.jqx-calendar-cell-today-ui-sunny{background:#ffe45c; border:1px solid #fed22f; color:#363636}
 .jqx-calendar-title-container-ui-sunny{border: 1px solid #aaa; border-bottom-width: 0px; border-radius:8px; moz-border-radius:8px; webkit-border-radius:8px; font-weight: bold;}
 .jqx-calendar-month-container-ui-sunny{border:none !important}
 .jqx-calendar-ui-sunny{padding:2px}
@@ -40,10 +40,7 @@
 .jqx-window-collapse-button-ui-sunny{background-position:0 -16px; background-image:url(images/sunny/ui-icons_fadc7a_256x240.png)}
 .jqx-window-collapse-button-hover-ui-sunny{background-image:url(images/sunny/ui-icons_bd7b00_256x240.png); background-color:#fff; border-radius:8px; moz-border-radius:8px; webkit-border-radius:8px}
 .jqx-window-collapse-button-collapsed-ui-sunny, .jqx-window-collapse-button-collapsed-hover-ui-sunny{background-position:-65px -16px}
-.jqx-window-modal-ui-sunny{background-image:url(images/sunny/ui-bg_diagonals-thick_20_666666_40x40.png)}
 .jqx-window-close-button-hover-ui-sunny{background-color:#fff; background-position:-96px -128px; background-image:url(images/sunny/ui-icons_bd7b00_256x240.png); cursor:pointer; width:16px; height:16px}
-/*Splitter*/
-.jqx-splitter-ui-sunny .jqx-widget-content-ui-sunny{border-width:0px; background: #fff;}
 
 /*Icons*/
 .jqx-icon-arrow-up-ui-sunny{background-position:0 -16px; background-image:url(images/sunny/ui-icons_3d3d3d_256x240.png)}
