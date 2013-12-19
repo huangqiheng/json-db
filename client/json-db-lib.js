@@ -1,11 +1,10 @@
 /******************************
-  datatables
+ 	编辑数据窗口 
 ******************************/
-
 
 function edit_data_window(title, input, cb_done)
 {
-	var fields=input[0], data=input[1];
+	var fields=input[0], old_data=input[1], options=input[2];
 
 	var seed = new Date().getTime();
 	var window_id = 'win_'+seed.toString(); 
@@ -51,6 +50,7 @@ function edit_data_window(title, input, cb_done)
 	$('#'+window_id).jqxWindow({
 			height: 'auto', width: 'auto',
 			minHeight: 250, minWidth: 400,
+			minWidth: 580,
 			resizable: true,  
 			modalOpacity: 0.3,
 			showCollapseButton: false,
@@ -110,7 +110,7 @@ function edit_data_window(title, input, cb_done)
 				if (field_value === 'jqxInput-name') 	   {res_val=getval_jqxInput_name(p);break;}
 				if (field_value === 'jqxListBox') 	   {res_val=getval_jqxListBox(p);break;}
 				if (field_value === 'jqxListBox-name') 	   {res_val=getval_jqxListBox_name(p);break;}
-				if (field_value === 'jqxListBox-onebox')   {res_val=getval_jqxListBox(p);break;}
+				if (field_value === 'jqxListBox-onebox')   {res_val=getval_jqxListBox_onebox(p);break;}
 				if (field_value === 'jqxListBox-images')   {res_val=getval_jqxListBox_images(p);break;}
 				if (field_value === 'jqxComboBox') 	   {res_val=getval_jqxComboBox(p);break;}
 				if (field_value === 'jqxNumberInput-size') {res_val=getval_jqxNumberInput(p);break;}
@@ -126,6 +126,7 @@ function edit_data_window(title, input, cb_done)
 	function init_data_component()
 	{
 		init_tab(fields, tabs_id);
+		var fill_data = merge_fields(old_data);
 
 		for (var tab_name in fields) {
 			var val_obj = fields[tab_name];
@@ -136,11 +137,20 @@ function edit_data_window(title, input, cb_done)
 				var field_id = get_tableitem_id(window_id, tab_name, field_name);
 				var p = [tab_id, table_id, field_id, field_name];
 
-				var init_val = undefined;
-				var option_val = undefined;
+				var init_val = null;
+				if (fill_data.hasOwnProperty(field_name)) {
+					init_val = fill_data[field_name];
+				}
+
+				var option_val = [];
+				if (options) {
+					if (options.hasOwnProperty(field_name)) {
+						option_val = options[field_name];
+					}
+				}
 
 				if (field_value === 'jqxInput') 	{addItem_jqxInput(p, init_val);continue;}
-				if (field_value === 'jqxInput-id') 	{addItem_jqxInput_id(p, env.id);continue;}
+				if (field_value === 'jqxInput-id') 	{addItem_jqxInput_id(p, init_val);continue;}
 				if (field_value === 'jqxInput-text') 	{addItem_jqxInput_text(p, init_val);continue;}
 				if (field_value === 'jqxInput-name') 	{addItem_jqxInput_name(p, init_val);continue;}
 				if (field_value === 'jqxListBox') 	{addItem_jqxListBox(p, init_val);continue;}
@@ -156,7 +166,19 @@ function edit_data_window(title, input, cb_done)
 	}
 }
 
-function new_datatable(listview_id, aDataSet, aoColumns, event)
+function merge_fields(data_obj)
+{
+	var output = {};
+	for(var group in data_obj) {
+		var items = data_obj[group];
+		for(var field in items) {
+			output[field] = items[field];
+		}
+	}
+	return output;
+}
+
+function datatables_new(listview_id, aDataSet, aoColumns, event)
 {
 	datatables_css();
 	var table_id = get_datatalbe_id(listview_id);
@@ -189,9 +211,13 @@ function new_datatable(listview_id, aDataSet, aoColumns, event)
 				{"sExtends": "text", "sButtonText": T('add'), "fnClick": 
 					function (nButton, oConfig, oFlash) {event.on_add();}},
 				{"sExtends": "text", "sButtonText": T('edit'), "fnClick": 
-					function (nButton, oConfig, oFlash) {event.on_edit();}},
+					function (nButton, oConfig, oFlash) {
+						event.on_edit(datatables_selected(listview_id));
+					}},
 				{"sExtends": "text", "sButtonText": T('delete'),"fnClick": 
-					function (nButton, oConfig, oFlash) {event.on_delete();}}
+					function (nButton, oConfig, oFlash) {
+						event.on_delete(datatables_selected(listview_id));
+					}},
 			],
 		},
 		"oLanguage": {
@@ -224,10 +250,77 @@ function new_datatable(listview_id, aDataSet, aoColumns, event)
 
 }
 
-function clear_datatables(listview_id)
+function datatables_delete(listview_id, id_list, id_index)
 {
 	var table_id = get_datatalbe_id(listview_id);
+	var oTable = $('#'+table_id).dataTable();
+	var oSettings = oTable.fnSettings();
+	var aoData = oSettings.aoData;
 
+	var found_nTrs = [];
+	for (var index in aoData){
+		var aoData_item = aoData[index];
+		var data = oTable.fnGetData(aoData_item.nTr);
+		var id_cmp = data[id_index];
+		if (id_list.indexOf(id_cmp) !== -1) {
+			found_nTrs.push(aoData_item.nTr);
+		}
+	}
+
+	if (found_nTrs.length === 0) {
+		return false;
+	}
+
+	for (var index in found_nTrs){
+		var nTr = found_nTrs[index];
+		oTable.fnDeleteRow(nTr);
+	}
+	return true;
+}
+
+function datatables_update(listview_id, data_item, id_index)
+{
+	var table_id = get_datatalbe_id(listview_id);
+	var oTable = $('#'+table_id).dataTable();
+	var oSettings = oTable.fnSettings();
+	var aoData = oSettings.aoData;
+
+	var id_target = data_item[id_index];
+	var found_nTr = null;
+	for (var index in aoData){
+		var aoData_item = aoData[index];
+		var data = oTable.fnGetData(aoData_item.nTr);
+		var id_cmp = data[id_index];
+		if (id_target == id_cmp) {
+			found_nTr = aoData_item.nTr;
+			break;
+		}
+	}
+
+	if (found_nTr === null) {
+		return false;
+	}
+
+	oTable.fnUpdate(data_item, found_nTr); 
+	return true;
+}
+
+function datatables_selected(listview_id)
+{
+	var table_id = get_datatalbe_id(listview_id);
+	var oTT = TableTools.fnGetInstance(table_id);
+	return oTT.fnGetSelectedData();
+}
+
+function datatables_add(listview_id, data)
+{
+	var table_id = get_datatalbe_id(listview_id);
+	$('#'+table_id).dataTable().fnAddData(data);
+}
+
+function datatables_clear(listview_id)
+{
+	var table_id = get_datatalbe_id(listview_id);
 	var is_datatables =  $.fn.DataTable.fnIsDataTable(document.getElementById(table_id)) ;
 	if (is_datatables) {
 		var oTable = $('#'+table_id).dataTable();
@@ -268,7 +361,7 @@ function datatables_css()
 		padding: 2px !important;
 	}
 	table.dataTable {
-		font-size:13px !important;
+		font-size:12px !important;
 		width:100% !important; 
 	}
 	div.dataTables_filter input {
@@ -873,7 +966,7 @@ function addItem_jqxInput_text(p, init_val, source, height, width)
 	width = width || 400; height = height || 50;
 	source = source || []; 
 
-	var html = '<tr><td align="right">'+caption+'</td>';
+	var html = '<tr><td align="right">'+caption+': </td>';
 	html += '<td align="left"><textarea id="'+field_id+'"></textarea></td></tr>';
 	$('#'+table_id).append(html);
 	$('#'+field_id).jqxInput({width: width, height: height, source:source});
@@ -888,7 +981,7 @@ function addItem_jqxInput(p, init_val, source, height, width)
 	width = width || 300; height = height || 23;
 	source = source || []; 
 
-	var html = '<tr><td align="right">'+caption+'：</td>';
+	var html = '<tr><td align="right">'+caption+': </td>';
 	html += '<td align="left"><input type="text" id="'+field_id+'" /></td></tr>';
 	$('#'+table_id).append(html);
 	$('#'+field_id).jqxInput({width: width, height: height, source:source});
@@ -939,19 +1032,25 @@ function jsonp(url, data, cb_done, cb_fail)
 	}).done(cb_done).fail(cb_fail);
 }
 
+function render_onebox_html(url, image, title, desc)
+{
+	var content = desc.substring(0,82);
+	var html = ['<table style="width:390px; height:80px; font-size:12"><tbody>',
+	    '<tr>',
+	    '<td rowspan="2"><a href="'+url+'" target="_blank"><img height="80" width="80" src="'+image+'"></a></td>',
+	    '<td><strong>'+title+'</strong></td>',
+	    '</tr><tr>',
+	    '<td>'+content+'</td>',
+	    '</tr></tbody></table>'].join('');
+	return html;
+}
+
 function render_onebox(data, finish)
 {
 	jsonp('onebox/index.php', 
 		{url:data[0], type:'json'}, function(d){
 		if (d.status === 'ok') {
-			var content = d.description.substring(0,82);
-			var html = ['<table style="width:390px; height:80px; font-size:12"><tbody>',
-			'<tr>',
-			    '<td rowspan="2"><a href="'+d.ori_url+'" target="_blank"><img height="80" width="80" src="'+d.image+'"></a></td>',
-			    '<td><strong>'+d.title+'</strong></td>',
-			'</tr><tr>',
-			    '<td>'+content+'</td>',
-			'</tr></tbody></table>'].join('');
+			var html = render_onebox_html(d.ori_url, d.image, d.title, d.description);
 
 			var value = {
 				title: d.title,
@@ -999,7 +1098,7 @@ function addItem_jqxListBox_images(p, init_val, height, width)
 	var btn_height = 25;
 
 	$('#'+table_id).append([
-		'<tr><td align="right" style="vertical-align:top;">'+caption+'：</td><td align="left" >',
+		'<tr><td align="right" style="vertical-align:top;">'+caption+': </td><td align="left" >',
 		'<table border="0" style="border-spacing:0px;" ><tbody><tr><td style="padding:0px;">',
 		'<div id="'+field_id+'" style="float:left;"></div>',
 		'<div id="'+image_id+'" style="float:left; width:'+img_width+'px; height: '+height+'px; background-color:rgb(241, 241, 241);"></div>',
@@ -1073,7 +1172,12 @@ function addItem_jqxListBox(p, init_val, render, height, width)
 	if (init_val instanceof Array) {
 		for (var i in init_val) {
 			var item = init_val[i];
-			source.push({label: item, value: item});
+			if (item.hasOwnProperty('title')) {
+				var html = render_onebox_html(item.url, item.image, item.title, item.desc);
+				source.push({html: html, label: item.title, value: item});
+			} else {
+				source.push({label: item, value: item});
+			}
 		}
 	}
 
@@ -1086,7 +1190,7 @@ function addItem_jqxListBox(p, init_val, render, height, width)
 	var btn_height = 25;
 
 	$('#'+table_id).append([
-		'<tr><td align="right" style="vertical-align:top;">'+caption+'：</td><td align="left">',
+		'<tr><td align="right" style="vertical-align:top;">'+caption+': </td><td align="left">',
 		'<div id="'+field_id+'"></div>',
 		'<div><input type="text" id="'+input_id+'" />',
 		'<input type="button" id="'+addbtn_id+'" value="✚" />',
@@ -1180,9 +1284,9 @@ function addItem_jqxComboBox(p, init_val, source, height, width)
 	width = width || 200; height = height || 25;
 	source = source || []; 
 
-	$('#'+table_id).append(['<tr><td align="right">'+caption+'：</td>',
+	$('#'+table_id).append(['<tr><td align="right">'+caption+': </td>',
 		'<td align="left"><div id="'+field_id+'"></div></td></tr>'].join(''));
-	$('#'+field_id).jqxComboBox({source: source, width: width, height: height});
+	$('#'+field_id).jqxComboBox({autoDropDownHeight:true, source: source, width: width, height: height});
 	if (init_val) {
 		$('#'+field_id).val(init_val);
 	}
@@ -1201,7 +1305,7 @@ function addItem_jqxNumberInput(p, init_val, digits, symbol, height, width)
 	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
 	width = width || 200; height = height || 25;
 	symbol = symbol || '';
-	$('#'+table_id).append(['<tr><td align="right">'+caption+'：</td>',
+	$('#'+table_id).append(['<tr><td align="right">'+caption+': </td>',
 		'<td align="left"><div id="'+field_id+'"></div></td></tr>'].join(''));
 	$('#'+field_id).jqxNumberInput({symbolPosition:'right',symbol:symbol,min:0,decimalDigits:digits,width:width,height:height, inputMode:'simple',spinButtons:true});
 	if (init_val) {
@@ -1219,7 +1323,7 @@ function addItem_jqxDateTimeInput(p, init_val, height, width)
 {
 	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
 	width = width || 200; height = height || 25;
-	$('#'+table_id).append(['<tr><td align="right">'+caption+'：</td>',
+	$('#'+table_id).append(['<tr><td align="right">'+caption+': </td>',
 		'<td align="left"><div id="'+field_id+'"></div></td></tr>'].join(''));
 	$('#'+field_id).jqxDateTimeInput({culture:'zh-CN', formatString: 'F', width:width, height:height});
 }

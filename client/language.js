@@ -1,5 +1,9 @@
 var langdata = {
+    'SUCCEED': 						{cn:'成功'},
     'ERROR': 						{cn:'错误'},
+    'Logout':						{cn:'登出'},
+    'Hello':						{cn:'您好'},
+    'you can':						{cn:'您可以'},
     'Create new data': 					{cn:'生成新数据'},
     'Edit data':					{cn:'编辑数据'},
     'No entries to show':				{cn:'没有数据可以显示'},
@@ -54,7 +58,10 @@ var langdata = {
     'Edit fields':				{cn:'编辑数据表格字段'},
     'network request failure.':			{cn:'网络请求失败了。'},
     'Delete Database':				{cn:'删除数据库'},
-    'Delete Table':				{cn:'删除数据表格'}
+    'Backup Database':				{cn:'备份数据库'},
+    'Cleanup Table':				{cn:'整理数据表格，删除冗余信息'},
+    'Delete Table':				{cn:'删除数据表格'},
+    'Backup database successfully.':		{cn:'已经成功备份数据库，恢复请找管理员。'}
 };
 
 var lang_selected = null;

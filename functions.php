@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once 'login.php';
 
 /*****************************************
 	系统常量
@@ -61,47 +61,26 @@ function refresh_data($db_name, $table_name, $append_data_file=null)
 
 			$id_input = $merge_items['ID'];
 			$id_index = array_search('ID', $listview);
-			if ($id_index !== false) {
-				foreach($listview_data as &$subitem) {
-					$id_cmp = $subitem[$id_index];
-					if ($id_cmp !== $id_input) {
-						continue;
-					}
+			if ($id_index === false) {
+				//找不到ID，这是个不正常的记录
+				jsonp_nocache_exit(['status'=>'error', 'error'=>'ID field not found, listview content error.']);
+			}
 
-					//替换listview
-					$replace_item = [];
-					foreach($listview as $view_item) {
-						$value = @$merge_items[$view_item];
-						if ($value) {
-							$replace_item[] = $value;
-						} else {
-							$replace_item[] = '';
-						}
-					}
-					$subitem = $replace_item;
-
-					//更新mapper
-					foreach($mapper_fields as $map_name) {
-						$map_key = @$merge_items[$map_name];
-						if (empty($map_key)) {continue;}
-
-						if (is_string($map_key)) {
-							$mapper_data[$map_key] = $item_id;
-							continue;
-						}
-
-						if (is_array($map_key)) {
-							foreach($map_key as $key) {
-								$mapper_data[$map_key] = $item_id;
-							}
-						}
-					}
-
-					//更新options
-
-
-					break 2;
+			//找到就是替换并直接退出，找不到就是追加，并抛给下一个流程
+			foreach($listview_data as &$subitem) {
+				$id_cmp = $subitem[$id_index];
+				if ($id_cmp !== $id_input) {
+					continue;
 				}
+
+				//替换listview
+				$subitem = new_listview_item($listview, $merge_items);
+				//更新mapper
+				update_mappers($mapper_data, $mapper_fields, $merge_items);
+				//更新options
+				update_options($options_data, $options_fields, $merge_items);
+
+				break 2;
 			}
 
 			$glob_files[] = $append_data_file;
@@ -120,33 +99,11 @@ function refresh_data($db_name, $table_name, $append_data_file=null)
 			$merge_items = merge_fields($data_obj);
 
 			//生成listview
-			$output = [];
-			foreach($listview as $view_item) {
-				$value = @$merge_items[$view_item];
-				if ($value) {
-					$output[] = $value;
-				} else {
-					$output[] = '';
-				}
-			}
-			$listview_data[] = $output;
-
+			array_unshift($listview_data, new_listview_item($listview, $merge_items));
 			//生成mapper
-			foreach($mapper_fields as $map_name) {
-				$map_key = @$merge_items[$map_name];
-				if (empty($map_key)) {continue;}
-
-				if (is_string($map_key)) {
-					$mapper_data[$map_key] = $item_id;
-					continue;
-				}
-
-				if (is_array($map_key)) {
-					foreach($map_key as $key) {
-						$mapper_data[$map_key] = $item_id;
-					}
-				}
-			}
+			update_mappers($mapper_data, $mapper_fields, $merge_items);
+			//更新options
+			update_options($options_data, $options_fields, $merge_items);
 		}
 
 	}while(false);
@@ -156,6 +113,71 @@ function refresh_data($db_name, $table_name, $append_data_file=null)
 	object_save("{$data_path}/options.json", $options_data);
 	return count($listview_data);
 }
+
+function update_options(&$options_data, $options_fields, $merged_item)
+{
+	foreach($options_fields as $opt_name) {
+		$opt_val = @$merged_item[$opt_name];
+		if (empty($opt_val)) {
+			continue;
+		}
+
+		$ori_arr = @$options_data[$opt_name];
+		if (empty($ori_arr)) {
+			$ori_arr = [];
+		}
+
+		if (!in_array($opt_val, $ori_arr)) {
+			$ori_arr[] = $opt_val;
+			$options_data[$opt_name] = $ori_arr;
+		}
+	}
+}
+
+
+function make_listview_item($schema, $data_obj)
+{
+	$listview = $schema['listview'];
+	$merge_items= merge_fields($data_obj);
+	return new_listview_item($listview, $merge_items);
+}
+
+function new_listview_item($listview, $merge_items)
+{
+	$output = [];
+	foreach($listview as $view_item) {
+		$value = @$merge_items[$view_item];
+		if ($value) {
+			$output[] = $value;
+		} else {
+			$output[] = '';
+		}
+	}
+	return $output;
+}
+
+function update_mappers(&$mapper_data, $mapper_fields, $merged_item)
+{
+	foreach($mapper_fields as $map_name) {
+		$map_key = @$merged_item[$map_name];
+		$item_id = @$merged_item['ID'];
+		if (empty($map_key)) {continue;}
+
+		if (is_string($map_key)) {
+			$mapper_data[$map_key] = $item_id;
+			$mapper_data[md5($map_key)] = $item_id;
+			continue;
+		}
+
+		if (is_array($map_key)) {
+			foreach($map_key as $key) {
+				$mapper_data[$key] = $item_id;
+				$mapper_data[md5($key)] = $item_id;
+			}
+		}
+	}
+}
+
 
 function get_options_fields($merge_fields)
 {
@@ -300,6 +322,10 @@ function get_db_captions()
 	foreach (glob(dbs_path().'/*', GLOB_ONLYDIR) as $db_path) { 
 		$db_name = basename($db_path);
 		$filename = $db_path.'/schema.json';
+		if (!file_exists($filename)) {
+			continue;
+		}
+
 		$schema_str = file_get_contents($filename);
 		if ($schema_str) {
 			$schema = json_decode($schema_str, true);

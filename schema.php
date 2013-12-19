@@ -1,11 +1,13 @@
 <?php
 require_once 'functions.php';
+denies_with_json();
 
 $req = get_param();
 
 switch($req['cmd']) {
     case 'new_database': create_database_exit($req);
     case 'edit_database': edit_database_exit($req);
+    case 'backup_database': backup_database_exit($req);
     case 'new_table': create_table_exit($req);
     case 'edit_table': edit_table_exit($req);
     case 'del_database': del_database_exit($req);
@@ -13,6 +15,27 @@ switch($req['cmd']) {
     case 'update_fields': update_fields_exit($req);
     case 'refresh_data': refresh_data_exit($req);
     default: jsonp_nocache_exit(['status'=>'error', 'error'=>'unknow command.']);
+}
+
+function backup_database_exit($req)
+{
+	$db_name = @$req['db_name'];
+	if (empty($db_name)) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'db_name empty.']);
+	}
+
+	$db_path = dbs_path();
+	$backup_dir = 'backup';
+	$bak_dir = "{$db_path}/{$backup_dir}";
+	if (!file_exists($bak_dir)) {
+		mkdir($bak_dir);
+	}
+
+	$bak_file = "{$backup_dir}/{$db_name}-".gmdate("YmdHis", time()).'.tar.gz';
+	exec("cd {$db_path} && tar -czf {$bak_file} {$db_name}");
+
+	$bak_url = substr($bak_file, strlen($_SERVER['DOCUMENT_ROOT']));
+	jsonp_nocache_exit(['status'=>'ok', 'file'=>$bak_url]); 
 }
 
 function update_fields_exit($req)
