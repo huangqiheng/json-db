@@ -239,7 +239,12 @@ function db_root($db_name)
 
 function dbs_path()
 {
-	return dirname(__FILE__).'/databases';
+	$root_path = dirname(__FILE__).'/databases/'.$_SERVER['HTTP_HOST'];
+	if (!file_exists($root_path)) {
+		mkdir($root_path);
+	}
+
+	return $root_path;
 }
 
 function object_save($filename, $data)

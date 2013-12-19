@@ -505,6 +505,8 @@ $Language_data = [
 	'Email cannot be longer than 64 characters' =>		['cn'=>'电子邮件不能长于64个字符'],
 	'Your email address is not in a valid email format' =>	['cn'=>'你的电子邮件地址不符合邮件格式'],
 	'An unknown error occurred.' =>				['cn'=>'发生了未知错误'],
+	'The setting error on Permission of  "databases" folder'=>
+				['cn'=>'databases目录的访问权限设置不当。'],
 	'Private password stored as hash in database(min. 6 characters)'=>
 				['cn'=>'个人密码（最少6个字符），服务器不会保存明文密码'],
 	'Username cannot be shorter than 2 or longer than 64 characters' => 				
