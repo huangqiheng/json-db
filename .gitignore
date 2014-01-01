@@ -2,4 +2,4 @@
 *.swo
 test.php
 databases/*
-uploads/*
+/admin/uploads/*
