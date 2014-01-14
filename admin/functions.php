@@ -44,7 +44,7 @@ function delete_current_data($db_name, $table_name, $req_list)
 	return ['status'=>'ok', 'id_list'=>$rep_list]; 
 }
 
-function set_data_id($data, $new_id)
+function set_data_id(&$data, $new_id)
 {
 	foreach($data as $group=>&$items){
 		if (array_key_exists('ID', $items)) {
@@ -67,7 +67,8 @@ function create_new_data($db_name, $table_name, $data)
 		return ['status'=>'error', 'error'=>'req data error'];
 	}
 
-	if (!set_data_id($data, get_random_id())) {
+	$new_id = get_random_id();
+	if (!set_data_id($data, $new_id)) {
 		return ['status'=>'error', 'error'=>'no id field'];
 	}
 
@@ -76,7 +77,7 @@ function create_new_data($db_name, $table_name, $data)
 	refresh_data($db_name, $table_name, $new_id_file);
 
 	$listview_item = make_listview_item($schema, $data);
-	return ['status'=>'ok', 'listview'=>$listview_item]; 
+	return ['status'=>'ok', 'ID'=>$new_id, 'listview'=>$listview_item]; 
 }
 
 function update_current_data($db_name, $table_name, $req_data)
@@ -131,7 +132,7 @@ function update_current_data($db_name, $table_name, $req_data)
 	refresh_data($db_name, $table_name, $data_file);
 
 	$listview_item = make_listview_item($schema, $new_data);
-	return ['status'=>'ok', 'listview'=>$listview_item]; 
+	return ['status'=>'ok', 'ID'=>$req_id, 'listview'=>$listview_item]; 
 }
 
 function refresh_data($db_name, $table_name, $append_data_file=null)
@@ -157,8 +158,8 @@ function refresh_data($db_name, $table_name, $append_data_file=null)
 			$listview_data = object_read("{$data_path}/listview.json");
 			$mapper_data = object_read("{$data_path}/mapper.json");
 			$options_data = object_read("{$data_path}/options.json");
-			$merge_items = merge_fields(object_read($append_data_file));
 
+			$merge_items = merge_fields(object_read($append_data_file));
 			$id_input = $merge_items['ID'];
 			$id_index = array_search('ID', $listview);
 			if ($id_index === false) {
@@ -174,7 +175,7 @@ function refresh_data($db_name, $table_name, $append_data_file=null)
 				}
 
 				//替换listview
-				$subitem = new_listview_item($listview, $merge_items);
+				$subitem = new_listview_item($listview, $merge_items, $merged_fields);
 				//更新mapper
 				update_mappers($mapper_data, $mapper_fields, $merge_items);
 				//更新options
@@ -199,7 +200,7 @@ function refresh_data($db_name, $table_name, $append_data_file=null)
 			$merge_items = merge_fields($data_obj);
 
 			//生成listview
-			array_unshift($listview_data, new_listview_item($listview, $merge_items));
+			array_unshift($listview_data, new_listview_item($listview, $merge_items, $merged_fields));
 			//生成mapper
 			update_mappers($mapper_data, $mapper_fields, $merge_items);
 			//更新options
@@ -227,9 +228,20 @@ function update_options(&$options_data, $options_fields, $merged_item)
 			$ori_arr = [];
 		}
 
-		if (!in_array($opt_val, $ori_arr)) {
-			$ori_arr[] = $opt_val;
-			$options_data[$opt_name] = $ori_arr;
+		if (is_array($opt_val)) {
+			$opt_vals = $opt_val;
+			foreach($opt_vals as $opt_val) {
+				if (!in_array($opt_val, $ori_arr)) {
+					$ori_arr[] = $opt_val;
+					$options_data[$opt_name] = $ori_arr;
+				}
+			}
+
+		} else {
+			if (!in_array($opt_val, $ori_arr)) {
+				$ori_arr[] = $opt_val;
+				$options_data[$opt_name] = $ori_arr;
+			}
 		}
 	}
 }
@@ -237,17 +249,32 @@ function update_options(&$options_data, $options_fields, $merged_item)
 
 function make_listview_item($schema, $data_obj)
 {
+	$fields = $schema['fields'];
+	$merged_fields = merge_fields($fields);
+
 	$listview = $schema['listview'];
 	$merge_items= merge_fields($data_obj);
-	return new_listview_item($listview, $merge_items);
+	return new_listview_item($listview, $merge_items, $merged_fields);
 }
 
-function new_listview_item($listview, $merge_items)
+function new_listview_item($listview, $merge_items, $merged_fields)
 {
 	$output = [];
 	foreach($listview as $view_item) {
 		$value = @$merge_items[$view_item];
 		if ($value) {
+			$field_name = @$merged_fields[$view_item];
+			if ($field_name) {
+				if ($field_name === 'jqxDateTimeInput'){
+					try {
+						$fixed_date = preg_replace('/\(.+\)$/', '', $value);
+						$date = new DateTime($fixed_date);
+						$value = $date->format('Y-m-d');
+					} catch (Exception $e) {
+					}
+				}
+			}
+
 			$output[] = $value;
 		} else {
 			$output[] = '';
@@ -264,6 +291,7 @@ function update_mappers(&$mapper_data, $mapper_fields, $merged_item)
 		if (empty($map_key)) {continue;}
 
 		if (is_string($map_key)) {
+			$map_key= mapper_key($map_key);
 			$mapper_data[$map_key] = $item_id;
 			$mapper_data[md5($map_key)] = $item_id;
 			continue;
@@ -271,11 +299,18 @@ function update_mappers(&$mapper_data, $mapper_fields, $merged_item)
 
 		if (is_array($map_key)) {
 			foreach($map_key as $key) {
+				$key = mapper_key($key);
 				$mapper_data[$key] = $item_id;
 				$mapper_data[md5($key)] = $item_id;
 			}
 		}
 	}
+}
+
+function mapper_key($input)
+{
+	if (empty($input)) {return '';}
+	return mb_strtolower($input, 'UTF-8');
 }
 
 
@@ -588,6 +623,16 @@ function set_cache_age($age_val = 300)
 	header('Pragma: public');
 	header('Last-Modified: '.gm_date(last_mtime()));
 	header('Expires: '.gm_date(time()+$age_val));
+}
+
+function gm_date($time)
+{
+        return gmdate('D, d M Y H:i:s \G\M\T', $time);
+}
+
+function format_time($time_str)
+{
+	return gm_date(strtotime($time_str));
 }
 
 function jsonp($data)

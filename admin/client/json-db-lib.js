@@ -15,9 +15,10 @@ function edit_data_window(title, input, cb_done)
 	var tabs_id = window_id+'_tab';
 	var header_id = window_id+'_header';
 	var btn_width = 50;
+	var this_windows_class = 'edit_data_windows';
 
 	$('body').append([
-            '<div id="'+window_id+'">',
+            '<div id="'+window_id+'" class="'+this_windows_class+'">',
                 '<div id="'+header_id+'">',
 		    '<table style="width:100% !important;"><tr><td>',
                     '<img width="20" height="20" src="images/new-table.png" alt="" style="float:left;" />',
@@ -47,10 +48,13 @@ function edit_data_window(title, input, cb_done)
 
 	init_component();
 
+	var win_count = $('.'+this_windows_class).length;
+
 	$('#'+window_id).jqxWindow({
 			height: 'auto', width: 'auto',
-			minHeight: 250, minWidth: 400,
-			minWidth: 580,
+			position: {x:win_count*30, y:12+win_count*41},
+			minHeight: 250, minWidth: 580,
+			maxHeight: 1000,
 			resizable: true,  
 			modalOpacity: 0.3,
 			showCollapseButton: false,
@@ -106,16 +110,31 @@ function edit_data_window(title, input, cb_done)
 				do{
 				if (field_value === 'jqxInput') 	   {res_val=getval_jqxInput(p);break;}
 				if (field_value === 'jqxInput-id') 	   {res_val=getval_jqxInput_id(p);break;}
+				if (field_value === 'jqxInput-time') 	   {res_val=getval_jqxInput_time(p);break;}
 				if (field_value === 'jqxInput-text') 	   {res_val=getval_jqxInput_text(p);break;}
 				if (field_value === 'jqxInput-name') 	   {res_val=getval_jqxInput_name(p);break;}
+				if (field_value === 'jqxCheckBox')    	   {res_val=getval_jqxCheckBox(p);break;}
+				if (field_value === 'jqxRadioButton')	   {res_val=getval_jqxRadioButton(p);break;}
 				if (field_value === 'jqxListBox') 	   {res_val=getval_jqxListBox(p);break;}
 				if (field_value === 'jqxListBox-name') 	   {res_val=getval_jqxListBox_name(p);break;}
-				if (field_value === 'jqxListBox-onebox')   {res_val=getval_jqxListBox_onebox(p);break;}
-				if (field_value === 'jqxListBox-images')   {res_val=getval_jqxListBox_images(p);break;}
+				if (field_value === 'jqxListBox-onebox-url')  	   {res_val=getval_jqxListBox_onebox_url(p);break;}
+				if (field_value === 'jqxListBox-onebox-id')   	   {res_val=getval_jqxListBox_onebox_id(p);break;}
+				if (field_value === 'jqxListBox-onebox-id-same')   {res_val=getval_jqxListBox_onebox_id(p);break;}
+				if (field_value === 'jqxListBox-images')   	{res_val=getval_jqxListBox_images(p);break;}
 				if (field_value === 'jqxComboBox') 	   {res_val=getval_jqxComboBox(p);break;}
 				if (field_value === 'jqxNumberInput-size') {res_val=getval_jqxNumberInput(p);break;}
 				if (field_value === 'jqxNumberInput-price'){res_val=getval_jqxNumberInput(p);break;}
 				if (field_value === 'jqxDateTimeInput')    {res_val=getval_jqxDateTimeInput(p);break;}
+
+				if (field_value === 'jqxInput-share') 	   {res_val=getval_jqxInput(p);break;}
+				if (field_value === 'jqxInput-text-share') {res_val=getval_jqxInput_text(p);break;}
+				if (field_value === 'jqxCheckBox-share')   {res_val=getval_jqxCheckBox(p);break;}
+				if (field_value === 'jqxRadioButton-share'){res_val=getval_jqxRadioButton(p);break;}
+				if (field_value === 'jqxListBox-share')	   {res_val=getval_jqxListBox(p);break;}
+				if (field_value === 'jqxListBox-onebox-url-share') {res_val=getval_jqxListBox_onebox_url(p);break;}
+				if (field_value === 'jqxListBox-onebox-id-share')  {res_val=getval_jqxListBox_onebox_id(p);break;}
+				if (field_value === 'jqxListBox-images-share')  {res_val=getval_jqxListBox_images(p);break;}
+				if (field_value === 'jqxComboBox-share')   {res_val=getval_jqxComboBox(p);break;}
 				}while(false);
 				res_data[tab_name][field_name] = res_val;
 			}
@@ -151,16 +170,31 @@ function edit_data_window(title, input, cb_done)
 
 				if (field_value === 'jqxInput') 	{addItem_jqxInput(p, init_val);continue;}
 				if (field_value === 'jqxInput-id') 	{addItem_jqxInput_id(p, init_val);continue;}
-				if (field_value === 'jqxInput-text') 	{addItem_jqxInput_text(p, init_val);continue;}
+				if (field_value === 'jqxInput-time') 	{addItem_jqxInput_time(p, init_val);continue;}
+				if (field_value === 'jqxInput-text') 		{addItem_jqxInput_text(p, init_val);continue;}
 				if (field_value === 'jqxInput-name') 	{addItem_jqxInput_name(p, init_val);continue;}
-				if (field_value === 'jqxListBox') 	{addItem_jqxListBox(p, init_val);continue;}
+				if (field_value === 'jqxCheckBox')      	{addItem_jqxCheckBox(p, init_val, option_val);continue;}
+				if (field_value === 'jqxRadioButton')   	{addItem_jqxRadioButton(p, init_val, option_val);continue;}
+				if (field_value === 'jqxListBox') 		{addItem_jqxListBox(p, init_val);continue;}
 				if (field_value === 'jqxListBox-name') 	{addItem_jqxListBox_name(p, init_val);continue;}
-				if (field_value === 'jqxListBox-onebox'){addItem_jqxListBox_onebox(p, init_val);continue;}
-				if (field_value === 'jqxListBox-images'){addItem_jqxListBox_images(p, init_val);continue;}
-				if (field_value === 'jqxComboBox') 	{addItem_jqxComboBox(p, init_val, option_val);continue;}
+				if (field_value === 'jqxListBox-onebox-url')	  	{addItem_jqxListBox_onebox_url(p, init_val);continue;}
+				if (field_value === 'jqxListBox-onebox-id')	  {addItem_jqxListBox_onebox_id(p, init_val);continue;}
+				if (field_value === 'jqxListBox-onebox-id-same')  {addItem_jqxListBox_onebox_id(p, init_val);continue;}
+				if (field_value === 'jqxListBox-images')	{addItem_jqxListBox_images(p, init_val);continue;}
+				if (field_value === 'jqxComboBox') 		{addItem_jqxComboBox(p, init_val, option_val);continue;}
 				if (field_value === 'jqxNumberInput-size') 	{addItem_jqxNumberInput(p, init_val, 2,' MB');continue;}
 				if (field_value === 'jqxNumberInput-price') 	{addItem_jqxNumberInput(p, init_val, 2);continue;}
 				if (field_value === 'jqxDateTimeInput') {addItem_jqxDateTimeInput(p, init_val);continue;}
+
+				if (field_value === 'jqxInput-share') 		{addItem_jqxInput(p, init_val);continue;}
+				if (field_value === 'jqxInput-text-share')	{addItem_jqxInput_text(p, init_val);continue;}
+				if (field_value === 'jqxCheckBox-share')	{addItem_jqxCheckBox(p, init_val, option_val);continue;}
+				if (field_value === 'jqxRadioButton-share')   	{addItem_jqxRadioButton(p, init_val, option_val);continue;}
+				if (field_value === 'jqxListBox-share') 	{addItem_jqxListBox(p, init_val);continue;}
+				if (field_value === 'jqxListBox-onebox-url-share')	{addItem_jqxListBox_onebox_url(p, init_val);continue;}
+				if (field_value === 'jqxListBox-onebox-id-share') {addItem_jqxListBox_onebox_id(p, init_val);continue;}
+				if (field_value === 'jqxListBox-images-share')	{addItem_jqxListBox_images(p, init_val);continue;}
+				if (field_value === 'jqxComboBox-share') 	{addItem_jqxComboBox(p, init_val, option_val);continue;}
 			}
 		}
 	}
@@ -191,7 +225,7 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 	var oTable = $('#'+table_id).dataTable( {
 		'bJQueryUI': true,
 		'sPaginationType': 'full_numbers',
-		'iDisplayLength': 10,
+		'iDisplayLength': 25,
 		"bLengthChange": true,
 		"bPaginate": true,
 		'aaData': aDataSet,
@@ -202,7 +236,8 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 		"sDom": '<"H"Tfrl>t<"F"ip>',
 		//"sDom": 'T<"clear">lfrtip',
 		'oTableTools': {
-			'sRowSelect': 'multi',
+			//'sRowSelect': 'multi',
+			'sRowSelect': 'single',
 			'aButtons': [
 				{"sExtends": "select_all", "sButtonText": T('select all')},
 				{"sExtends": "select_none", "sButtonText": T('select none')},
@@ -240,7 +275,13 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 			'sInfoFiltered': T(' - filtering from _MAX_ records'),
 			'sInfoEmpty': T('No entries to show'),
 			'sInfo': T('Showing _START_ to _END_ of _TOTAL_ entries'),
-			'sLengthMenu': T('Display _MENU_ records')
+			"sLengthMenu": T('Display')+'<select>'+
+				'<option value="25">25</option>'+
+				'<option value="50">50</option>'+
+				'<option value="100">100</option>'+
+				'<option value="200">200</option>'+
+				'<option value="-1">'+T('All')+'</option>'+
+				'</select> '+T('records')
 		}
 
 	});	
@@ -400,7 +441,15 @@ function edit_fields_windows(title, input, cb_done)
 {
 	var listview = input[0];
 	var fields = input[1];
-	var fields_types = input[2];
+	var onebox = input[2];
+	var fields_types = input[3];
+
+	if (onebox === undefined) {
+		onebox = {};
+		onebox.title = '';
+		onebox.desc = '';
+		onebox.image = '';
+	}
 
 	var time = new Date().getTime();
 	var window_id = 'win_'+time.toString(); 
@@ -414,36 +463,51 @@ function edit_fields_windows(title, input, cb_done)
 	var image_id = window_id+'_image';
 	var add_id = window_id+'_add';
 	var notify_id = window_id+'_notify';
+	var ob_title_id = window_id+'_obtitle';
+	var ob_desc_id = window_id+'_obdesc';
+	var ob_image_id = window_id+'_obimage';
 
 	var delbtn_id = window_id+'_del';
 	var upbtn_id = window_id+'_up';
 	var downbtn_id = window_id+'_down';
+	var this_windows_class = 'edit_data_windows';
 
 	$('body').append([
-            '<div id="'+window_id+'">',
+            '<div id="'+window_id+'" class="'+this_windows_class+'">',
                 '<div>',
                     '<img width="20" height="20" src="images/new-table.png" alt="" style="float:left;" /><strong style="font-size:16px;">'+title+'</strong></div>',
                 '<div>',
                     '<div align="center"><p><table>',
-		        '<tr><td rowspan="2"><div id="'+list_id+'"></div>',
-			    '<div style="width:230px; height:25px; border: 1px solid rgb(224, 224, 224);"><div style="float:right;">',
+		        '<tr><td rowspan="2">',
+			    '<div id="'+list_id+'"></div>',
+			    '<div style="width:230px; height:30px;"><div style="float:right;">',
 				'<input type="button" id="'+delbtn_id+'" value="✖︎" />',
 				'<input type="button" id="'+upbtn_id+'" value="⬆︎" />',
 				'<input type="button" id="'+downbtn_id+'" value="⬇︎" />',
-			    '</div></div></td>',
-			'<td><table>',
-			    '<tr><td colspan="2"><input type="button" id="'+add_id+'" value="'+T('Add/Modify')+'" /></td></tr>',
+			    '</div></div>',
+			    '<div style="width:230px; border: 1px solid rgb(224, 224, 224);">',
+			    	'<table style="font-size:13; width:100%;">',
+				    '<tr><td colspan="2" align="center">'+T('onebox')+'</td></tr>',
+				    '<tr><td align="right">'+T('title')+':</td><td><div id="'+ob_title_id+'"></div></td></tr>',
+				    '<tr><td align="right">'+T('desc')+':</td><td><div id="'+ob_desc_id+'"></div></td></tr>',
+				    '<tr><td align="right">'+T('thumbnail')+':</td><td><div id="'+ob_image_id+'"></div></td></tr>',
+				'</table>',
+			    '</div>',
+			    '</td>',
+			'<td><table style="font-size:13;">',
+			    '<tr><td ><input type="button" id="'+add_id+'" value="'+T('Add/Modify')+'" /></td><td>',
+				    '<div style="float:right;">',
+					'<input type="button" id="'+ok_id+'" value="'+T('OK')+'" style="margin-right: 10px" />',
+					'<input type="button" id="'+no_id+'" value="'+T('Cancel')+'" />',
+				    '</div>',
+			    	'</td></tr>',
 			    '<tr><td align="right">'+T('category')+':</td><td><input type="text" id="'+category_id+'" /></td></tr>',
 			    '<tr><td align="right">'+T('name')+':</td><td><input type="text" id="'+name_id+'" /></td></tr>',
 			    '<tr><td align="right">'+T('view')+':</td><td><div id="'+view_id+'"><img height="15" width="30" src="images/eye.png"/></div></td></tr>',
 			    '<tr><td align="right">'+T('type')+':</td><td><div id="'+type_id+'"></div></td></tr>',
-			    '<tr><td></td><td><div style="width:300px; height:200px; border: 1px solid rgb(224, 224, 224);" id="'+image_id+'" /></td></tr>',
+			    '<tr><td></td><td><div style="width:300px; height:300px; border: 1px solid rgb(224, 224, 224);" id="'+image_id+'" /></td></tr>',
 			'</table></td><tr><td vlign="bottom">',
 			    '<div id="'+notify_id+'" style="color:red; text-align:center;"></div>',
-			    '<div style="float:right; margin-top:15px; margin-right:40px;">',
-				'<input type="button" id="'+ok_id+'" value="'+T('OK')+'" style="margin-right: 10px" />',
-				'<input type="button" id="'+no_id+'" value="'+T('Cancel')+'" />',
-			    '</div>',
 			'</td></tr>',
                     '</table></div>',
                 '</div>',
@@ -453,12 +517,14 @@ function edit_fields_windows(title, input, cb_done)
 		$('#'+notify_id).text(msg);
 	};
 
-	$('#'+window_id).jqxWindow({height: 510, width: 660,
+	var win_count = $('.'+this_windows_class).length;
+
+	$('#'+window_id).jqxWindow({height: 540, width: 660,
+			position: {x:win_count*30, y:12+win_count*41},
 			resizable: false, isModal: true, modalOpacity: 0.3,
 			cancelButton: $('#'+no_id),
 			initContent: tree_render
 	});
-
 
 	function tree_render() {
 		$('#'+delbtn_id).jqxButton({width:25, height:25});
@@ -467,6 +533,7 @@ function edit_fields_windows(title, input, cb_done)
 		$('#'+delbtn_id).on('click', event_tree_delete);
 		$('#'+upbtn_id).on('click', event_tree_up);
 		$('#'+downbtn_id).on('click', event_tree_down);
+
 
 		$('#'+category_id).jqxInput({width:300, height: 25});
 		$('#'+name_id).jqxInput({width:300, height: 25});
@@ -512,7 +579,13 @@ function edit_fields_windows(title, input, cb_done)
 					}
 				}
 			}
-			cb_done([listview, fields]);
+
+			var res_onebox = {};
+			res_onebox.title = $('#'+ob_title_id).jqxDropDownList('val');
+			res_onebox.desc = $('#'+ob_desc_id).jqxDropDownList('val');
+			res_onebox.image = $('#'+ob_image_id).jqxDropDownList('val');
+
+			cb_done([listview, fields, res_onebox]);
 			$('#'+window_id).jqxWindow('close');
 		});
 
@@ -562,7 +635,7 @@ function edit_fields_windows(title, input, cb_done)
 		});
 		dataAdapter.dataBind();
 		var records = dataAdapter.getRecordsHierarchy('id', 'parentid', 'items');
-		$('#'+list_id).jqxTree({source: records, width:'230px', height:'400px', 
+		$('#'+list_id).jqxTree({source: records, width:'230px', height:'320px', 
 					hasThreeStates:true, checkboxes:true,
 					allowDrag:false
 					});
@@ -582,6 +655,7 @@ function edit_fields_windows(title, input, cb_done)
 		$('#'+list_id).on('select', function (event) {
 			$('#'+name_id).jqxInput({disabled:false});
 			$('#'+view_id).jqxCheckBox({disabled:false});
+			$('#'+type_id).jqxDropDownList({disabled:false});
 			var args = event.args;
 			if (args) {
 				$('#'+category_id).val('');
@@ -605,9 +679,56 @@ function edit_fields_windows(title, input, cb_done)
 				if (item.label==='ID') {
 					$('#'+name_id).jqxInput({disabled:true});
 					$('#'+view_id).jqxCheckBox({disabled:true});
+					$('#'+type_id).jqxDropDownList({disabled:true});
+				}
+				if (item.label==='TIME') {
+					$('#'+name_id).jqxInput({disabled:true});
+					$('#'+type_id).jqxDropDownList({disabled:true});
 				}
 			}
 		});
+
+		var get_list_items=function(){
+			var items = $('#'+list_id).jqxTree('getItems');
+			var field_names = [];
+			for(var index in items) {
+				var item = items[index];
+				if (item.parentElement === null){//这是标签
+					continue;
+				} 
+				field_names.push(item.label);
+			}
+			return field_names;
+		};
+		var onebox_source = get_list_items();
+
+		$('#'+ob_title_id).jqxDropDownList({source:onebox_source, autoDropDownHeight:true,  placeHolder: T('Please choose field name'), width:170, height: 25});
+		$('#'+ob_desc_id).jqxDropDownList({source:onebox_source, autoDropDownHeight:true,  placeHolder: T('Please choose field name'), width:170, height: 25});
+		$('#'+ob_image_id).jqxDropDownList({source:onebox_source, autoDropDownHeight:true,  placeHolder: T('Please choose field name'), width:170, height: 25});
+		if (onebox.title !== '') {
+			$('#'+ob_title_id).jqxDropDownList('val', onebox.title);
+		}
+		if (onebox.desc !== '') {
+			$('#'+ob_desc_id).jqxDropDownList('val', onebox.desc);
+		}
+		if (onebox.image !== '') {
+			$('#'+ob_image_id).jqxDropDownList('val', onebox.image);
+		}
+
+		$('#'+ob_title_id).on('open', function (event) {
+			var item_list = get_list_items();
+			$('#'+ob_title_id).jqxDropDownList({source: item_list});
+		}); 
+		$('#'+ob_desc_id).on('open', function (event) {
+			var item_list = get_list_items();
+			$('#'+ob_desc_id).jqxDropDownList({source: item_list});
+		}); 
+		$('#'+ob_image_id).on('open', function (event) {
+			var item_list = get_list_items();
+			$('#'+ob_image_id).jqxDropDownList({source: item_list});
+		}); 
+
+
 
 		$('#'+add_id).jqxButton({width: 65, height:35});
 		$('#'+add_id).on('click', function(e){
@@ -696,6 +817,8 @@ function edit_fields_windows(title, input, cb_done)
 		function event_tree_delete(){
 			var item = $('#'+list_id).jqxTree('getSelectedItem');
 			if (item === null){return;}
+			if (item.label === 'ID'){return;}
+			if (item.label === 'TIME'){return;}
 			$('#'+list_id).jqxTree('removeItem', item.element);
 		}
 
@@ -740,9 +863,6 @@ function edit_fields_windows(title, input, cb_done)
 				me_data.push({label:iter_item.label, value:iter_item.value, checked: iter_item.checked});
 			} while(true);
 
-			console.log(me_group);
-			console.log(me_data);
-
 			var next_group = function(input){
 				var iter_item = input;
 				do {
@@ -758,8 +878,6 @@ function edit_fields_windows(title, input, cb_done)
 
 			var target_item = next_group(item);
 			if (target_item === null) {return;}
-
-			console.log(target_item);
 
 			if (updown === 'up') {
 				$('#'+list_id).jqxTree('addBefore', me_group, target_item);
@@ -967,6 +1085,15 @@ function addItem_jqxInput_name(p, init_val, source, height, width)
 	addItem_jqxInput(p, init_val, source, height, width);
 }
 
+function addItem_jqxInput_time(p, init_val, source, height, width)
+{
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	if (caption === 'TIME') {
+		init_val = new Date().toUTCString();
+	}
+	addItem_jqxInput(p, init_val, source, height, width);
+	$('#'+field_id).jqxInput({disabled: true});
+}
 
 function addItem_jqxInput_text(p, init_val, source, height, width)
 {
@@ -985,7 +1112,7 @@ function addItem_jqxInput_text(p, init_val, source, height, width)
 
 function addItem_jqxInput(p, init_val, source, height, width)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	width = width || 300; height = height || 23;
 	source = source || []; 
 
@@ -998,13 +1125,13 @@ function addItem_jqxInput(p, init_val, source, height, width)
 	}
 }
 
-
 function getval_jqxInput_id(p){return getval_jqxInput(p);}
+function getval_jqxInput_time(p){return getval_jqxInput(p);}
 function getval_jqxInput_name(p){return getval_jqxInput(p);}
 function getval_jqxInput_text(p){return getval_jqxInput(p);}
 function getval_jqxInput(p)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	return $('#'+field_id).jqxInput('val');
 }
 
@@ -1040,7 +1167,7 @@ function jsonp(url, data, cb_done, cb_fail)
 	}).done(cb_done).fail(cb_fail);
 }
 
-function render_onebox_html(url, image, title, desc)
+function render_onebox_url_html(url, image, title, desc)
 {
 	var content = desc.substring(0,82);
 	var html = ['<table style="width:371px; height:80px; font-size:12"><tbody>',
@@ -1053,23 +1180,57 @@ function render_onebox_html(url, image, title, desc)
 	return html;
 }
 
-function render_onebox(data, finish)
+
+function render_onebox_id(data, finish)
 {
-	jsonp('/service/onebox/index.php', 
-		{url:data[0], type:'json'}, function(d){
+	jsonp('/service/onebox/name.php', {
+		name:data[0], 
+		db_name: get_db_name(),
+		table_name: get_table_name(),
+		type:'json'
+	}, function(d){
 		if (d.status === 'ok') {
-			var html = render_onebox_html(d.ori_url, d.image, d.title, d.description);
+			var html = render_onebox_url_html(d.ori_url, d.image, d.title, d.description);
 
 			var value = {
 				title: d.title,
 				desc: d.description,
 				image: d.image,
-				url: d.ori_url
+				url: d.ori_url,
+				id: d.ID,
+				time: d.update_time
 			};
 
 			data.push(html);
 			data.push(value);
 			finish(data);
+		} else {
+			env.popup(T('ERROR'), T('Maybe you input name is invalid.'));
+		}
+	});
+}
+
+function render_onebox_url(data, finish)
+{
+	jsonp('/service/onebox/url.php', 
+		{url:data[0], type:'json'}, function(d){
+		if (d.status === 'ok') {
+			var html = render_onebox_url_html(d.ori_url, d.image, d.title, d.description);
+
+			var value = {
+				title: d.title,
+				desc: d.description,
+				image: d.image,
+				url: d.ori_url,
+				id: d.ID,
+				time: d.update_time
+			};
+
+			data.push(html);
+			data.push(value);
+			finish(data);
+		} else {
+			env.popup(T('ERROR'), T('Maybe you input url is invalid.'));
 		}
 	});
 }
@@ -1147,21 +1308,28 @@ function addItem_jqxListBox_images(p, init_val, height, width)
 	$('#'+field_id).jqxListBox('selectIndex', 0 ); 
 }
 
-function addItem_jqxListBox_onebox(p, init_val, render, height, width)
+function addItem_jqxListBox_onebox_id(p, init_val, render, height, width)
 {
-	render = render || render_onebox;
+	render = render || render_onebox_id;
 	height = height || 250;
-	addItem_jqxListBox(p, init_val, render, height, width)
+	addItem_jqxListBox(p, init_val, render, height, width);
+}
+
+function addItem_jqxListBox_onebox_url(p, init_val, render, height, width)
+{
+	render = render || render_onebox_url;
+	height = height || 250;
+	addItem_jqxListBox(p, init_val, render, height, width);
 }
 
 function addItem_jqxListBox_name(p, init_val, render, height, width)
 {
 	width = width || 300;
-	addItem_jqxListBox(p, init_val, render, height, width)
+	addItem_jqxListBox(p, init_val, render, height, width);
 }
-
 function getval_jqxListBox_name(p){return getval_jqxListBox(p);}
-function getval_jqxListBox_onebox(p){return getval_jqxListBox(p);}
+function getval_jqxListBox_onebox_url(p){return getval_jqxListBox(p);}
+function getval_jqxListBox_onebox_id(p){return getval_jqxListBox(p);}
 function getval_jqxListBox_images(p){return getval_jqxListBox(p);}
 function getval_jqxListBox(p)
 {
@@ -1176,6 +1344,201 @@ function getval_jqxListBox(p)
 	return res_objs;
 }
 
+function getval_jqxRadioButton(p)
+{
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tr_class = field_id+'_trclass';
+	var td_class = field_id+'_tdclass';
+	var radiobtn_class = field_id+'_radiobtn_class';
+	var radio_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class+' div.'+radiobtn_class);
+	var res_val = '';
+	for(var i=0; i<radio_objs.length; i++) {
+		var td_item = radio_objs[i];
+		var checked = $(td_item).jqxRadioButton('checked');
+		if (checked) {
+			var caption = $(td_item)[0].textContent;
+			return caption;
+		}
+	}
+	return res_val;
+}
+
+function addItem_jqxRadioButton(p, init_val, options, width)
+{
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+
+	var input_id = field_id+'_input';
+	var sub_table_id = field_id+'_table';
+	var tr_class = field_id+'_trclass';
+	var td_class = field_id+'_tdclass';
+	var group = field_id+'_group';
+	var addbtn_id = field_id+'_add';
+	var radiobtn_class = field_id+'_radiobtn_class';
+	var btn_width = 22;
+	var btn_height = 22;
+	width = width || 200;
+	width = width - btn_width - 6;
+
+	$('#'+table_id).append([
+		'<tr><td align="right" style="vertical-align:top;">'+caption+': </td><td align="left" >',
+		'<div style="border: 1px solid rgb(224, 224, 224);">',
+		    '<table width="100%"><tr><td>',
+			'<table id="'+sub_table_id+'" border="0" style="width:100%; border-spacing:5px;" >',
+			'</table>',
+		    '</td><tr><td>',
+			'<div id="'+addbtn_id+'" style="padding:0px;float:right;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/add.png"/></div>',
+			'<input type="text" id="'+input_id+'" style="float:right;" />',
+		    '</td></tr></table>',
+		'</div>',
+		'</td></tr>'
+	].join(''));
+
+	$('#'+input_id).jqxInput({width: width-(btn_width+2)*4, height: btn_height, rtl:true});
+	$('#'+addbtn_id).jqxButton({width: btn_width, height:btn_height});
+
+	if (options instanceof Array) {
+		for (var i in options) {
+			var item = options[i];
+			var checked = (init_val === item);
+			add_radiobtn_item(sub_table_id, tr_class, td_class, radiobtn_class, item, group,checked);
+		}
+	}
+
+	$('#'+addbtn_id).on('click', function(e){
+		var input_caption = $('#'+input_id).val();
+		if (input_caption != '') {
+			add_radiobtn_item(sub_table_id, tr_class, td_class, radiobtn_class, input_caption, group);
+			$('#'+input_id).val('');
+		}
+	});
+
+}
+
+function add_radiobtn_item(table_id, tr_class, td_class, radiobtn_class, caption, group, checked)
+{
+	if (checked === undefined) {
+		checked = true;
+	}
+	if (group === undefined) {
+		group = '';
+	}
+	var item_elmt = '<div class="'+radiobtn_class+'" style="float: left;">'+caption+'</div>';
+	var td_elmt = '<td class="'+td_class+'" style="padding:0px;">'+item_elmt+'</td>';
+
+	var tr_objs = $('table#'+table_id+' tr.'+tr_class);
+	var td_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class);
+	var mod_val = parseInt(td_objs.length % 3);
+
+	if ((mod_val === 0) || isNaN(mod_val)) {
+		$('table#'+table_id).append('<tr class="'+tr_class+'"></tr>');
+		tr_objs = $('table#'+table_id+' tr.'+tr_class);
+	}
+
+	var tr_elmt = tr_objs[tr_objs.length-1];
+	$(tr_elmt).append(td_elmt);
+	var radio_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class+' div.'+radiobtn_class);
+	$(radio_objs[radio_objs.length-1]).jqxRadioButton({groupName:group, checked: checked});
+}
+
+function addItem_jqxCheckBox(p, init_val, options, width)
+{
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+
+	var input_id = field_id+'_input';
+	var sub_table_id = field_id+'_table';
+	var tr_class = field_id+'_trclass';
+	var td_class = field_id+'_tdclass';
+	var addbtn_id = field_id+'_add';
+	var checkbox_class = field_id+'_checkbox_class';
+	var btn_width = 22;
+	var btn_height = 22;
+	width = width || 200;
+	width = width - btn_width - 6;
+
+	$('#'+table_id).append([
+		'<tr><td align="right" style="vertical-align:top;">'+caption+': </td><td align="left" >',
+		'<div style="border: 1px solid rgb(224, 224, 224);">',
+		    '<table width="100%"><tr><td>',
+			'<table id="'+sub_table_id+'" border="0" style="width:100%; border-spacing:5px;" >',
+			'</table>',
+		    '</td><tr><td>',
+			'<div id="'+addbtn_id+'" style="padding:0px;float:right;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/add.png"/></div>',
+			'<input type="text" id="'+input_id+'" style="float:right;" />',
+		    '</td></tr></table>',
+		'</div>',
+		'</td></tr>'
+	].join(''));
+
+	$('#'+input_id).jqxInput({width: width-(btn_width+2)*4, height: btn_height, rtl:true});
+	$('#'+addbtn_id).jqxButton({width: btn_width, height:btn_height});
+
+	if (options instanceof Array) {
+		for (var i in options) {
+			var item = options[i];
+			var checked = false;
+			if (init_val instanceof Array) {
+				checked = (init_val.indexOf(item) !== -1);
+			} else {
+				checked = (item === init_val);
+			}
+			add_checkbox_item(sub_table_id, tr_class, td_class, checkbox_class, item, checked);
+		}
+	}
+
+	$('#'+addbtn_id).on('click', function(e){
+		var input_caption = $('#'+input_id).val();
+		if (input_caption != '') {
+			add_checkbox_item(sub_table_id, tr_class, td_class, checkbox_class, input_caption);
+			$('#'+input_id).val('');
+		}
+	});
+
+}
+
+function add_checkbox_item(table_id, tr_class, td_class, checkbox_class, caption, checked)
+{
+	if (checked === undefined) {
+		checked = true;
+	}
+	var item_elmt = '<div class="'+checkbox_class+'" style="float: left;">'+caption+'</div>';
+	var td_elmt = '<td class="'+td_class+'" style="padding:0px;">'+item_elmt+'</td>';
+
+	var tr_objs = $('table#'+table_id+' tr.'+tr_class);
+	var td_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class);
+	var mod_val = parseInt(td_objs.length % 3);
+
+	if ((mod_val === 0) || isNaN(mod_val)) {
+		$('table#'+table_id).append('<tr class="'+tr_class+'"></tr>');
+		tr_objs = $('table#'+table_id+' tr.'+tr_class);
+	}
+
+	var tr_elmt = tr_objs[tr_objs.length-1];
+	$(tr_elmt).append(td_elmt);
+	var checkb_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class+' div.'+checkbox_class);
+	$(checkb_objs[checkb_objs.length-1]).jqxCheckBox({checked: checked});
+}
+
+function getval_jqxCheckBox(p)
+{
+	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tr_class = field_id+'_trclass';
+	var td_class = field_id+'_tdclass';
+	var checkbox_class = field_id+'_checkbox_class';
+	var checkb_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class+' div.'+checkbox_class);
+	var res_obj = [];
+	for(var i=0; i<checkb_objs.length; i++) {
+		var td_item = checkb_objs[i];
+		var checked = $(td_item).jqxCheckBox('checked');
+		if (checked) {
+			var caption = $(td_item)[0].textContent;
+			if (res_obj.indexOf(caption) === -1) {
+				res_obj.push(caption);
+			}
+		}
+	}
+	return res_obj;
+}
+
 function addItem_jqxListBox(p, init_val, render, height, width)
 {
 	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
@@ -1187,7 +1550,7 @@ function addItem_jqxListBox(p, init_val, render, height, width)
 		for (var i in init_val) {
 			var item = init_val[i];
 			if (item.hasOwnProperty('title')) {
-				var html = render_onebox_html(item.url, item.image, item.title, item.desc);
+				var html = render_onebox_url_html(item.url, item.image, item.title, item.desc);
 				source.push({html: html, label: item.title, value: item});
 			} else {
 				source.push({label: item, value: item});
@@ -1333,7 +1696,8 @@ function addItem_jqxNumberInput(p, init_val, digits, symbol, height, width)
 function getval_jqxDateTimeInput(p)
 {
 	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
-	return $('#'+field_id).jqxDateTimeInput('val');
+	var date_obj = $('#'+field_id).jqxDateTimeInput('getDate');
+	return date_obj;
 }
 
 function addItem_jqxDateTimeInput(p, init_val, height, width)
@@ -1342,9 +1706,9 @@ function addItem_jqxDateTimeInput(p, init_val, height, width)
 	width = width || 200; height = height || 25;
 	$('#'+table_id).append(['<tr><td align="right">'+caption+': </td>',
 		'<td align="left"><div id="'+field_id+'"></div></td></tr>'].join(''));
-	$('#'+field_id).jqxDateTimeInput({culture:'zh-CN', formatString: 'F', width:width, height:height});
+	$('#'+field_id).jqxDateTimeInput({culture:'zh-CN', formatString: 'D', width:width, height:height});
 	if (init_val) {
-		$('#'+field_id).jqxDateTimeInput('val', init_val);
+		$('#'+field_id).jqxDateTimeInput('setDate', init_val);
 	}
 }
 
@@ -1398,5 +1762,41 @@ function confirm_dialog(title, content, cb_ok)
 	}); 
 }
 
+function set_cookie(cname,cvalue,exdays)
+{
+	var d = new Date();
+	d.setTime(d.getTime()+(exdays*24*60*60*1000));
+	var expires = "expires="+d.toGMTString();
+	document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+function get_cookie(cname)
+{
+	var name = cname + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0; i<ca.length; i++) 
+	{
+		var c = ca[i].trim();
+		if (c.indexOf(name)==0) return c.substring(name.length,c.length);
+	}
+	return "";
+}
+
+function check_cookie()
+{
+	var user=get_cookie("username");
+	if (user!="")
+	{
+		alert("Welcome again " + user);
+	}
+	else 
+	{
+		user = prompt("Please enter your name:","");
+		if (user!="" && user!=null)
+		{
+			set_cookie("username",user,365);
+		}
+	}
+}
 
 

@@ -62,6 +62,12 @@ set_language('cn');
 env.web_root = "<?php echo $web_root; ?>";
 env.init_db = "<?php echo $init_db; ?>";
 env.init_table = "<?php echo $init_table; ?>";
+
+if ((env.init_db === 'default') && (env.init_table === 'default')) {
+	env.init_db = get_cookie('init_db');
+	env.init_table = get_cookie('init_table');
+}
+
 env.username = "<?php echo $user_info['user_name']; ?>";
 env.logout = "<?php echo login_wrap_referer($user_info['logout'],'/index.php'); ?>";
 
@@ -152,7 +158,6 @@ function jsondb_main()
 		env.dont_refresh = false;
 
 		if ((env.db_index!==-1) && (env.table_index!==-1)) {
-			console.log('trigger refresh');
 			$('#refresh_btn').trigger('click');
 		}
 	}
@@ -166,16 +171,17 @@ function jsondb_main()
 		});
 
 		function schema_done(schema_data) {
-			var input = [schema_data.listview, schema_data.fields, env.field_types];
+			var input = [schema_data.listview, schema_data.fields, schema_data.onebox, env.field_types];
 			edit_fields_windows(T('Edit fields'), input, function(p){
 				var data = {
 					cmd:'update_fields', 
 					db_name: db_name, 
 					table_name: table_name,
 					listview:p[0], 
-					fields:p[1]
+					fields:p[1],
+					onebox:p[2]
 				};
-				post('schema.php', data, function(d){
+				post('field.php', data, function(d){
 					if (d.hasOwnProperty('status')) {
 						if (d.status === 'ok') {
 							trigger_refresh();
@@ -225,32 +231,34 @@ function jsondb_main()
 				'</td><td><strong>' + datarecord.title +'</strong></td></tr></table>';
 
 		} else {
-			var img = '<img height="55" width="65" src="' + datarecord.image+ '"/>';
+			var img = '<img height="55" width="55" src="' + datarecord.image+ '"/>';
 			var table = '<table style="max-width: '+(this.width-10)+'px; font-size:12; border-spacing:0px;"><tr><td style="width: 70px;" rowspan="2">' + img + 
 				'</td><td><strong>' + datarecord.title +'</strong></td></tr><tr><td>' + datarecord.content+ '</td></tr></table>';
 		}
 		return table;
 	}
 
-	function delete_caption_item(cb_done)
+	function delete_caption_item(is_table, cb_done)
 	{
-		db_name = get_db_name();
-		table_name = get_table_name();
-		var data = {};
-		data.db_name = db_name;
-		if (table_name) {
-			data.cmd = 'del_table';
-			data.table_name = table_name;
-		} else {
-			data.cmd = 'del_database';
-		}
-
-		submit_schema(data, function(d){
-			if (table_name) {
-				cb_done(db_name, table_name);
+		confirm_dialog(T('Delete database or row'), T('Are you sure???'), function(e){
+			var db_name = get_db_name();
+			var table_name = get_table_name();
+			var data = {};
+			data.db_name = db_name;
+			if (is_table) {
+				data.cmd = 'del_table';
+				data.table_name = table_name;
 			} else {
-				cb_done(db_name);
+				data.cmd = 'del_database';
 			}
+
+			submit_schema(data, function(d){
+				if (table_name) {
+					cb_done(db_name, table_name);
+				} else {
+					cb_done(db_name);
+				}
+			});
 		});
 	}
 
@@ -261,7 +269,7 @@ function jsondb_main()
 		}
 
 		if (mode === 'DELITEM') {
-			delete_caption_item(function(){
+			delete_caption_item(false, function(){
 				var index = $('#db_captions').jqxDropDownList('getSelectedIndex'); 
 				var db_name = $('#db_captions').jqxDropDownList('val'); 
 				$('#db_captions').jqxDropDownList('clearSelection'); 
@@ -328,7 +336,7 @@ function jsondb_main()
 		}
 
 		if (mode === 'DELITEM') {
-			delete_caption_item(function(){
+			delete_caption_item(true, function(){
 				var index = $('#table_captions').jqxDropDownList('getSelectedIndex'); 
 				$('#table_captions').jqxDropDownList('clearSelection'); 
 				$('#table_captions').jqxDropDownList('removeAt', env.table_index); 
@@ -401,7 +409,7 @@ function jsondb_main()
 				if (value === 'BACKUP') {
 					var data = {};
 					data.cmd = 'backup_database';
-					data.db_name = get_db_name;
+					data.db_name = get_db_name();
 					submit_schema(data, function(d){
 						env.popup(T('SUCCEED'), T('Backup database successfully.'));
 					});
@@ -413,8 +421,6 @@ function jsondb_main()
 				var default_index = where_default(db_name);
 				env.table_index = default_index;
 				env.db_index = args.index;
-
-				console.log(env.table_captions);
 
 				$('#table_captions').jqxDropDownList({disabled: false}); 
 
@@ -455,9 +461,9 @@ function jsondb_main()
 				if (value === 'CLEANUP') {
 					var data = {};
 					data.cmd = 'refresh_data';
-					data.db_name = get_db_name;
+					data.db_name = get_db_name();
 					data.table_name = get_table_name();
-					submit_schema(data, function(d){
+					submit_data(data, function(d){
 						trigger_refresh();
 					});
 				} else {
@@ -543,7 +549,7 @@ function where_default(db_name)
 				return index;
 			}
 		}
-		return -1;
+		return (captions.length>0)? 0: -1;
 	}
 
 	if (db_name === undefined) {
@@ -566,6 +572,7 @@ function is_operate_item(name)
 }
 
 function submit_data(data, cb_done){return submit_post('data.php', data, cb_done);}
+function submit_field(data, cb_done){return submit_post('field.php', data, cb_done);}
 function submit_schema(data, cb_done){return submit_post('schema.php', data, cb_done);}
 function submit_post(url, data, cb_done)
 {
@@ -588,10 +595,10 @@ function submit_post(url, data, cb_done)
 function init_db_captions()
 {
 	env.db_captions.push(
-	    {'name':'NEWITEM', 'image':'images/new-database.ico', 'title':T('New Database')},
-	    {'name':'EDITITEM','image':'images/new-database.ico','title':T('Edit DB Description')},
-	    {'name':'DELITEM','image':'images/new-database.ico','title':T('Delete Database')},
-	    {'name':'BACKUP','image':'images/new-database.ico','title':T('Backup Database')}
+	    {'name':'NEWITEM', 'image':'images/add.png', 'title':T('New Database')},
+	    {'name':'EDITITEM','image':'images/edit.png','title':T('Edit DB Description')},
+	    {'name':'DELITEM','image':'images/delete.png','title':T('Delete Database')},
+	    {'name':'BACKUP','image':'images/backup.png','title':T('Backup Database')}
 	);
 }
 
@@ -604,10 +611,10 @@ function init_table_captions(db_name)
 	}
 
 	captions.push(
-	    {'name':'NEWITEM', 'image':'images/new-table.png','title':T('Create New Table')},
-	    {'name':'EDITITEM','image':'images/new-table.png','title':T('Edit Table Description')},
-	    {'name':'DELITEM','image':'images/new-table.png','title':T('Delete Table')},
-	    {'name':'CLEANUP','image':'images/new-table.png','title':T('Cleanup Table')}
+	    {'name':'NEWITEM', 'image':'images/add.png','title':T('Create New Table')},
+	    {'name':'EDITITEM','image':'images/edit.png','title':T('Edit Table Description')},
+	    {'name':'DELITEM','image':'images/delete.png','title':T('Delete Table')},
+	    {'name':'CLEANUP','image':'images/registry.png','title':T('Cleanup Table')}
 	);
 }
 
@@ -690,7 +697,6 @@ function refresh_listview(db_name, table_name)
 			req_data['db_name'] = db_name;
 			req_data['table_name'] = table_name;
 			submit_data(req_data, function(d){
-				console.log(req_data);
 				datatables_delete(listview_id, d.id_list, id_index);
 			});
 
@@ -735,7 +741,6 @@ function refresh_listview(db_name, table_name)
 					req_data['db_name'] = db_name;
 					req_data['table_name'] = table_name;
 					submit_data(req_data, function(d){
-						console.log(req_data);
 						datatables_update(listview_id, d.listview, id_index);
 					});
 				});
@@ -763,6 +768,9 @@ function refresh_listview(db_name, table_name)
 		}, function() {
 			datatables_new(listview_id, [], aoColumns, event);
 		});
+
+		set_cookie('init_db', db_name, 30);
+		set_cookie('init_table', table_name, 30);
 	};
 }
 

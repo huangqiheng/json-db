@@ -25,22 +25,27 @@ $map_key = @$req['mapper'];
 if (empty($map_key)) {
 	jsonp_nocache_exit(['status'=>'error', 'error'=>'not mapper in parameter']);
 }
+$map_key= mapper_key($map_key);
 
 $is_new_data = false;
 if (empty($mapper)) {
 	$is_new_data = true;
 } else {
-	$map_val = $mapper[$map_key];
-	$map_file = "{$table_root}/{$map_val}.json";
-	if (!file_exists($map_file)) {
+	$map_val = @$mapper[$map_key];
+	if(empty($map_val)) {
 		$is_new_data = true;
 	} else {
-		$ori_data = object_read($map_file);
-		if (empty($ori_data)) {
+		$map_file = "{$table_root}/{$map_val}.json";
+		if (!file_exists($map_file)) {
 			$is_new_data = true;
-		}
-		if (!set_data_id($data, $map_val)) {
-			jsonp_nocache_exit(['status'=>'error', 'error'=>'no id field']);
+		} else {
+			$ori_data = object_read($map_file);
+			if (empty($ori_data)) {
+				$is_new_data = true;
+			}
+			if (!set_data_id($data, $map_val)) {
+				jsonp_nocache_exit(['status'=>'error', 'error'=>'no id field']);
+			}
 		}
 	}
 }

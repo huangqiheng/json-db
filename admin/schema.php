@@ -12,8 +12,6 @@ switch($req['cmd']) {
     case 'edit_table': edit_table_exit($req);
     case 'del_database': del_database_exit($req);
     case 'del_table': del_table_exit($req);
-    case 'update_fields': update_fields_exit($req);
-    case 'refresh_data': refresh_data_exit($req);
     default: jsonp_nocache_exit(['status'=>'error', 'error'=>'unknow command.']);
 }
 
@@ -37,42 +35,6 @@ function backup_database_exit($req)
 	$bak_url = substr($bak_file, strlen($_SERVER['DOCUMENT_ROOT']));
 	jsonp_nocache_exit(['status'=>'ok', 'file'=>$bak_url]); 
 }
-
-function update_fields_exit($req)
-{
-	$db_name = @$req['db_name'];
-	$table_name = @$req['table_name'];
-	$table_root = table_root($db_name, $table_name);
-	$schema_file = "{$table_root}/schema.json";
-	$schema = object_read($schema_file);
-
-	$fields_req = $req['fields'];
-	$listview_req = $req['listview'];
-	$listview = $schema['listview'];
-
-	$diff1 = array_diff($listview_req, $listview);
-	$diff2 = array_diff($listview, $listview_req);
-	$is_same = (empty($diff1) && empty($diff2));
-
-	$schema['fields'] = $fields_req;
-	$schema['listview'] = $listview_req;
-	object_save($schema_file, $schema);
-
-	if (!$is_same) {
-		refresh_data($db_name, $table_name);
-	}
-
-	jsonp_nocache_exit(['status'=>'ok']); 
-}
-
-function refresh_data_exit($req)
-{
-	$db_name = @$req['db_name'];
-	$table_name = @$req['table_name'];
-	$counter = refresh_data($db_name, $table_name);
-	jsonp_nocache_exit(['status'=>'ok', 'counter'=>$counter]); 
-}
-
 
 function del_database_exit($req)
 {
@@ -177,13 +139,20 @@ function create_table_exit($req)
 	$fields = [];
 	$general = [];
 	$general['ID'] = 'jqxInput-id';
-	$general['Name'] = 'jqxInput-name';
+	$general['TIME'] = 'jqxInput-time';
+        $general['Name'] = 'jqxInput-name';
 	$fields['general'] = $general;
+
+	$onebox = [];
+	$onebox['title'] = 'ID';
+	$onebox['desc'] = 'Name';
+	$onebox['image'] = '';
 
 	$schema = [];
 	$schema['caption'] = $caption;
 	$schema['listview'] = $listview;
 	$schema['fields'] = $fields;
+	$schema['onebox'] = $onebox;
 
 	$filename = "{$filename}/schema.json";
 	object_save($filename, $schema);
