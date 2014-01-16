@@ -713,6 +713,11 @@ function refresh_listview(db_name, table_name)
 					req_data['table_name'] = table_name;
 					submit_data(req_data, function(d){
 						datatables_add(listview_id, d.listview);
+						if (d.hasOwnProperty('reload')) {
+							if (d.reload === true) {
+								$('#refresh_btn').trigger('click');
+							}
+						}
 					});
 				});
 			};
@@ -742,6 +747,11 @@ function refresh_listview(db_name, table_name)
 					req_data['table_name'] = table_name;
 					submit_data(req_data, function(d){
 						datatables_update(listview_id, d.listview, id_index);
+						if (d.hasOwnProperty('reload')) {
+							if (d.reload === true) {
+								$('#refresh_btn').trigger('click');
+							}
+						}
 					});
 				});
 			};

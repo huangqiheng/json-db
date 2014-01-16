@@ -6,6 +6,55 @@ require_once 'config.php';
 	共享函数
 *****************************************/
 
+function onebox_object($schema, $data_file, $data=null)
+{
+	$http_prefix = 'http://'.$_SERVER['HTTP_HOST'];
+	$onebox = @$schema['onebox'];
+	$key_title = @$onebox['title'];
+	$key_desc = @$onebox['desc'];
+	$key_image = @$onebox['image'];
+	$key_title || $key_title = 'ID';
+	if (empty($key_desc)) {
+		foreach(merge_fields($schema['fields']) as $key=>$type) {
+			if (in_array($type, $mapper_types)) {
+				$key_title = $key;
+				break;
+			}
+		}
+	}
+
+	$data || $data = object_read($data_file);
+	$res_obj = merge_fields($data);
+
+	$ob_title = $res_obj[$key_title];
+	$ob_desc = 'no description.';
+	if (!empty($key_desc)) {
+		$ob_desc = $res_obj[$key_desc];
+	}
+	$ob_image = $http_prefix.$schema['caption']['image'];
+	if (!empty($key_image)) {
+		$ob_image = $res_obj[$key_image];
+	}
+
+	$ob_time = @$res_obj['TIME'];
+	if ($ob_time) {
+		$ob_time = format_time($ob_time);
+	}
+
+	$file_uri = substr($data_file, strlen($_SERVER['DOCUMENT_ROOT']));
+	$file_uri = preg_replace('/\/'.$_SERVER['HTTP_HOST'].'/i', '', $file_uri);
+	$file_uri = $http_prefix.$file_uri;
+
+	$result = [];
+	$result['title'] = $ob_title;
+	$result['desc'] = strip_tags($ob_desc);
+	$result['image'] = $ob_image;
+	$result['url'] = $file_uri;
+	$result['id'] = intval($res_obj['ID']);;
+	$result['time'] = $ob_time;
+	return $result;
+}
+
 function delete_current_data($db_name, $table_name, $req_list)
 {
 	$table_root = table_root($db_name, $table_name);
@@ -72,12 +121,43 @@ function create_new_data($db_name, $table_name, $data)
 		return ['status'=>'error', 'error'=>'no id field'];
 	}
 
+	$data = format_fields($schema, $data);
+
 	$new_id_file = "{$table_root}/{$new_id}.json";
 	object_save($new_id_file, $data);
 	refresh_data($db_name, $table_name, $new_id_file);
 
 	$listview_item = make_listview_item($schema, $data);
 	return ['status'=>'ok', 'ID'=>$new_id, 'listview'=>$listview_item]; 
+}
+
+function format_fields($schema, $req_data)
+{
+	$fields = $schema['fields'];
+	$fix_data = array_merge(array(), $req_data);
+
+	foreach($fields as $group=>$items) {
+		$group_obj = @$fix_data[$group];
+		if (empty($group_obj)) {
+			$group_obj = [];
+		}
+		foreach($items as $field_name=>$field_type) {
+			$field_value = @$group_obj[$field_name];
+			if (empty($field_value)) {
+				$field_value = '';
+				if (preg_match('/^jqxInput/i', $field_type)) {$field_value='';}
+				if (preg_match('/^jqxComboBox/i', $field_type)) {$field_value='';}
+				if (preg_match('/^jqxRadioButton/i', $field_type)) {$field_value='';}
+				if (preg_match('/^jqxCheckBox/i', $field_type)) {$field_value=[];}
+				if (preg_match('/^jqxListBox/i', $field_type)) {$field_value=[];}
+				if (preg_match('/^jqxNumberInput/i', $field_type)) {$field_value='0';}
+				if (preg_match('/^jqxDateTimeInput/i', $field_type)) {$field_value=gm_date(time());}
+			}
+			$group_obj[$field_name] = $field_value;
+		}
+		$fix_data[$group] = $group_obj;
+	}
+	return $fix_data;
 }
 
 function update_current_data($db_name, $table_name, $req_data)
@@ -101,9 +181,12 @@ function update_current_data($db_name, $table_name, $req_data)
 
 	$data_file = "{$table_root}/{$req_id}.json";
 	$ori_data = object_read($data_file);
+	$ori_output = array_merge(array(), $ori_data);
+
+	//格式化输入结构，填充空白字段
+	$req_data = format_fields($schema, $req_data);
 
 	//将请求的数据，逐个压入现有数据中
-
 	foreach($req_data as $req_group=>$req_items){
 		foreach($req_items as $req_field=>$req_val){
 			$handled = false;
@@ -132,7 +215,8 @@ function update_current_data($db_name, $table_name, $req_data)
 	refresh_data($db_name, $table_name, $data_file);
 
 	$listview_item = make_listview_item($schema, $new_data);
-	return ['status'=>'ok', 'ID'=>$req_id, 'listview'=>$listview_item]; 
+	$result = ['status'=>'ok', 'ID'=>$req_id, 'listview'=>$listview_item];
+	return [$result, $ori_output]; 
 }
 
 function refresh_data($db_name, $table_name, $append_data_file=null)
@@ -144,6 +228,7 @@ function refresh_data($db_name, $table_name, $append_data_file=null)
 	$merged_fields = merge_fields($fields);
 	$mapper_fields = get_mapper_fields($merged_fields);
 	$options_fields = get_options_fields($merged_fields);
+	$id_index = array_search('ID', $listview);
 
 	$listview_data = [];
 	$mapper_data = [];
@@ -159,32 +244,41 @@ function refresh_data($db_name, $table_name, $append_data_file=null)
 			$mapper_data = object_read("{$data_path}/mapper.json");
 			$options_data = object_read("{$data_path}/options.json");
 
-			$merge_items = merge_fields(object_read($append_data_file));
-			$id_input = $merge_items['ID'];
-			$id_index = array_search('ID', $listview);
-			if ($id_index === false) {
-				//找不到ID，这是个不正常的记录
-				jsonp_nocache_exit(['status'=>'error', 'error'=>'ID field not found, listview content error.']);
-			}
-
-			//找到就是替换并直接退出，找不到就是追加，并抛给下一个流程
-			foreach($listview_data as &$subitem) {
-				$id_cmp = $subitem[$id_index];
-				if ($id_cmp !== $id_input) {
-					continue;
+			if (is_array($append_data_file)) {
+				foreach($append_data_file as $data_file) {
+					$merge_items = merge_fields(object_read($data_file));
+					$id_input = @$merge_items['ID'];
+					if (empty($id_input)) {
+						continue;
+					}
+					
+					//找到就是替换并直接退出，找不到就是追加，并抛给下一个流程
+					foreach($listview_data as &$subitem) {
+						if ($subitem[$id_index] !== $id_input) {continue;}
+						//替换listview，完成任务退出
+						$subitem = new_listview_item($listview, $merge_items, $merged_fields);
+						update_mappers($mapper_data, $mapper_fields, $merge_items);
+						update_options($options_data, $options_fields, $merge_items);
+						continue 2;
+					}
+					//需要后续处理的
+					$glob_files[] = $data_file;
 				}
-
-				//替换listview
-				$subitem = new_listview_item($listview, $merge_items, $merged_fields);
-				//更新mapper
-				update_mappers($mapper_data, $mapper_fields, $merge_items);
-				//更新options
-				update_options($options_data, $options_fields, $merge_items);
-
-				break 2;
+			} else {
+				$merge_items = merge_fields(object_read($append_data_file));
+				$id_input = $merge_items['ID'];
+				//找到就是替换并直接退出，找不到就是追加，并抛给下一个流程
+				foreach($listview_data as &$subitem) {
+					if ($subitem[$id_index] !== $id_input) {continue;}
+					//替换listview，完成任务退出
+					$subitem = new_listview_item($listview, $merge_items, $merged_fields);
+					update_mappers($mapper_data, $mapper_fields, $merge_items);
+					update_options($options_data, $options_fields, $merge_items);
+					break 2;
+				}
+				//需要后续处理的
+				$glob_files[] = $append_data_file;
 			}
-
-			$glob_files[] = $append_data_file;
 		} else {
 			$glob_files = glob("{$data_path}/*.json");
 		}
@@ -272,6 +366,18 @@ function new_listview_item($listview, $merge_items, $merged_fields)
 						$value = $date->format('Y-m-d');
 					} catch (Exception $e) {
 					}
+				}
+
+				if (preg_match('/^jqxListBox-onebox/i', $field_name)) {
+					$value_out = [];
+					foreach($value as $onebox_item) {
+						$value_out[] = $onebox_item['title'];
+					}
+					$value = implode(',<br>',$value_out);
+				}
+
+				if (preg_match('/^jqxCheckBox/i', $field_name)) {
+					$value = implode(',<br>',$value);
 				}
 			}
 
@@ -389,6 +495,18 @@ function dbs_path()
 		init_db_root($root_path);
 	}
 	return $root_path;
+}
+
+function put_object($db_name, $table_name, $base_name, $data)
+{
+	$table_root = table_root($db_name, $table_name);
+	return object_save("{$table_root}/{$base_name}.json", $data);
+}
+
+function get_object($db_name, $table_name, $base_name)
+{
+	$table_root = table_root($db_name, $table_name);
+	return object_read("{$table_root}/{$base_name}.json");
 }
 
 function object_save($filename, $data)

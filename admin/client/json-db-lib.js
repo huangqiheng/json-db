@@ -231,7 +231,7 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 		'aaData': aDataSet,
 		'aaSorting': [[0,'desc']],
 		'bStateSave': true,
-		"iCookieDuration": 3600*24*30, // 30day
+		//"iCookieDuration": 3600*24*30, // 30day
 		'aoColumns': aoColumns,
 		"sDom": '<"H"Tfrl>t<"F"ip>',
 		//"sDom": 'T<"clear">lfrtip',
@@ -548,7 +548,7 @@ function edit_fields_windows(title, input, cb_done)
 				if (index !== -1) {
 					var item = args.item;
 					var value = item.value;
-					var image = '<img height="200" width="300" src="images/'+value+'.png"/>';
+					var image = '<img height="300" width="300" src="images/'+value+'.png"/>';
 					$('#'+image_id).html(image);
 				}
 			}                        
@@ -1334,7 +1334,6 @@ function getval_jqxListBox_images(p){return getval_jqxListBox(p);}
 function getval_jqxListBox(p)
 {
 	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
-
 	var res_objs = [];
 	var items = $('#'+field_id).jqxListBox('getItems'); 
 	for (var index in items) {
