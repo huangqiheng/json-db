@@ -1,4 +1,5 @@
 var langdata = {
+    'seckey':						{cn:'密钥'},
     'Maybe you input name is invalid.':			{cn:'可能你输入的名称不正确，不在映射范围'},
     'Maybe you input url is invalid.': 			{cn:'可能你输入的网址不正确，不在Onebox服务范围'},
     'Delete database or row':				{cn:'删除数据库或表'},
@@ -20,6 +21,8 @@ var langdata = {
     'records':					{cn:'条记录'},
     'No data available in table':		{cn:'此数据表中没有数据'},
     'Search:':					{cn:'搜索：'},
+    'import': 					{cn:'导入'},
+    'export': 					{cn:'导出'},
     'delete': 					{cn:'删除'},
     'add': 					{cn:'添加'},
     'edit': 					{cn:'编辑'},

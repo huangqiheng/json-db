@@ -73,6 +73,7 @@ function create_database_exit($req)
 	$caption = [];
 	$caption['title'] = $req['title']; 
 	$caption['content'] = $req['content']; 
+	$caption['key'] = $req['key']; 
 	$caption['image'] = $req['image']; 
 
 	$schema = [];
@@ -103,6 +104,7 @@ function edit_database_exit($req)
 	$caption['title'] = $req['title']; 
 	$caption['content'] = $req['content']; 
 	$caption['image'] = $req['image']; 
+	$caption['key'] = $req['key']; 
 	$schema['caption'] = $caption;
 
 	object_save($filename, $schema);
@@ -132,6 +134,7 @@ function create_table_exit($req)
 	$caption['title'] = $req['title']; 
 	$caption['content'] = $req['content']; 
 	$caption['image'] = $req['image']; 
+	$caption['key'] = $req['key']; 
 
 	$listview = [];
 	array_push($listview, 'ID', 'Name');
@@ -187,6 +190,7 @@ function edit_table_exit($req)
 	$caption['title'] = $req['title']; 
 	$caption['content'] = $req['content']; 
 	$caption['image'] = $req['image']; 
+	$caption['key'] = $req['key']; 
 	$schema['caption'] = $caption;
 
 	object_save($filename, $schema);

@@ -43,7 +43,7 @@ $init_table = get_param('table', 'default');
 	@import "client/datatables/demo_table_jui.css";
 	@import "client/datatables/jquery-ui-1.8.4.custom.css";
 	@import "client/datatables/demo_page.css";
-	@import "client/datatables/header.ccss";
+	@import "client/datatables/header.css";
 	@import "client/datatables/demo_table.css";
 	@import "client/datatables/TableTools.css";
 </style>
@@ -85,6 +85,7 @@ env.table_last_unselect = env.table_index;
 env.popup = function (title, content){$.gritter.add({title: title, text: content});};
 env.db_cmd_count = 4;
 env.table_cmd_count = 4;
+env.last_refresh_time = 0;
 
 $(document).ready(jsondb_main);
 
@@ -119,15 +120,15 @@ function jsondb_main()
 		selectedIndex:env.table_index, 
 		selectionRenderer: render_table_selection,
 		placeHolder: T('Please Choose Table:'),
-		dropDownWidth:376, 
+		dropDownWidth:343, 
 		source:table_dataAdapter}, dropdown_opt));
 
 	if (env.table_captions.length === 0) {
 		$('#table_captions').jqxDropDownList({disabled: true});
 	}
 
-	$('#refresh_btn').jqxButton({width: 46, height: 25});
-	$('#config_btn').jqxButton({width: 46, height: 25});
+	$('#refresh_btn').jqxButton({width: 30, height: 25});
+	$('#config_btn').jqxButton({width: 30, height: 25});
 	$('#user_info').html('<span>'+T('Hello')+' "'+env.username+'", '+T('you can')+' </span><a href="'+env.logout+'" style="color:red;">'+T('Logout')+'</a>');
 
 	$('#refresh_btn').on('click', function(e){
@@ -150,6 +151,7 @@ function jsondb_main()
 		edit_fields(db_name, table_name);
 	});
 
+	
 	function trigger_refresh() {
 		if (env.dont_refresh) {
 			env.dont_refresh = false;
@@ -157,8 +159,14 @@ function jsondb_main()
 		}
 		env.dont_refresh = false;
 
+		var now_time = new Date().getTime();
+		if ((now_time - env.last_refresh_time) < 1000) {
+			return;
+		}
+
 		if ((env.db_index!==-1) && (env.table_index!==-1)) {
 			$('#refresh_btn').trigger('click');
+			env.last_refresh_time = now_time;
 		}
 	}
 
@@ -296,6 +304,7 @@ function jsondb_main()
 			init_data.name = caption.name;
 			init_data.title = caption.title;
 			init_data.content = caption.content;
+			init_data.key = caption.key;
 			init_data.image = caption.image;
 			init_data.notify = '';
 		}
@@ -311,12 +320,14 @@ function jsondb_main()
 					caption.title = data.title;
 					caption.content = data.content;
 					caption.image = data.image;
+					caption.key = data.key;
 					caption.name = data.name;
 				} else {
 					var caption= {};
 					caption.title = data.title;
 					caption.content = data.content;
 					caption.image = data.image;
+					caption.key = data.key;
 					caption.name = data.name;
 					var captions = env.db_captions;
 					captions.splice(captions.length - env.db_cmd_count,0, caption);
@@ -365,6 +376,7 @@ function jsondb_main()
 			init_data.name = caption.name;
 			init_data.title = caption.title;
 			init_data.content = caption.content;
+			init_data.key = caption.key;
 			init_data.image = caption.image;
 			init_data.notify = '';
 		}
@@ -382,12 +394,14 @@ function jsondb_main()
 					caption.title = data.title;
 					caption.content = data.content;
 					caption.image = data.image;
+					caption.key = data.key;
 					caption.name = data.name;
 				} else {
 					var caption= {};
 					caption.title = data.title;
 					caption.content = data.content;
 					caption.image = data.image;
+					caption.key = data.key;
 					caption.name = data.name;
 					var captions = env.table_captions[db_name];
 					captions.splice(captions.length-env.table_cmd_count,0, caption);
@@ -783,6 +797,7 @@ function refresh_listview(db_name, table_name)
 		set_cookie('init_table', table_name, 30);
 	};
 }
+
 
 </script>
 </head>

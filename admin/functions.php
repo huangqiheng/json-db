@@ -6,6 +6,101 @@ require_once 'config.php';
 	共享函数
 *****************************************/
 
+function require_all ($path) 
+{
+	foreach (glob($path.'*.php') as $filename){
+		require_once $filename;
+	}
+}
+
+function items_exit()
+{
+	$var_arr= func_get_args();
+	$data = array_shift($var_arr);
+
+	if (empty($data)) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'items_exit no data']);
+	}
+
+	$merged_data = merge_fields($data);
+
+	if (!array_key_exists('ID', $merged_data)) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'no id field']);
+	}
+
+	if (!array_key_exists('TIME', $merged_data)) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'no time field']);
+	}
+
+	foreach($var_arr as $var) {
+		if (!array_key_exists($var, $merged_data)) {
+			jsonp_nocache_exit(['status'=>'error', 'error'=>'no field: '.$var]);
+		}
+	}
+}
+
+function null_exit()
+{
+	$res = [];
+	$var_arr= func_get_args();
+	$req = @$var_arr[0];
+
+	if (is_array($req)) {
+		for($i=1; $i<count($var_arr); $i++) {
+			$key = $var_arr[$i];
+			$var = @$req[$key];
+			if (empty($var)) {
+				jsonp_nocache_exit(['status'=>'error', 'error'=>'input parameters invalid']);
+			}
+			$res[] = $var;
+		}
+	} else {
+		foreach($var_arr as $var) {
+			if (empty($var)) {
+				jsonp_nocache_exit(['status'=>'error', 'error'=>'input parameters invalid']);
+			}
+			$res[] = $var;
+		}
+	}
+	return $res;
+}
+
+function api_exit($db_name, $table_name, $apikey)
+{
+	if (!api_valid($db_name, $table_name, $apikey)) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'api key error']);
+	}
+}
+
+function api_valid($db_name, $table_name, $apikey)
+{
+	if (empty($db_name) || empty($table_name)) {
+		return false;
+	}
+
+	$db_root = db_root($db_name);
+	$table_root = $db_root."/{$table_name}";
+	$db_schema = object_read("{$db_root}/schema.json");
+	$table_schema = object_read("{$table_root}/schema.json");
+
+	if (empty($db_schema) || empty($table_schema)) {
+		return false;
+	}
+
+	$table_key = @$table_schema['caption']['key'];
+	$db_key = @$db_schema['caption']['key'];
+
+	$valid_keys = [];
+	empty($table_key) || array_push($valid_keys, $table_key);
+	empty($db_key) || array_push($valid_keys, $db_key);
+
+	if (empty($valid_keys) || empty($apikey)) {
+		return true;
+	}
+
+	return in_array($apikey, $valid_keys);
+}
+
 function onebox_object($schema, $data_file, $data=null)
 {
 	$http_prefix = 'http://'.$_SERVER['HTTP_HOST'];
@@ -104,6 +199,70 @@ function set_data_id(&$data, $new_id)
 	return false;
 }
 
+function append_new_data($db_name, $table_name, $data)
+{
+	$table_root = table_root($db_name, $table_name);
+	$schema = object_read("{$table_root}/schema.json");
+	if (empty($schema)) {
+		return ['status'=>'error', 'error'=>'schema file error'];
+	}
+
+	if (empty($data)) {
+		return ['status'=>'error', 'error'=>'req data error'];
+	}
+
+	$new_id = get_random_id();
+	if (!set_data_id($data, $new_id)) {
+		return ['status'=>'error', 'error'=>'no id field'];
+	}
+
+	$data = format_fields($schema, $data);
+
+	$new_id_file = "{$table_root}/{$new_id}.json";
+	object_save($new_id_file, $data);
+
+	$listview_item = make_listview_item($schema, $data);
+	append_listview_json("{$table_root}/listview.json", $listview_item);
+
+	return ['status'=>'ok', 'ID'=>$new_id, 'listview'=>$listview_item]; 
+}
+
+function append_listview_json($file_name, $item)
+{
+	if (file_exists($file_name)) {
+		$item_str =','. json_encode($item) . ']';
+	} else {
+		touch($file_name);
+		$item_str = '['.json_encode($item) . ']';
+	}
+
+	$mutex = sem_get(ftok($file_name, 'r'), 1);
+	sem_acquire($mutex);
+
+	$fh = fopen($file_name, 'r+');
+	fseek($fh, -4, SEEK_END);
+	$read_str = fread($fh, 4);
+	$found_index = 0;
+	for($i=strlen($read_str)-1; $i>=0; $i--) {
+		if ($read_str[$i] === ']') {
+			$found_index = $i;
+			break;
+		}
+	}
+
+	if ($found_index === 0) {
+		fclose($fh);
+		sem_release($mutex);
+		return;
+	}
+
+	fseek($fh, $found_index-4, SEEK_END);
+	fwrite($fh, $item_str);
+	fclose($fh);
+
+	sem_release($mutex);
+}
+
 function create_new_data($db_name, $table_name, $data)
 {
 	$table_root = table_root($db_name, $table_name);
@@ -146,6 +305,7 @@ function format_fields($schema, $req_data)
 			if (empty($field_value)) {
 				$field_value = '';
 				if (preg_match('/^jqxInput/i', $field_type)) {$field_value='';}
+				if (preg_match('/^jqxInput-text-json/i', $field_type)) {$field_value=json_decode('{}');}
 				if (preg_match('/^jqxComboBox/i', $field_type)) {$field_value='';}
 				if (preg_match('/^jqxRadioButton/i', $field_type)) {$field_value='';}
 				if (preg_match('/^jqxCheckBox/i', $field_type)) {$field_value=[];}
@@ -165,18 +325,18 @@ function update_current_data($db_name, $table_name, $req_data)
 	$table_root = table_root($db_name, $table_name);
 	$schema = object_read("{$table_root}/schema.json");
 	if (empty($schema)) {
-		return ['status'=>'error', 'error'=>'schema file error'];
+		return [['status'=>'error', 'error'=>'schema file error'], []];
 	}
 
 	if (empty($req_data)) {
-		return ['status'=>'error', 'error'=>'req data error'];
+		return [['status'=>'error', 'error'=>'req data error'],[]];
 	}
 
 	$merged_data = merge_fields($req_data);
 	$req_id = $merged_data['ID'];
 
 	if (empty($req_id)) {
-		return ['status'=>'error', 'error'=>'no id field'];
+		return [['status'=>'error', 'error'=>'no id field'],[]];
 	}
 
 	$data_file = "{$table_root}/{$req_id}.json";
@@ -645,6 +805,14 @@ function get_param($name=null, $default='default')
 	global $g_union;
 	if ($g_union === null) {
 		$g_union = array_merge($_GET, $_POST); 
+
+		if (empty($g_union)) {
+			if(stristr(@$_SERVER['HTTP_USER_AGENT'], ' MSIE')){
+				$msie_post = file_get_contents("php://input");
+				parse_str($msie_post, $MY_POST);
+				$g_union = $MY_POST;
+			}
+		}
 	}
 
 	if ($name === null) {
@@ -660,6 +828,13 @@ function get_param($name=null, $default='default')
 function get_basetime()
 {
 	return mktime(0,0,0,7,21,2012);
+}
+
+function _get_random_id()
+{
+        $mutex = sem_get(ftok($_SERVER['SCRIPT_FILENAME'], 'r'), 1);
+	sem_acquire($mutex);
+	sem_release($mutex);
 }
 
 function get_random_id()

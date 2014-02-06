@@ -21,6 +21,7 @@ $id_same_types = [
 $id_share_types = [
 	'jqxInput-share',
 	'jqxInput-text-share',
+	'jqxInput-text-json-share',
 	'jqxComboBox-share',
 	'jqxCheckBox-share',
 	'jqxRadioButton-share',
@@ -33,6 +34,7 @@ $id_share_types = [
 $field_types = [
 	'jqxInput',
 	'jqxInput-text',
+	'jqxInput-text-json',
 	'jqxInput-name',
 	'jqxComboBox',
 	'jqxCheckBox',

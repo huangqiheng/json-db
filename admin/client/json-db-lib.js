@@ -53,7 +53,7 @@ function edit_data_window(title, input, cb_done)
 	$('#'+window_id).jqxWindow({
 			height: 'auto', width: 'auto',
 			position: {x:win_count*30, y:12+win_count*41},
-			minHeight: 250, minWidth: 580,
+			minHeight: 450, minWidth: 580,
 			maxHeight: 1000,
 			resizable: true,  
 			modalOpacity: 0.3,
@@ -112,6 +112,7 @@ function edit_data_window(title, input, cb_done)
 				if (field_value === 'jqxInput-id') 	   {res_val=getval_jqxInput_id(p);break;}
 				if (field_value === 'jqxInput-time') 	   {res_val=getval_jqxInput_time(p);break;}
 				if (field_value === 'jqxInput-text') 	   {res_val=getval_jqxInput_text(p);break;}
+				if (field_value === 'jqxInput-text-json') 	   {res_val=getval_jqxInput_text_json(p);break;}
 				if (field_value === 'jqxInput-name') 	   {res_val=getval_jqxInput_name(p);break;}
 				if (field_value === 'jqxCheckBox')    	   {res_val=getval_jqxCheckBox(p);break;}
 				if (field_value === 'jqxRadioButton')	   {res_val=getval_jqxRadioButton(p);break;}
@@ -128,6 +129,7 @@ function edit_data_window(title, input, cb_done)
 
 				if (field_value === 'jqxInput-share') 	   {res_val=getval_jqxInput(p);break;}
 				if (field_value === 'jqxInput-text-share') {res_val=getval_jqxInput_text(p);break;}
+				if (field_value === 'jqxInput-text-json-share') {res_val=getval_jqxInput_text_json(p);break;}
 				if (field_value === 'jqxCheckBox-share')   {res_val=getval_jqxCheckBox(p);break;}
 				if (field_value === 'jqxRadioButton-share'){res_val=getval_jqxRadioButton(p);break;}
 				if (field_value === 'jqxListBox-share')	   {res_val=getval_jqxListBox(p);break;}
@@ -172,6 +174,7 @@ function edit_data_window(title, input, cb_done)
 				if (field_value === 'jqxInput-id') 	{addItem_jqxInput_id(p, init_val);continue;}
 				if (field_value === 'jqxInput-time') 	{addItem_jqxInput_time(p, init_val);continue;}
 				if (field_value === 'jqxInput-text') 		{addItem_jqxInput_text(p, init_val);continue;}
+				if (field_value === 'jqxInput-text-json') 		{addItem_jqxInput_text_json(p, init_val);continue;}
 				if (field_value === 'jqxInput-name') 	{addItem_jqxInput_name(p, init_val);continue;}
 				if (field_value === 'jqxCheckBox')      	{addItem_jqxCheckBox(p, init_val, option_val);continue;}
 				if (field_value === 'jqxRadioButton')   	{addItem_jqxRadioButton(p, init_val, option_val);continue;}
@@ -188,6 +191,7 @@ function edit_data_window(title, input, cb_done)
 
 				if (field_value === 'jqxInput-share') 		{addItem_jqxInput(p, init_val);continue;}
 				if (field_value === 'jqxInput-text-share')	{addItem_jqxInput_text(p, init_val);continue;}
+				if (field_value === 'jqxInput-text-json-share')	{addItem_jqxInput_text_json(p, init_val);continue;}
 				if (field_value === 'jqxCheckBox-share')	{addItem_jqxCheckBox(p, init_val, option_val);continue;}
 				if (field_value === 'jqxRadioButton-share')   	{addItem_jqxRadioButton(p, init_val, option_val);continue;}
 				if (field_value === 'jqxListBox-share') 	{addItem_jqxListBox(p, init_val);continue;}
@@ -239,6 +243,14 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 			//'sRowSelect': 'multi',
 			'sRowSelect': 'single',
 			'aButtons': [
+				{"sExtends": "text", "sButtonText": T('export'), "fnClick": 
+					function (nButton, oConfig, oFlash) {
+
+					}},
+				{"sExtends": "text", "sButtonText": T('import'), "fnClick": 
+					function (nButton, oConfig, oFlash) {
+
+					}},
 				{"sExtends": "select_all", "sButtonText": T('select all')},
 				{"sExtends": "select_none", "sButtonText": T('select none')},
 				{"sExtends": "text", "sButtonText": T('refresh'), "fnClick": 
@@ -397,7 +409,10 @@ function datatables_css()
 	div.DTTT_container.ui-buttonset {
 		margin-bottom:0px !important;
 	}
-	a#ToolTables_listview_table_2 {
+	a#ToolTables_listview_table_1 {
+		margin-right: 3px !important;
+	}
+	a#ToolTables_listview_table_4 {
 		margin-right: 3px !important;
 	}
 	div#listview_table_info {
@@ -945,6 +960,7 @@ function new_schema_window(title, cb_done, init_data)
 	var name_id = window_id+'_name';
 	var title_id = window_id+'_title';
 	var content_id = window_id+'_content';
+	var key_id = window_id+'_key';
 	var image_id = window_id+'_image';
 	var notify_id = window_id+'_notify';
 
@@ -957,6 +973,7 @@ function new_schema_window(title, cb_done, init_data)
 			'<tr><td align="right">'+T('name')+':</td><td><input type="text" id="'+name_id+'" /></td></tr>',
 			'<tr><td align="right">'+T('title')+':</td><td><input type="text" id="'+title_id+'" /></td></tr>',
 			'<tr><td align="right" style="vertical-align:top;">'+T('desc')+':</td><td><textarea id="'+content_id+'"></textarea></td></tr>',
+			'<tr><td align="right">'+T('seckey')+':</td><td><input type="text" id="'+key_id+'" /></td></tr>',
 			'<tr><td align="right">'+T('image')+':</td><td><input type="text" id="'+image_id+'" /></td></tr>',
                     '</table></div>',
                     '<div>',
@@ -976,14 +993,21 @@ function new_schema_window(title, cb_done, init_data)
 				$('#'+name_id).jqxInput({width:300, height: 25});
 				$('#'+title_id).jqxInput({width:300, height: 25});
 				$('#'+content_id).jqxInput({width:300, height: 50});
+				$('#'+key_id).jqxInput({width:300, height: 25});
 				$('#'+image_id).jqxInput({width:300, height: 25});
 
 				if (init_data) {
+					if (!init_data.hasOwnProperty('key') || (init_data.key == '') || (!init_data.key)) {
+						init_data.key = rank_str();
+					}
 					$('#'+name_id).val(init_data.name);
 					$('#'+title_id).val(init_data.title);
 					$('#'+content_id).val(init_data.content);
+					$('#'+key_id).val(init_data.key);
 					$('#'+image_id).val(init_data.image);
 					$('#'+notify_id).text(init_data.notify);
+				} else {
+					$('#'+key_id).val(rank_str());
 				}
 
 				$('#'+ok_id).jqxButton({width: 65, height:35});
@@ -994,6 +1018,7 @@ function new_schema_window(title, cb_done, init_data)
 					var d_name = $('#'+name_id).jqxInput('val');
 					var d_title = $('#'+title_id).jqxInput('val');
 					var d_content = $('#'+content_id).jqxInput('val');
+					var d_key = $('#'+key_id).jqxInput('val');
 					var d_image = $('#'+image_id).jqxInput('val');
 
 					if ((d_title==='')||(d_content==='')||(d_image==='')) {
@@ -1001,6 +1026,7 @@ function new_schema_window(title, cb_done, init_data)
 							'name': d_name,
 							'title': d_title,
 							'content': d_content,
+							'key': d_key,
 							'image': d_image,
 							'notify': T('Don\'t leave it blank please.')
 						};
@@ -1011,6 +1037,7 @@ function new_schema_window(title, cb_done, init_data)
 						'name': d_name,
 						'title': d_title,
 						'content': d_content,
+						'key': d_key,
 						'image': d_image
 					});
 
@@ -1095,6 +1122,16 @@ function addItem_jqxInput_time(p, init_val, source, height, width)
 	$('#'+field_id).jqxInput({disabled: true});
 }
 
+
+function addItem_jqxInput_text_json(p, init_val, source, height, width)
+{
+	if (!init_val) {
+		init_val = {};
+	}
+	init_val = json_encode(init_val);
+	return addItem_jqxInput_text(p, init_val, source, height, width);
+}
+
 function addItem_jqxInput_text(p, init_val, source, height, width)
 {
 	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
@@ -1123,6 +1160,15 @@ function addItem_jqxInput(p, init_val, source, height, width)
 	if (init_val) {
 		$('#'+field_id).val(init_val);
 	}
+}
+
+function getval_jqxInput_text_json(p)
+{
+	var res = getval_jqxInput(p);
+	if (res === '') {
+		return {};
+	}
+	return json_decode(res);
 }
 
 function getval_jqxInput_id(p){return getval_jqxInput(p);}
@@ -1798,4 +1844,169 @@ function check_cookie()
 	}
 }
 
+function mk_guid()
+{
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+			var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+			return v.toString(16);
+			});
+}
+
+function rank_str()
+{
+	var guid = mk_guid();
+	return guid.replace(/-/g, '');
+}
+
+function json_encode (mixed_val) 
+{
+	// *        example 1: json_encode(['e', {pluribus: 'unum'}]);
+	// *        returns 1: '[\n    "e",\n    {\n    "pluribus": "unum"\n}\n]'
+	var retVal, json = this.window.JSON;
+	try {
+		if (typeof json === 'object' && typeof json.stringify === 'function') {
+			retVal = json.stringify(mixed_val); // Errors will not be caught here if our own equivalent to resource
+			//  (an instance of PHPJS_Resource) is used
+			if (retVal === undefined) {
+				throw new SyntaxError('json_encode');
+			}
+			return retVal;
+		}
+
+		var value = mixed_val;
+		var quote = function (string) {
+			var escapable = /[\\\"\u0000-\u001f\u007f-\u009f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
+			var meta = { // table of character substitutions
+				'\b': '\\b',
+				'\t': '\\t',
+				'\n': '\\n',
+				'\f': '\\f',
+				'\r': '\\r',
+				'"': '\\"',
+				'\\': '\\\\'
+			};
+
+			escapable.lastIndex = 0;
+			return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
+					var c = meta[a];
+					return typeof c === 'string' ? c : '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+			}) + '"' : '"' + string + '"';
+		};
+
+		var str = function (key, holder) {
+			var gap = '';
+			var indent = '    ';
+			var i = 0; // The loop counter.
+			var k = ''; // The member key.
+			var v = ''; // The member value.
+			var length = 0;
+			var mind = gap;
+			var partial = [];
+			var value = holder[key];
+
+			// If the value has a toJSON method, call it to obtain a replacement value.
+			if (value && typeof value === 'object' && typeof value.toJSON === 'function') {
+				value = value.toJSON(key);
+			}
+
+			// What happens next depends on the value's type.
+			switch (typeof value) {
+				case 'string':
+					return quote(value);
+
+				case 'number':
+					return isFinite(value) ? String(value) : 'null';
+
+				case 'boolean':
+				case 'null':
+					return String(value);
+
+				case 'object':
+					if (!value) {
+						return 'null';
+					}
+					if ((this.PHPJS_Resource && value instanceof this.PHPJS_Resource) || (window.PHPJS_Resource && value instanceof window.PHPJS_Resource)) {
+						throw new SyntaxError('json_encode');
+					}
+					gap += indent;
+					partial = [];
+					if (Object.prototype.toString.apply(value) === '[object Array]') {
+						length = value.length;
+						for (i = 0; i < length; i += 1) {
+							partial[i] = str(i, value) || 'null';
+						}
+						v = partial.length === 0 ? '[]' : gap ? '[\n' + gap + partial.join(',\n'+gap)+'\n'+mind+']' : '['+partial.join(',')+']';
+						gap = mind;
+						return v;
+					}
+
+					for (k in value) {
+						if (Object.hasOwnProperty.call(value, k)) {
+							v = str(k, value);
+							if (v) {
+								partial.push(quote(k) + (gap ? ': ' : ':') + v);
+							}
+						}
+					}
+					v = partial.length === 0 ? '{}' : gap ? '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}' : '{' + partial.join(',') + '}';
+					gap = mind;
+					return v;
+				case 'undefined': // Fall-through
+				case 'function': // Fall-through
+				default: throw new SyntaxError('json_encode');
+			}
+		};
+		return str('', {'': value});
+
+	} catch (err) { // Todo: ensure error handling above throws a SyntaxError in all cases where it could
+		if (!(err instanceof SyntaxError)) {
+			throw new Error('Unexpected error type in json_encode()');
+		}
+		this.php_js = this.php_js || {};
+		this.php_js.last_error_json = 4; // usable by json_last_error()
+		return null;
+	}
+}
+
+function json_decode (str_json) 
+{
+	// *        example 1: json_decode('[\n    "e",\n    {\n    "pluribus": "unum"\n}\n]');
+	// *        returns 1: ['e', {pluribus: 'unum'}]
+	var json = this.window.JSON;
+	if (typeof json === 'object' && typeof json.parse === 'function') {
+		try {
+			return json.parse(str_json);
+		} catch (err) {
+			if (!(err instanceof SyntaxError)) {
+				throw new Error('Unexpected error type in json_decode()');
+			}
+			this.php_js = this.php_js || {};
+			this.php_js.last_error_json = 4; // usable by json_last_error()
+			return null;
+		}
+	}
+
+	var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g;
+	var j;
+	var text = str_json;
+
+	cx.lastIndex = 0;
+	if (cx.test(text)) {
+		text = text.replace(cx, function (a) {
+				return '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+				});
+	}
+
+	if ((/^[\],:{}\s]*$/).
+			test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@').
+			replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']').
+			replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
+		j = eval('(' + text + ')');
+		return j;
+	}
+
+	this.php_js = this.php_js || {};
+	this.php_js.last_error_json = 4; // usable by json_last_error()
+	return null;
+}
 
