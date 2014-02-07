@@ -2,7 +2,7 @@
 
 $log_db_name = null;
 $log_table_name = null;
-$log_apikey = null;
+$log_apikey = '';
 $log_ident = null;
 $log_facility = null;
 
@@ -10,14 +10,15 @@ $log_domain = 'log.hqh.me';
 $log_host = '120.31.130.152';
 $log_port = '80';
 
-function jsondb_logger_init($db_name, $table_name, $apikey, $ident, $facility)
+function jsondb_logger_init($ident, $facility, $db_name=null, $table_name=null, $apikey=null)
 {
 	global $log_db_name, $log_table_name, $log_apikey, $log_ident, $log_facility;
-	$log_db_name = $db_name;
-	$log_table_name = $table_name;
-	$log_apikey = $apikey;
 	$log_ident = $ident;
 	$log_facility = $facility;
+
+	$db_name && ($log_db_name = $db_name);
+	$table_name && ($log_table_name = $table_name);
+	$apikey && ($log_apikey = $apikey);
 }
 
 function jsondb_logger_server($domain, $host, $port)
@@ -32,6 +33,10 @@ function jsondb_logger($priority, $message)
 {
 	global $log_db_name, $log_table_name, $log_apikey, $log_ident, $log_facility;
 	global $log_host, $log_domain, $log_port;
+
+	$invalid = false;
+	empty($log_db_name) && empty($log_table_name) && ($invalid = true);
+	if ($invalid) return 'null';
 
 	$log_url = 'http://'.$log_host.':'.$log_port.'/service/log/write.php';
         $headers = ['Content-Type: multipart/form-data; charset=utf-8'];

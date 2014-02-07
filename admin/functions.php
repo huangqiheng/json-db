@@ -211,7 +211,7 @@ function append_new_data($db_name, $table_name, $data)
 		return ['status'=>'error', 'error'=>'req data error'];
 	}
 
-	$new_id = get_random_id();
+	$new_id = get_random_id($db_name, $table_name);
 	if (!set_data_id($data, $new_id)) {
 		return ['status'=>'error', 'error'=>'no id field'];
 	}
@@ -240,23 +240,34 @@ function append_listview_json($file_name, $item)
 	sem_acquire($mutex);
 
 	$fh = fopen($file_name, 'r+');
-	fseek($fh, -4, SEEK_END);
-	$read_str = fread($fh, 4);
-	$found_index = 0;
-	for($i=strlen($read_str)-1; $i>=0; $i--) {
-		if ($read_str[$i] === ']') {
-			$found_index = $i;
-			break;
+	$read_len = 8;
+	fseek($fh, -$read_len, SEEK_END);
+	$read_str = fread($fh, $read_len);
+
+	$seek_option = SEEK_END;
+	$seek_posi = null;
+	$cmp_str = preg_replace('/\s+/m', '', $read_str);
+
+	if ($cmp_str === '[]') {
+		$item_str = '['.json_encode($item) . ']';
+		$seek_option = SEEK_SET;
+		$seek_posi = 0;
+	} else {
+		for($i=strlen($read_str)-1; $i>=0; $i--) {
+			if ($read_str[$i] === ']') {
+				$seek_posi = $i - strlen($read_str);
+				break;
+			}
 		}
 	}
 
-	if ($found_index === 0) {
+	if ($seek_posi === null) {
 		fclose($fh);
 		sem_release($mutex);
 		return;
 	}
 
-	fseek($fh, $found_index-4, SEEK_END);
+	fseek($fh, $seek_posi, $seek_option);
 	fwrite($fh, $item_str);
 	fclose($fh);
 
@@ -275,7 +286,7 @@ function create_new_data($db_name, $table_name, $data)
 		return ['status'=>'error', 'error'=>'req data error'];
 	}
 
-	$new_id = get_random_id();
+	$new_id = get_random_id($db_name, $table_name);
 	if (!set_data_id($data, $new_id)) {
 		return ['status'=>'error', 'error'=>'no id field'];
 	}
@@ -830,28 +841,33 @@ function get_basetime()
 	return mktime(0,0,0,7,21,2012);
 }
 
-function _get_random_id()
+function get_random_id($db_name, $table_name)
 {
-        $mutex = sem_get(ftok($_SERVER['SCRIPT_FILENAME'], 'r'), 1);
-	sem_acquire($mutex);
-	sem_release($mutex);
-}
+	$table_root = table_root($db_name, $table_name);
+	$maxid_file = "{$table_root}/maxid.json";
+	$schema_file = "{$table_root}/schema.json";
 
-function get_random_id()
-{
-	$ran_val = time()-get_basetime();
-	return strval($ran_val);
+        $mutex = sem_get(ftok($schema_file, 'r'), 1);
+	sem_acquire($mutex);
+
+	($max_id = file_get_contents($maxid_file)) || ($max_id = 0);
+	$ran_val = intval((microtime(true)-get_basetime()) * 1000);
+	$res_val = ($ran_val > $max_id)? $ran_val : ++$max_id;
+	file_put_contents($maxid_file, $res_val);
+
+	sem_release($mutex);
+	return $res_val;
 }
 
 function get_selected_db()
 {
-	return [get_param('db', 'default'), get_param('table', 'default'), get_param('id', get_random_id())];
+	return [get_param('db', 'default'), get_param('table', 'default')];
 }
 
 function json_file($file_name)
 {
 	do {
-		list($database,$table,$id) = get_selected_db();
+		list($database,$table) = get_selected_db();
 		$full_name = dbs_path()."/{$database}/{$table}/{$file_name}";
 		if (!file_exists($full_name)) {
 			break;

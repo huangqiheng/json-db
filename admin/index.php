@@ -127,8 +127,8 @@ function jsondb_main()
 		$('#table_captions').jqxDropDownList({disabled: true});
 	}
 
-	$('#refresh_btn').jqxButton({width: 30, height: 25});
-	$('#config_btn').jqxButton({width: 30, height: 25});
+	$('#refresh_btn').jqxButton({width: 32, height: 27});
+	$('#config_btn').jqxButton({width: 32, height: 27});
 	$('#user_info').html('<span>'+T('Hello')+' "'+env.username+'", '+T('you can')+' </span><a href="'+env.logout+'" style="color:red;">'+T('Logout')+'</a>');
 
 	$('#refresh_btn').on('click', function(e){
