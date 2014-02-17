@@ -6,9 +6,9 @@ json-db
 
 TODO
 =======
-		. 周期自动备份
-		. 管理端的导出和导入
-		. 对key等特殊字段的加密。
+	. 周期自动备份
+	. 管理端的导出和导入
+	. 对key等特殊字段的加密。
 
 nginx 配置
 ======
@@ -50,4 +50,13 @@ nginx 配置
 			fastcgi_pass unix:/var/run/php5-fpm.sock;
 		}
 	}
+```
+
+配置目录权限
+======
+```
+cd /srv/http/json-db
+chown www-data:www-data ./databases -R
+chown www-data:www-data ./admin/uploads -R
+chown www-data:www-data ./service/queue/cache -R
 ```
