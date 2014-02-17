@@ -810,7 +810,7 @@ function refresh_listview(db_name, table_name)
 	<div id="config_btn" style="float:left; padding:0px"><img height="25" width="25" src="images/setting.png"/></div>
 	<div id="user_info" style="float:right; padding:4px; color: white;"></div>
 </td></tr><tr><td>
-	<div id="listview" style="width:100%%;"></div>
+	<div id="listview" style="width:100%;"></div>
 </td></tr>
 </table>
 </body></html>
