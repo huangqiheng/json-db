@@ -10,7 +10,7 @@ $log_domain = 'log.hqh.me';
 $log_host = '120.31.130.152';
 $log_port = '80';
 
-function jsondb_logger_init($ident, $facility, $db_name=null, $table_name=null, $apikey=null)
+function jsondb_logger_init($facility, $ident, $db_name=null, $table_name=null, $apikey=null)
 {
 	global $log_db_name, $log_table_name, $log_apikey, $log_ident, $log_facility;
 	$log_ident = $ident;
@@ -29,7 +29,7 @@ function jsondb_logger_server($domain, $host, $port)
 	$log_port = $port;
 }
 
-function jsondb_logger($priority, $message)
+function jsondb_logger($priority, $msg_title, $msg_data=null)
 {
 	global $log_db_name, $log_table_name, $log_apikey, $log_ident, $log_facility;
 	global $log_host, $log_domain, $log_port;
@@ -55,7 +55,8 @@ function jsondb_logger($priority, $message)
 				'ident' => $log_ident,
 				'facility' => $log_facility,
 				'priority'=> $priority,
-				'message' => $message
+                                'title' => $msg_title,
+                                'data' => $msg_data
 			]
 		]
 	];

@@ -46,7 +46,6 @@ function edit_data_window(title, input, cb_done)
 		$('#'+notify_id).text(msg);
 	};
 
-	init_component();
 
 	var win_count = $('.'+this_windows_class).length;
 
@@ -60,6 +59,7 @@ function edit_data_window(title, input, cb_done)
 			showCollapseButton: false,
 			showCloseButton: false,
 			cancelButton: $('#'+no_id),
+			initContent: init_component
 	});
 
 	$('#'+window_id).on('close', function (event) {  
@@ -187,7 +187,7 @@ function edit_data_window(title, input, cb_done)
 				if (field_value === 'jqxComboBox') 		{addItem_jqxComboBox(p, init_val, option_val);continue;}
 				if (field_value === 'jqxNumberInput-size') 	{addItem_jqxNumberInput(p, init_val, 2,' MB');continue;}
 				if (field_value === 'jqxNumberInput-price') 	{addItem_jqxNumberInput(p, init_val, 2);continue;}
-				if (field_value === 'jqxDateTimeInput') {addItem_jqxDateTimeInput(p, init_val);continue;}
+				if (field_value === 'jqxDateTimeInput') 	{addItem_jqxDateTimeInput(p, init_val);continue;}
 
 				if (field_value === 'jqxInput-share') 		{addItem_jqxInput(p, init_val);continue;}
 				if (field_value === 'jqxInput-text-share')	{addItem_jqxInput_text(p, init_val);continue;}
@@ -1751,6 +1751,7 @@ function addItem_jqxDateTimeInput(p, init_val, height, width)
 	width = width || 200; height = height || 25;
 	$('#'+table_id).append(['<tr><td align="right">'+caption+': </td>',
 		'<td align="left"><div id="'+field_id+'"></div></td></tr>'].join(''));
+
 	$('#'+field_id).jqxDateTimeInput({culture:'zh-CN', formatString: 'D', width:width, height:height});
 	if (init_val) {
 		$('#'+field_id).jqxDateTimeInput('setDate', init_val);

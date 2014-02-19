@@ -25,7 +25,7 @@ $init_table = get_param('table', 'default');
 
 
 <!--加载jquery-->
-<script type="text/javascript" language="javascript" src="client/jquery/jquery-2.0.3.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/jquery/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/jquery/md5.min.js"></script>
 
 <!--加载gritter-->
