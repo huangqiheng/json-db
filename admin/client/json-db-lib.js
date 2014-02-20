@@ -700,6 +700,10 @@ function edit_fields_windows(title, input, cb_done)
 					$('#'+name_id).jqxInput({disabled:true});
 					$('#'+type_id).jqxDropDownList({disabled:true});
 				}
+				if (item.label==='CREATE') {
+					$('#'+name_id).jqxInput({disabled:true});
+					$('#'+type_id).jqxDropDownList({disabled:true});
+				}
 			}
 		});
 
@@ -834,6 +838,7 @@ function edit_fields_windows(title, input, cb_done)
 			if (item === null){return;}
 			if (item.label === 'ID'){return;}
 			if (item.label === 'TIME'){return;}
+			if (item.label === 'CREATE'){return;}
 			$('#'+list_id).jqxTree('removeItem', item.element);
 		}
 
@@ -1118,6 +1123,12 @@ function addItem_jqxInput_time(p, init_val, source, height, width)
 	if (caption === 'TIME') {
 		init_val = new Date().toUTCString();
 	}
+	if (caption === 'CREATE') {
+		if (!init_val) {
+			init_val = new Date().toUTCString();
+		}
+	}
+
 	addItem_jqxInput(p, init_val, source, height, width);
 	$('#'+field_id).jqxInput({disabled: true});
 }
@@ -1244,7 +1255,8 @@ function render_onebox_id(data, finish)
 				image: d.image,
 				url: d.ori_url,
 				id: d.ID,
-				time: d.update_time
+				time: d.update_time,
+				ctime: d.create_time
 			};
 
 			data.push(html);
@@ -1269,7 +1281,8 @@ function render_onebox_url(data, finish)
 				image: d.image,
 				url: d.ori_url,
 				id: d.ID,
-				time: d.update_time
+				time: d.update_time,
+				ctime: d.create_time
 			};
 
 			data.push(html);

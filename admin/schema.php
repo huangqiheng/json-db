@@ -142,6 +142,7 @@ function create_table_exit($req)
 	$fields = [];
 	$general = [];
 	$general['ID'] = 'jqxInput-id';
+	$general['CREATE'] = 'jqxInput-time';
 	$general['TIME'] = 'jqxInput-time';
         $general['Name'] = 'jqxInput-name';
 	$fields['general'] = $general;

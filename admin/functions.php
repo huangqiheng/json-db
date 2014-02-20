@@ -28,6 +28,12 @@ function items_exit()
 		jsonp_nocache_exit(['status'=>'error', 'error'=>'no id field']);
 	}
 
+/*
+	if (!array_key_exists('CREATE', $merged_data)) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'no create time field']);
+	}
+*/
+
 	if (!array_key_exists('TIME', $merged_data)) {
 		jsonp_nocache_exit(['status'=>'error', 'error'=>'no time field']);
 	}
@@ -136,6 +142,11 @@ function onebox_object($schema, $data_file, $data=null)
 		$ob_time = format_time($ob_time);
 	}
 
+	$ob_ctime = @$res_obj['CREATE'];
+	if ($ob_ctime) {
+		$ob_ctime= format_time($ob_ctime);
+	}
+
 	$file_uri = substr($data_file, strlen($_SERVER['DOCUMENT_ROOT']));
 	$file_uri = preg_replace('/\/'.$_SERVER['HTTP_HOST'].'/i', '', $file_uri);
 	$file_uri = $http_prefix.$file_uri;
@@ -147,6 +158,7 @@ function onebox_object($schema, $data_file, $data=null)
 	$result['url'] = $file_uri;
 	$result['id'] = intval($res_obj['ID']);;
 	$result['time'] = $ob_time;
+	$result['ctime'] = $ob_ctime;
 	return $result;
 }
 
@@ -939,9 +951,15 @@ function gm_date($time)
         return gmdate('D, d M Y H:i:s \G\M\T', $time);
 }
 
+function __strtotime($time_str)
+{
+	$time_str = preg_replace('/中国标准时间/', 'CST', $time_str);
+	return strtotime($time_str);
+}
+
 function format_time($time_str)
 {
-	return gm_date(strtotime($time_str));
+	return gm_date(__strtotime($time_str));
 }
 
 function jsonp($data)

@@ -48,6 +48,7 @@ $res['ID'] 	= $onebox['id'];
 $res['title'] 	= $onebox['title'];
 $res['image'] 	= $onebox['image'];
 $res['update_time'] = $onebox['time'];
+$res['create_time'] = $onebox['ctime'];
 $res['description'] = $onebox['desc'];
 
 $res_type = @$req['type'];
