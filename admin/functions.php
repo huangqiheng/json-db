@@ -107,24 +107,30 @@ function api_valid($db_name, $table_name, $apikey)
 	return in_array($apikey, $valid_keys);
 }
 
-function onebox_object($schema, $data_file, $data=null)
+function get_onebox_keys($schema)
 {
-	$http_prefix = 'http://'.$_SERVER['HTTP_HOST'];
+	global $mapper_types;
 	$onebox = @$schema['onebox'];
 	$key_title = @$onebox['title'];
-	$key_desc = @$onebox['desc'];
-	$key_image = @$onebox['image'];
 	$key_title || $key_title = 'ID';
+	$key_desc = @$onebox['desc'];
+
 	if (empty($key_desc)) {
 		foreach(merge_fields($schema['fields']) as $key=>$type) {
 			if (in_array($type, $mapper_types)) {
-				$key_title = $key;
+				$key_desc = $key;
 				break;
 			}
 		}
 	}
 
-	$data || $data = object_read($data_file);
+	return [$key_title, $key_desc, @$onebox['image']];
+}
+
+function get_onebox_data($schema, $data)
+{
+	list($key_title, $key_desc, $key_image) = get_onebox_keys($schema);
+
 	$res_obj = merge_fields($data);
 
 	$ob_title = $res_obj[$key_title];
@@ -132,11 +138,30 @@ function onebox_object($schema, $data_file, $data=null)
 	if (!empty($key_desc)) {
 		$ob_desc = $res_obj[$key_desc];
 	}
-	$ob_image = $http_prefix.$schema['caption']['image'];
+
+	if (is_array($ob_desc)) {
+		$ob_desc = implode(', ', $ob_desc);
+	}
+
+	$ob_image = $schema['caption']['image'];
 	if (!empty($key_image)) {
 		$ob_image = $res_obj[$key_image];
 	}
+	return [$ob_title, $ob_desc, $ob_image];
+}
 
+function onebox_object($schema, $data_file, $data=null)
+{
+	$data || $data = object_read($data_file);
+
+	$http_prefix = 'http://'.$_SERVER['HTTP_HOST'];
+	list($ob_title, $ob_desc, $ob_image) = get_onebox_data($schema, $data);
+
+	if ($ob_image[0] === '/') {
+		$ob_image = $http_prefix.$ob_image;
+	}
+
+	$res_obj = merge_fields($data);
 	$ob_time = @$res_obj['TIME'];
 	if ($ob_time) {
 		$ob_time = format_time($ob_time);
@@ -699,6 +724,10 @@ function object_save($filename, $data)
 
 function object_read($filename)
 {
+	if (preg_match('#^https?://#i', $filename)) {
+		return object_read_url($filename);
+	}
+	
 	if (!file_exists($filename)) {
 		return [];
 	}
@@ -708,6 +737,27 @@ function object_read($filename)
 		return [];
 	}
 	return json_decode($data_str, true);
+}
+
+function object_read_url($req_url)
+{
+	$res = curl_get_content($req_url);
+
+	if (empty($res)) {
+		return [];
+	}
+
+	$res = preg_replace( '/[^[:print:]]/', '',$res);
+	$res = preg_replace( '/[\s]+/', '',$res);
+	preg_match("#{[\s]*\".*[\s]*}#ui", $res, $mm);
+
+	$res_body = @$mm[0];
+
+	if (empty($res_body)) {
+		return [];
+	}
+
+	return json_decode($res_body, true);
 }
 
 function prety_json($obj)

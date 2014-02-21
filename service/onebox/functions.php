@@ -26,7 +26,57 @@ function get_onebox_url($req_url)
 	if ($res_obj = process_itunes_url($req_url)) {return $res_obj;}
 	if ($res_obj = process_appgame_url($req_url)) {return $res_obj;}
 	if ($res_obj = process_bbs_appgame_url($req_url)) {return $res_obj;}
+	if ($res_obj = process_jsondb_url($req_url)) {return $res_obj;}
 	return false;
+}
+
+function process_jsondb_url($req_url)
+{
+	//http://db.appgame.com/databases/db_name/table_name/12345678.json
+	preg_match('#^((https?://[\S]+)/databases/[\S]+/[\S]+/)[\d]+\.json$#i', $req_url, $matches);
+
+	if ($matches == null) {
+		return false;
+	}
+
+	$data_url = $matches[0];
+	$schema_url = $matches[1].'schema.json';
+	$http_prefix = $matches[2];
+
+	$schema = object_read($schema_url);
+	$data = object_read($data_url);
+
+	if (empty($schema) || empty($data)) {
+		return false;
+	}
+
+	list($ob_title, $ob_desc, $ob_image) = get_onebox_data($schema, $data);
+
+	if (@$ob_image[0] === '/') {
+		$ob_image = $http_prefix.$ob_image;
+	}
+
+	$res_obj = merge_fields($data);
+	$utime = format_time(@$res_obj['TIME']);
+	$ctime = @$res_obj['CREATE'];
+	if (empty($ctime)) {
+		$ctime = $utime;
+	} else {
+		$ctime = format_time($ctime);
+	}
+
+	$res = array();
+	$res['provider_name'] = '任玩堂';
+	$res['provider_url'] = 'http://www.appgame.com/';
+	$res['favicon_url'] = 'http://www.appgame.com/favicon.ico';
+	$res['ori_url'] = $data_url;
+	$res['title'] = $ob_title;
+	$res['image'] = $ob_image;
+	$res['ID'] = intval($res_obj['ID']);
+	$res['update_time'] = $utime;
+	$res['create_time'] = $ctime;
+	$res['description'] = strip_tags(trim($ob_desc));
+	return $res;
 }
 
 function process_bbs_appgame_url($req_url)
@@ -76,7 +126,7 @@ function process_bbs_appgame_url($req_url)
 	$res['title'] = $title;
 	$res['image'] = $user_img;
 	$res['ID'] = intval($pid);
-	$res['description'] = $content;
+	$res['description'] = trim($content);
 	$res['update_time'] = format_time($time_str);
 	$res['create_time'] = $res['update_time'];
 	return $res;
@@ -102,6 +152,7 @@ function dom_to_html($node)
 	$doc->appendChild($doc->importNode($node,true));
 	return mb_convert_encoding($doc->saveHTML(),'UTF-8','HTML-ENTITIES');
 }
+
 
 function process_appgame_url($req_url)
 {
@@ -142,7 +193,7 @@ function process_appgame_url($req_url)
 	$res['ID'] = $res_obj['post']['id'];
 	$res['update_time'] = format_time($res_obj['post']['modified']);
 	$res['create_time'] = format_time($res_obj['post']['date']);
-	$res['description'] = strip_tags($res_obj['post']['excerpt']);
+	$res['description'] = strip_tags(trim($res_obj['post']['excerpt']));
 	return $res;
 }
 
@@ -186,7 +237,7 @@ function process_itunes_url($req_url)
 	$res['create_time'] = $res['update_time'];
 	$res['image'] = $app_logo;
 	$res['ID'] = intval($appid);
-	$res['description'] = $res_obj['description'];
+	$res['description'] = trim($res_obj['description']);
 
 	return $res;
 }

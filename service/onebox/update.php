@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+header( 'Content-type: text/html; charset=utf-8' );
 
 $req = get_param();
 list($db_name,$table_name,$apikey) = null_exit($req,'db_name','table_name','apikey');
@@ -12,13 +13,15 @@ $fields = $schema['fields'];
 $onebox_url_routes = [];
 foreach($fields as $group_name=>$group_data) {
 	foreach($group_data as $field_name=>$field_type) {
-		if (preg_match('/^jqxListBox-onebox-url/i', $field_type)) {
+		if (preg_match('/^jqxListBox-onebox/i', $field_type)) {
 			$onebox_url_routes[] = [$group_name, $field_name];
 		}
 	}
 }
 
-$changed_urls = [];
+$counter_changed = 0;
+$counter_constant = 0;
+$counter_all = 0;
 
 foreach(glob("{$table_path}/*.json") as $file) {
 	if (is_dir($file)) {continue;}
@@ -28,6 +31,11 @@ foreach(glob("{$table_path}/*.json") as $file) {
 	$data_obj = object_read($file);
 	if (empty($data_obj)) {continue;}
 
+	$counter_file_changed = 0;
+	$counter_all++;
+
+	echo '<h2>'.$file.'</h2>';
+
 	foreach($onebox_url_routes as $route) {
 		$oneboxs = @$data_obj[$route[0]][$route[1]];
 		if (empty($oneboxs)) {
@@ -36,7 +44,23 @@ foreach(glob("{$table_path}/*.json") as $file) {
 		$new_oneboxs = [];
 		foreach($oneboxs as $onebox) {
 			$url = $onebox['url'];
+			if (empty($url)) continue;
+
 			$res_obj = get_onebox_url($url);
+
+			if (!isset($onebox['time'])) {
+				$onebox['time'] = gm_date(time());
+			}
+
+			$ctime_str = @$onebox['ctime'];
+			if (empty($ctime_str)) {
+				$ctime_str = $onebox['time'];
+			}
+
+			$new_ctime = __strtotime($res_obj['create_time']);
+			$ori_ctime = __strtotime($ctime_str);
+			$ctime = gm_date(min($new_ctime, $ori_ctime));
+
 			$new_onebox = [];
 			$new_onebox['title'] = $res_obj['title'];
 			$new_onebox['desc'] = $res_obj['description'];
@@ -44,30 +68,36 @@ foreach(glob("{$table_path}/*.json") as $file) {
 			$new_onebox['url'] = $res_obj['ori_url'];
 			$new_onebox['id'] = $res_obj['ID'];
 			$new_onebox['time'] = $res_obj['update_time'];
-			$new_onebox['ctime'] = $res_obj['create_time'];
+			$new_onebox['ctime'] = $ctime;
 			$new_oneboxs[] = $new_onebox;
 
-			if (!same_onebox($new_onebox, $onebox)) {
-				$changed_urls[] = $url;
+			$same_onebox = true;
+			foreach($new_onebox as $key=>$val) {
+				if ($val !== @$onebox[$key]) {
+					$same_onebox = false;
+					break;
+				}
+			}
+
+			if ($same_onebox) {
+				$counter_constant++;
+				echo '<span>'.$url.' ok.</span><br>';
+			} else {
+				$counter_changed++;
+				$counter_file_changed++;
+				echo '<span>'.$url.'  updated!</span><br>';
 			}
 		}
 
 		$data_obj[$route[0]][$route[1]] = $new_oneboxs;
 	}
 
-	object_save($file, $data_obj);
-}
 
-jsonp_nocache_exit($changed_urls); 
-
-function same_onebox($a_onebox, $b_onebox)
-{
-	foreach($a_onebox as $key=>$val) {
-		if ($val !== @$b_onebox[$key]) {
-			return false;
-		}
+	if ($counter_file_changed > 0) {
+		echo '<span>save '.$file.'</span><br>';
+		object_save($file, $data_obj);
 	}
-	return true;
 }
 
+echo '<span>total: '.($counter_all).' (constant: '.$counter_constant.'/ changed: '.$counter_changed.')</span>';
 
