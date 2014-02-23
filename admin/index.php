@@ -226,7 +226,7 @@ function jsondb_main()
 		return '<table style="border:none; border-spacing:0px; font-size:12;"><tr>'+
 			'<td><img height="16" width="16" src="'+image+'"/></td>'+
 			'<td>x'+ counter +'&nbsp;</td>'+
-			'<td>'+ label+ '</td>'+
+			'<td>'+ label+ '</td><td id="counter_table_datas"></td>'+
 			'</tr></table>';
 	}
 
@@ -235,13 +235,13 @@ function jsondb_main()
 		var datarecord = data[index];
 		if (is_operate_item(value)) {
 			var img = '<img height="25" width="25" src="' + datarecord.image+ '"/>';
-			var table = '<table style="max-width: '+(this.width-10)+'px; font-size:12; border-spacing:0px;"><tr><td>' + img + 
+			var table = '<table style="max-width: '+(this.width-10)+'px;font-size:12; border-spacing:0px;"><tr><td>' + img + 
 				'</td><td><strong>' + datarecord.title +'</strong></td></tr></table>';
 
 		} else {
 			var img = '<img height="55" width="55" src="' + datarecord.image+ '"/>';
-			var table = '<table style="max-width: '+(this.width-10)+'px; font-size:12; border-spacing:0px;"><tr><td style="width: 70px;" rowspan="2">' + img + 
-				'</td><td><strong>' + datarecord.title +'</strong></td></tr><tr><td>' + datarecord.content+ '</td></tr></table>';
+			var table = '<table style="max-width: '+(this.width-10)+'px; width:100%; font-size:12; border-spacing:0px; background-image: url(/admin/images/gradient_grey.png);background-position-y: -75px;"><tr><td style="width: 70px;" rowspan="2">' + img + 
+				'</td><td><strong>' + datarecord.title+'('+datarecord.name+')'+'</strong></td></tr><tr><td style="color:gray;">' + datarecord.content+ '</td></tr></table>';
 		}
 		return table;
 	}
@@ -778,7 +778,7 @@ function refresh_listview(db_name, table_name)
 						item_ready(old_data, options);
 					});
 				}
-			}
+			};
 
 			var opt_url = get_url(db_name, table_name, 'options.json');
 			json(opt_url, get_items_data, function(d){
@@ -787,10 +787,19 @@ function refresh_listview(db_name, table_name)
 
 		};
 
+		var set_records_counter=function(data) {
+			var counter_str = '('+data.length+T('records')+')';
+			$('#counter_table_datas').html('<div id="counter_datasize" style="text-align:right;">'+counter_str+'</div>');
+			var out_width = $('#counter_datasize').outerWidth();
+			$('#counter_datasize').css('width', out_width+10);
+		};
+
 		json(data_url, function(data){
 			datatables_new(listview_id, data, aoColumns, event);
+			set_records_counter(data);
 		}, function() {
 			datatables_new(listview_id, [], aoColumns, event);
+			set_records_counter(data);
 		});
 
 		set_cookie('init_db', db_name, 30);

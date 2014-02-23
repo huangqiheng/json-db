@@ -75,8 +75,11 @@ function edit_data_window(title, input, cb_done)
 		$('#'+ok_id).jqxButton({width: btn_width, height:23});
 		$('#'+no_id).jqxButton({width: btn_width, height:23});
 		$('#'+ok_id).on('click', function(e){
-			cb_done(grep_data());
-			$('#'+window_id).jqxWindow('close');
+			grep_data(function(new_data){
+			console.log('new data: '+new_data);
+				cb_done(new_data);
+				$('#'+window_id).jqxWindow('close');
+			});
 		});
 
 		$('#'+collapse_id).jqxButton({width: btn_width, height:23});
@@ -93,10 +96,13 @@ function edit_data_window(title, input, cb_done)
 		init_data_component();
 	}
 
-	function grep_data()
+	function grep_data(fn_done)
 	{
 		var res_data = {};
+		var name_fields = [];
+		var tab_index = -1;
 		for (var tab_name in fields) {
+			tab_index++;
 			res_data[tab_name] = {};
 			var val_obj = fields[tab_name];
 			var ids = get_tabtable_id(tabs_id, tab_name);
@@ -108,40 +114,58 @@ function edit_data_window(title, input, cb_done)
 				var res_val = '';
 
 				do{
-				if (field_value === 'jqxInput') 	   {res_val=getval_jqxInput(p);break;}
-				if (field_value === 'jqxInput-id') 	   {res_val=getval_jqxInput_id(p);break;}
-				if (field_value === 'jqxInput-time') 	   {res_val=getval_jqxInput_time(p);break;}
-				if (field_value === 'jqxInput-text') 	   {res_val=getval_jqxInput_text(p);break;}
+				if (field_value === 'jqxInput') 	   	   {res_val=getval_jqxInput(p);break;}
+				if (field_value === 'jqxInput-id') 	   	   {res_val=getval_jqxInput_id(p);break;}
+				if (field_value === 'jqxInput-time') 	   	   {res_val=getval_jqxInput_time(p);break;}
+				if (field_value === 'jqxInput-text') 	   	   {res_val=getval_jqxInput_text(p);break;}
 				if (field_value === 'jqxInput-text-json') 	   {res_val=getval_jqxInput_text_json(p);break;}
-				if (field_value === 'jqxInput-name') 	   {res_val=getval_jqxInput_name(p);break;}
-				if (field_value === 'jqxCheckBox')    	   {res_val=getval_jqxCheckBox(p);break;}
-				if (field_value === 'jqxRadioButton')	   {res_val=getval_jqxRadioButton(p);break;}
-				if (field_value === 'jqxListBox') 	   {res_val=getval_jqxListBox(p);break;}
-				if (field_value === 'jqxListBox-name') 	   {res_val=getval_jqxListBox_name(p);break;}
+				if (field_value === 'jqxInput-name') 	   	   {res_val=getval_jqxInput_name(p);break;}
+				if (field_value === 'jqxCheckBox')    	   	   {res_val=getval_jqxCheckBox(p);break;}
+				if (field_value === 'jqxRadioButton')	   	   {res_val=getval_jqxRadioButton(p);break;}
+				if (field_value === 'jqxListBox') 	   	   {res_val=getval_jqxListBox(p);break;}
+				if (field_value === 'jqxListBox-name') 	   	   {res_val=getval_jqxListBox_name(p);break;}
 				if (field_value === 'jqxListBox-onebox-url')  	   {res_val=getval_jqxListBox_onebox_url(p);break;}
 				if (field_value === 'jqxListBox-onebox-id')   	   {res_val=getval_jqxListBox_onebox_id(p);break;}
 				if (field_value === 'jqxListBox-onebox-id-same')   {res_val=getval_jqxListBox_onebox_id(p);break;}
-				if (field_value === 'jqxListBox-images')   	{res_val=getval_jqxListBox_images(p);break;}
-				if (field_value === 'jqxComboBox') 	   {res_val=getval_jqxComboBox(p);break;}
-				if (field_value === 'jqxNumberInput-size') {res_val=getval_jqxNumberInput(p);break;}
-				if (field_value === 'jqxNumberInput-price'){res_val=getval_jqxNumberInput(p);break;}
-				if (field_value === 'jqxDateTimeInput')    {res_val=getval_jqxDateTimeInput(p);break;}
+				if (field_value === 'jqxListBox-images')   	   {res_val=getval_jqxListBox_images(p);break;}
+				if (field_value === 'jqxComboBox') 	   	   {res_val=getval_jqxComboBox(p);break;}
+				if (field_value === 'jqxNumberInput-size') 	   {res_val=getval_jqxNumberInput(p);break;}
+				if (field_value === 'jqxNumberInput-price')	   {res_val=getval_jqxNumberInput(p);break;}
+				if (field_value === 'jqxDateTimeInput')    	   {res_val=getval_jqxDateTimeInput(p);break;}
 
-				if (field_value === 'jqxInput-share') 	   {res_val=getval_jqxInput(p);break;}
-				if (field_value === 'jqxInput-text-share') {res_val=getval_jqxInput_text(p);break;}
-				if (field_value === 'jqxInput-text-json-share') {res_val=getval_jqxInput_text_json(p);break;}
-				if (field_value === 'jqxCheckBox-share')   {res_val=getval_jqxCheckBox(p);break;}
-				if (field_value === 'jqxRadioButton-share'){res_val=getval_jqxRadioButton(p);break;}
-				if (field_value === 'jqxListBox-share')	   {res_val=getval_jqxListBox(p);break;}
+				if (field_value === 'jqxInput-share') 	   	   {res_val=getval_jqxInput(p);break;}
+				if (field_value === 'jqxInput-text-share') 	   {res_val=getval_jqxInput_text(p);break;}
+				if (field_value === 'jqxInput-text-json-share')    {res_val=getval_jqxInput_text_json(p);break;}
+				if (field_value === 'jqxCheckBox-share')   	   {res_val=getval_jqxCheckBox(p);break;}
+				if (field_value === 'jqxRadioButton-share')	   {res_val=getval_jqxRadioButton(p);break;}
+				if (field_value === 'jqxListBox-share')	   	   {res_val=getval_jqxListBox(p);break;}
 				if (field_value === 'jqxListBox-onebox-url-share') {res_val=getval_jqxListBox_onebox_url(p);break;}
 				if (field_value === 'jqxListBox-onebox-id-share')  {res_val=getval_jqxListBox_onebox_id(p);break;}
-				if (field_value === 'jqxListBox-images-share')  {res_val=getval_jqxListBox_images(p);break;}
-				if (field_value === 'jqxComboBox-share')   {res_val=getval_jqxComboBox(p);break;}
+				if (field_value === 'jqxListBox-images-share')     {res_val=getval_jqxListBox_images(p);break;}
+				if (field_value === 'jqxComboBox-share')   	   {res_val=getval_jqxComboBox(p);break;}
 				}while(false);
 				res_data[tab_name][field_name] = res_val;
+
+				if (field_value === 'jqxInput-name') {
+					name_fields.push([tab_index, field_id, res_val]);
+				}
 			}
 		}
-		return res_data;
+
+		if ((old_data===null) && (name_fields.length)) {
+			var name_attr = name_fields[0];
+			check_name_valid(name_attr[2], function(url){
+				if (url === null) {
+					fn_done(res_data);
+				} else {
+					$('#'+tabs_id).jqxTabs('select', name_attr[0]);
+					$('#'+name_attr[1]).select();
+					env.popup(T('ERROR'), T('The key name already exists.')+'<a target="blank" href="'+url+'">'+url+'</a>');
+				}
+			});
+		} else {
+			fn_done(res_data);
+		}
 	}
 
 	function init_data_component()
@@ -179,10 +203,10 @@ function edit_data_window(title, input, cb_done)
 				if (field_value === 'jqxCheckBox')      	{addItem_jqxCheckBox(p, init_val, option_val);continue;}
 				if (field_value === 'jqxRadioButton')   	{addItem_jqxRadioButton(p, init_val, option_val);continue;}
 				if (field_value === 'jqxListBox') 		{addItem_jqxListBox(p, init_val);continue;}
-				if (field_value === 'jqxListBox-name') 	{addItem_jqxListBox_name(p, init_val);continue;}
-				if (field_value === 'jqxListBox-onebox-url')	  	{addItem_jqxListBox_onebox_url(p, init_val);continue;}
-				if (field_value === 'jqxListBox-onebox-id')	  {addItem_jqxListBox_onebox_id(p, init_val);continue;}
-				if (field_value === 'jqxListBox-onebox-id-same')  {addItem_jqxListBox_onebox_id(p, init_val);continue;}
+				if (field_value === 'jqxListBox-name') 		{addItem_jqxListBox_name(p, init_val);continue;}
+				if (field_value === 'jqxListBox-onebox-url')	{addItem_jqxListBox_onebox_url(p, init_val);continue;}
+				if (field_value === 'jqxListBox-onebox-id')	{addItem_jqxListBox_onebox_id(p, init_val);continue;}
+				if (field_value === 'jqxListBox-onebox-id-same'){addItem_jqxListBox_onebox_id(p, init_val);continue;}
 				if (field_value === 'jqxListBox-images')	{addItem_jqxListBox_images(p, init_val);continue;}
 				if (field_value === 'jqxComboBox') 		{addItem_jqxComboBox(p, init_val, option_val);continue;}
 				if (field_value === 'jqxNumberInput-size') 	{addItem_jqxNumberInput(p, init_val, 2,' MB');continue;}
@@ -967,10 +991,14 @@ function new_schema_window(title, cb_done, init_data)
 	var content_id = window_id+'_content';
 	var key_id = window_id+'_key';
 	var image_id = window_id+'_image';
+	var image_btn_id = window_id+'_imgbtn';
+	var image_grid_id = window_id+'_imggrid';
 	var notify_id = window_id+'_notify';
+	var logos_winid = window_id+'_logos';
+	var this_windows_class = 'new_schema_windows';
 
 	$('body').append([
-            '<div id="'+window_id+'">',
+            '<div id="'+window_id+'" class="'+this_windows_class+'">',
                 '<div>',
                     '<img width="20" height="20" src="images/new-table.png" alt="" style="float:left;" /><strong style="font-size:16px;">'+title+'</strong></div>',
                 '<div>',
@@ -979,7 +1007,8 @@ function new_schema_window(title, cb_done, init_data)
 			'<tr><td align="right">'+T('title')+':</td><td><input type="text" id="'+title_id+'" /></td></tr>',
 			'<tr><td align="right" style="vertical-align:top;">'+T('desc')+':</td><td><textarea id="'+content_id+'"></textarea></td></tr>',
 			'<tr><td align="right">'+T('seckey')+':</td><td><input type="text" id="'+key_id+'" /></td></tr>',
-			'<tr><td align="right">'+T('image')+':</td><td><input type="text" id="'+image_id+'" /></td></tr>',
+			'<tr><td align="right">'+T('image')+':</td><td><input type="text" id="'+image_id+'" style="float:left;"/>',
+				'<div id="'+image_btn_id+'" style="float:left;"><div id="'+image_grid_id+'"></div></div></td></tr>',
                     '</table></div>',
                     '<div>',
 		    '<div id="'+notify_id+'" style="color:red; text-align:center;"></div>',
@@ -991,71 +1020,170 @@ function new_schema_window(title, cb_done, init_data)
                 '</div>',
             '</div>'].join(''));
 
+	var win_count = $('.'+this_windows_class).length;
+
 	$('#'+window_id).jqxWindow({height: 320, width: 450,
-			resizable: false, isModal: true, modalOpacity: 0.3,
-			cancelButton: $('#'+no_id),
-			initContent: function () {
-				$('#'+name_id).jqxInput({width:300, height: 25});
-				$('#'+title_id).jqxInput({width:300, height: 25});
-				$('#'+content_id).jqxInput({width:300, height: 50});
-				$('#'+key_id).jqxInput({width:300, height: 25});
-				$('#'+image_id).jqxInput({width:300, height: 25});
+		position: {x:win_count*30+200, y:50+win_count*41},
+		resizable: false, isModal: true, modalOpacity: 0.3,
+		cancelButton: $('#'+no_id),
+		initContent: function () {
+			$('#'+name_id).jqxInput({width:300, height: 25});
+			$('#'+title_id).jqxInput({width:300, height: 25});
+			$('#'+content_id).jqxInput({width:300, height: 50});
+			$('#'+key_id).jqxInput({width:300, height: 25});
+			$('#'+image_id).jqxInput({width:273, height: 25});
+			$('#'+image_btn_id).jqxDropDownButton({width: 25, height: 25, dropDownHorizontalAlignment: 'right'});
+			$('#'+image_btn_id).css('background-image', 'url(/admin/images/add.png)');
+			$('#'+image_btn_id).css('background-size', '100%');
 
-				if (init_data) {
-					if (!init_data.hasOwnProperty('key') || (init_data.key == '') || (!init_data.key)) {
-						init_data.key = rank_str();
-					}
-					$('#'+name_id).val(init_data.name);
-					$('#'+title_id).val(init_data.title);
-					$('#'+content_id).val(init_data.content);
-					$('#'+key_id).val(init_data.key);
-					$('#'+image_id).val(init_data.image);
-					$('#'+notify_id).text(init_data.notify);
-				} else {
-					$('#'+key_id).val(rank_str());
+			jsonp('/admin/options.php', {what: 'logos'}, function(d){
+				if (d.status === 'ok') {
+					init_logos_grid(d.items);
 				}
+			});
 
-				$('#'+ok_id).jqxButton({width: 65, height:35});
-				$('#'+no_id).jqxButton({width: 65, height:35});
-				focus_on_blank([name_id,title_id,content_id,image_id]);
+			if (init_data) {
+				if (!init_data.hasOwnProperty('key') || (init_data.key == '') || (!init_data.key)) {
+					init_data.key = rank_str();
+				}
+				$('#'+name_id).val(init_data.name);
+				$('#'+title_id).val(init_data.title);
+				$('#'+content_id).val(init_data.content);
+				$('#'+key_id).val(init_data.key);
+				$('#'+image_id).val(init_data.image);
+				$('#'+notify_id).text(init_data.notify);
+			} else {
+				$('#'+key_id).val(rank_str());
+			}
 
-				$('#'+ok_id).on('click', function(e){
-					var d_name = $('#'+name_id).jqxInput('val');
-					var d_title = $('#'+title_id).jqxInput('val');
-					var d_content = $('#'+content_id).jqxInput('val');
-					var d_key = $('#'+key_id).jqxInput('val');
-					var d_image = $('#'+image_id).jqxInput('val');
+			$('#'+ok_id).jqxButton({width: 65, height:35});
+			$('#'+no_id).jqxButton({width: 65, height:35});
+			focus_on_blank([name_id,title_id,content_id,image_id]);
 
-					if ((d_title==='')||(d_content==='')||(d_image==='')) {
-						var d_init = {
-							'name': d_name,
-							'title': d_title,
-							'content': d_content,
-							'key': d_key,
-							'image': d_image,
-							'notify': T('Don\'t leave it blank please.')
-						};
-						new_schema_window(title, cb_done, d_init);
-						return;
-					}
-					cb_done({
+			$('#'+ok_id).on('click', function(e){
+				var d_name = $('#'+name_id).jqxInput('val');
+				var d_title = $('#'+title_id).jqxInput('val');
+				var d_content = $('#'+content_id).jqxInput('val');
+				var d_key = $('#'+key_id).jqxInput('val');
+				var d_image = $('#'+image_id).jqxInput('val');
+
+				if ((d_title==='')||(d_content==='')||(d_image==='')) {
+					var d_init = {
 						'name': d_name,
 						'title': d_title,
 						'content': d_content,
 						'key': d_key,
-						'image': d_image
-					});
-
-					$('#'+window_id).jqxWindow('close');
+						'image': d_image,
+						'notify': T('Don\'t leave it blank please.')
+					};
+					new_schema_window(title, cb_done, d_init);
+					return;
+				}
+				cb_done({
+					'name': d_name,
+					'title': d_title,
+					'content': d_content,
+					'key': d_key,
+					'image': d_image
 				});
 
-				$('#'+window_id).on('close', function (event) {  
-					if (event.target.id === window_id) {
-						$('#'+window_id).jqxWindow('destroy'); 
-					}
-				}); 
-			}
+				$('#'+window_id).jqxWindow('close');
+			});
+
+			$('#'+window_id).on('close', function (event) {  
+				if (event.target.id === window_id) {
+					$('#'+window_id).jqxWindow('destroy'); 
+				}
+			}); 
+		}
 	});
+
+	function init_logos_grid(urls) 
+	{
+		$('#'+image_btn_id).bind('open', function () { 
+			var url2img = function(url){
+				return '<img height="64" width="64" src="'+url+'">';
+			};
+
+			var make_array_data = function(urls) 
+			{
+				var items = [];
+				for(var i in urls) {
+					items.push(url2img(urls[i]));
+				}
+
+				var data = Array();
+				while (items.length > 0) {
+					var line = {};
+					line['1'] = items.shift();
+					line['2'] = items.shift();
+					line['3'] = items.shift();
+					line['4'] = items.shift();
+					line['5'] = items.shift();
+					line['6'] = items.shift();
+					line['7'] = items.shift();
+					line['8'] = items.shift();
+					data.push(line);
+				};
+				return data;
+			};
+
+			var source = $('#'+image_grid_id).jqxGrid('source');
+			var localdatas = make_array_data(urls);
+			source._source.localdata = localdatas;
+			source.dataBind();
+		});
+		$('#'+image_btn_id).bind('close', function () { 
+			$('#'+image_grid_id).jqxGrid('clearselection');
+		});
+
+		$('#'+image_grid_id).jqxGrid({
+			width: 560,
+			columnsresize: true,
+			showemptyrow: false,
+			autoheight: true,
+			autorowheight: true,
+			showheader: false,
+			selectionmode: 'singlecell',
+			columns: [
+				{text: '1', columntype: 'textbox', datafield: '1', width: 70 },
+				{text: '2', columntype: 'textbox', datafield: '2', width: 70 },
+				{text: '3', columntype: 'textbox', datafield: '3', width: 70 },
+				{text: '4', columntype: 'textbox', datafield: '4', width: 70 },
+				{text: '5', columntype: 'textbox', datafield: '5', width: 70 },
+				{text: '6', columntype: 'textbox', datafield: '6', width: 70 },
+				{text: '7', columntype: 'textbox', datafield: '7', width: 70 },
+				{text: '8', columntype: 'textbox', datafield: '8', width: 70 }
+			],
+			source : new $.jqx.dataAdapter({
+				localdata: [],
+				datafields:
+				[
+					{name: '1', type: 'string'},
+					{name: '2', type: 'string'},
+					{name: '3', type: 'string'},
+					{name: '4', type: 'string'},
+					{name: '5', type: 'string'},
+					{name: '6', type: 'string'},
+					{name: '7', type: 'string'},
+					{name: '8', type: 'string'}
+				],
+				datatype: "array"
+			})
+		});
+
+		$('#'+image_grid_id).on('cellselect', function (event) {
+			var value = $('#'+image_grid_id).jqxGrid('getcellvalue', event.args.rowindex, event.args.datafield);
+			if (value == '') {return;} 
+
+			var patt = new RegExp(/src="(.+)"/);
+			var result = patt.exec(value);
+			var img_url = $.trim(result[1]);
+
+			$('#'+image_id).val(img_url);
+			$('#'+image_btn_id).jqxDropDownButton('close'); 
+		});
+	}
 
 
 	function focus_on_blank(id_arr) {
@@ -1105,7 +1233,7 @@ function get_tableitem_id(window_id, tab_name, field_name)
 
 function addItem_jqxInput_id(p, id, width, height)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	width = width || 200;
 	addItem_jqxInput(p, id, [], height, width);
 	$('#'+field_id).jqxInput({disabled: true});
@@ -1145,7 +1273,7 @@ function addItem_jqxInput_text_json(p, init_val, source, height, width)
 
 function addItem_jqxInput_text(p, init_val, source, height, width)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	width = width || 400; height = height || 50;
 	source = source || []; 
 
@@ -1296,13 +1424,13 @@ function render_onebox_url(data, finish)
 
 function addItem_jqxListBox_images(p, init_val, height, width)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	width = width || 400; height = height || 250;
 	var img_width = 332;
 
 	var url2img=function(url){
 		return '<img height="50" width="50" src="'+url+'">';
-	}
+	};
 
 	var source = [];
 	if (init_val instanceof Array) {
@@ -1374,6 +1502,35 @@ function addItem_jqxListBox_onebox_id(p, init_val, render, height, width)
 	addItem_jqxListBox(p, init_val, render, height, width);
 }
 
+function check_name_valid(input_str, cb_done)
+{
+	if (input_str === null) {
+		return;
+	}
+
+	jsonp('/admin/valid.php', {
+		db_name: get_db_name(),
+		table_name: get_table_name(),
+		what: 'mapper',
+		is: input_str
+	}, function(d){
+		if (d.status === 'ok') {
+			cb_done(d.url);
+		} else {
+			cb_done(null);
+		}
+	}, function(d){
+		cb_done(null);
+	});
+}
+
+function addItem_jqxListBox_name(p, init_val, render, height, width)
+{
+	width = width || 300;
+	p.push(check_name_valid);
+	addItem_jqxListBox(p, init_val, render, height, width);
+}
+
 function addItem_jqxListBox_onebox_url(p, init_val, render, height, width)
 {
 	render = render || render_onebox_url;
@@ -1381,18 +1538,13 @@ function addItem_jqxListBox_onebox_url(p, init_val, render, height, width)
 	addItem_jqxListBox(p, init_val, render, height, width);
 }
 
-function addItem_jqxListBox_name(p, init_val, render, height, width)
-{
-	width = width || 300;
-	addItem_jqxListBox(p, init_val, render, height, width);
-}
 function getval_jqxListBox_name(p){return getval_jqxListBox(p);}
 function getval_jqxListBox_onebox_url(p){return getval_jqxListBox(p);}
 function getval_jqxListBox_onebox_id(p){return getval_jqxListBox(p);}
 function getval_jqxListBox_images(p){return getval_jqxListBox(p);}
 function getval_jqxListBox(p)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	var res_objs = [];
 	var items = $('#'+field_id).jqxListBox('getItems'); 
 	for (var index in items) {
@@ -1404,7 +1556,7 @@ function getval_jqxListBox(p)
 
 function getval_jqxRadioButton(p)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	var tr_class = field_id+'_trclass';
 	var td_class = field_id+'_tdclass';
 	var radiobtn_class = field_id+'_radiobtn_class';
@@ -1423,8 +1575,7 @@ function getval_jqxRadioButton(p)
 
 function addItem_jqxRadioButton(p, init_val, options, width)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
-
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	var input_id = field_id+'_input';
 	var sub_table_id = field_id+'_table';
 	var tr_class = field_id+'_trclass';
@@ -1500,8 +1651,7 @@ function add_radiobtn_item(table_id, tr_class, td_class, radiobtn_class, caption
 
 function addItem_jqxCheckBox(p, init_val, options, width)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
-
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	var input_id = field_id+'_input';
 	var sub_table_id = field_id+'_table';
 	var tr_class = field_id+'_trclass';
@@ -1578,7 +1728,7 @@ function add_checkbox_item(table_id, tr_class, td_class, checkbox_class, caption
 
 function getval_jqxCheckBox(p)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	var tr_class = field_id+'_trclass';
 	var td_class = field_id+'_tdclass';
 	var checkbox_class = field_id+'_checkbox_class';
@@ -1599,7 +1749,7 @@ function getval_jqxCheckBox(p)
 
 function addItem_jqxListBox(p, init_val, render, height, width)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], check_valid=p[4];
 	width = width || 400; height = height || 90;
 	render = render || render_null;
 
@@ -1642,7 +1792,7 @@ function addItem_jqxListBox(p, init_val, render, height, width)
 	$('#'+upbtn_id).jqxButton({width: btn_width, height:btn_height});
 	$('#'+downbtn_id).jqxButton({width: btn_width, height:btn_height});
 
-	$('#'+addbtn_id).on('click',[input_id,field_id,render], event_listbox_add);
+	$('#'+addbtn_id).on('click',[input_id,field_id,render,check_valid], event_listbox_add);
 	$('#'+delbtn_id).on('click', [field_id], event_listbox_delete);
 	$('#'+upbtn_id).on('click', [field_id], event_listbox_up);
 	$('#'+downbtn_id).on('click', [field_id], event_listbox_down);
@@ -1653,13 +1803,22 @@ function event_listbox_add(e)
 	var input_id = e.data[0];
 	var listbox_id = e.data[1];
 	var render = e.data[2];
+	var check_valid = e.data[3];
+
 	var input_str = $('#'+input_id).val();
 	if (input_str.length > 0) {
-		render([input_str, listbox_id], function (p) {
-			var input_str=p[0], listbox_id=p[1], label=p[2], value=p[3];
-			$('#'+listbox_id).jqxListBox('insertAt', {label: label, value: value}, 0); 
+		check_valid(input_str, function(url) {
+			if (url === null) {
+				render([input_str, listbox_id], function (p) {
+					var input_str=p[0], listbox_id=p[1], label=p[2], value=p[3];
+					$('#'+listbox_id).jqxListBox('insertAt', {label: label, value: value}, 0); 
+				});
+				$('#'+input_id).val('');
+			} else {
+				env.popup(T('ERROR'), T('The key name already exists.')+'<a target="blank" href="'+url+'">'+url+'</a>');
+				$('#'+input_id).select();
+			}
 		});
-		$('#'+input_id).val('');
 	}
 }
 
@@ -1709,13 +1868,13 @@ function cp(old)
 
 function getval_jqxComboBox(p)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	return $('#'+field_id).jqxComboBox('val');
 }
 
 function addItem_jqxComboBox(p, init_val, source, height, width)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	width = width || 200; height = height || 25;
 	source = source || []; 
 
@@ -1734,13 +1893,13 @@ function getval_jqxNumberInput_size(p){return getval_jqxNumberInput(p);}
 function getval_jqxNumberInput_price(p){return getval_jqxNumberInput(p);}
 function getval_jqxNumberInput(p)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	return $('#'+field_id).jqxNumberInput('val');
 }
 
 function addItem_jqxNumberInput(p, init_val, digits, symbol, height, width)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	width = width || 200; height = height || 25;
 	symbol = symbol || '';
 	$('#'+table_id).append(['<tr><td align="right">'+caption+': </td>',
@@ -1753,14 +1912,14 @@ function addItem_jqxNumberInput(p, init_val, digits, symbol, height, width)
 
 function getval_jqxDateTimeInput(p)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	var date_obj = $('#'+field_id).jqxDateTimeInput('getDate');
 	return date_obj;
 }
 
 function addItem_jqxDateTimeInput(p, init_val, height, width)
 {
-	tab_id=p[0]; table_id=p[1]; field_id=p[2]; caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
 	width = width || 200; height = height || 25;
 	$('#'+table_id).append(['<tr><td align="right">'+caption+': </td>',
 		'<td align="left"><div id="'+field_id+'"></div></td></tr>'].join(''));

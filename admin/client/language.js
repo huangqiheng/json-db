@@ -1,4 +1,5 @@
 var langdata = {
+    'The key name already exists.':			{cn:'该关键字名已经存在。'},
     'seckey':						{cn:'密钥'},
     'Maybe you input name is invalid.':			{cn:'可能你输入的名称不正确，不在映射范围'},
     'Maybe you input url is invalid.': 			{cn:'可能你输入的网址不正确，不在Onebox服务范围'},

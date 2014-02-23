@@ -621,6 +621,54 @@ function update_mappers(&$mapper_data, $mapper_fields, $merged_item)
 	}
 }
 
+function mapper_value_exit($db_name, $table_name, $map_key)
+{
+	$result = get_mapper_value($db_name, $table_name, $map_key);
+	if ($result === false) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'no valid mapped id']);
+	}
+	return $result;
+}
+
+function get_mapper_value($db_name, $table_name, $map_key)
+{
+	$table_root = table_root($db_name, $table_name);
+	$mapper = object_read("{$table_root}/mapper.json");
+	if (empty($mapper)) {
+		return false;
+	}
+
+	$map_key= mapper_key($map_key);
+	$map_val = @$mapper[$map_key];
+
+	if (empty($map_val)) {
+		return false;
+	}
+
+	$data_file = "{$table_root}/{$map_val}.json";
+	if (!file_exists($data_file)) {
+		return false;
+	}
+
+	$data_uri = substr($data_file, strlen($_SERVER['DOCUMENT_ROOT']));
+	$data_uri = preg_replace('/\/'.$_SERVER['HTTP_HOST'].'/i', '', $data_uri);
+	$data_url = get_current_url(false).$data_uri;
+
+	return [$map_val, $data_file, $data_url];
+}
+
+function get_current_url($full = true)
+{
+	$s = $_SERVER;
+	$ssl = (!empty($s['HTTPS']) && $s['HTTPS'] == 'on') ? true:false;
+	$sp = strtolower($s['SERVER_PROTOCOL']);
+	$protocol = substr($sp, 0, strpos($sp, '/')) . (($ssl) ? 's' : '');
+	$port = $s['SERVER_PORT'];
+	$port = ((!$ssl && $port=='80') || ($ssl && $port=='443')) ? '' : ':'.$port;
+	$host = isset($s['HTTP_X_FORWARDED_HOST']) ? $s['HTTP_X_FORWARDED_HOST'] : isset($s['HTTP_HOST']) ? $s['HTTP_HOST'] : $s['SERVER_NAME'];
+	return $protocol . '://' . $host . $port .(($full)? $s['REQUEST_URI'] : '');
+}
+
 function mapper_key($input)
 {
 	if (empty($input)) {return '';}
@@ -819,7 +867,10 @@ function indent_json($json)
 function get_db_captions()
 {
 	$result = [];
-	foreach (glob(dbs_path().'/*', GLOB_ONLYDIR) as $db_path) { 
+	$dirs = glob(dbs_path().'/*', GLOB_ONLYDIR);
+	usort($dirs, function($a,$b){return filemtime($b) - filemtime($a);});
+
+	foreach ($dirs as $db_path) { 
 		$db_name = basename($db_path);
 		$filename = $db_path.'/schema.json';
 		if (!file_exists($filename)) {
@@ -848,7 +899,10 @@ function get_table_captions($db_name=null)
 		}
 		return $result;
 	} else {
-		foreach (glob(dbs_path()."/{$db_name}/*", GLOB_ONLYDIR) as $table_path) { 
+		$dirs = glob(dbs_path()."/{$db_name}/*", GLOB_ONLYDIR);
+		usort($dirs, function($a,$b){return filemtime($b) - filemtime($a);});
+
+		foreach ($dirs as $table_path) { 
 			$table_name = basename($table_path);
 			$filename = $table_path.'/schema.json';
 			$schema_str = file_get_contents($filename);

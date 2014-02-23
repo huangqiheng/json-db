@@ -97,6 +97,8 @@ function edit_database_exit($req)
 		rename($old_name, $filename);
 	}
 
+	touch($filename);
+
 	$filename = "{$filename}/schema.json";
 	$schema = object_read($filename);
 
@@ -183,6 +185,8 @@ function edit_table_exit($req)
 	if ($req['ori_name'] !== $req['name']) {
 		rename($old_name, $filename);
 	}
+
+	touch($filename);
 
 	$filename = "{$filename}/schema.json";
 	$schema = object_read($filename);
