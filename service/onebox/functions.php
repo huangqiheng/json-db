@@ -153,7 +153,6 @@ function dom_to_html($node)
 	return mb_convert_encoding($doc->saveHTML(),'UTF-8','HTML-ENTITIES');
 }
 
-
 function process_appgame_url($req_url)
 {
 	preg_match('#^http://([a-zA-Z0-9\-]+\.)*appgame\.com/([\S]+/)?[\d]+\.html$#i', $req_url, $matches);
@@ -162,26 +161,10 @@ function process_appgame_url($req_url)
 		return false;
 	}
 
-	$res = curl_get_content($req_url.'?json=1');
-
-	if (empty($res)) {
+	$res_obj = get_remote_json($req_url.'?json=1');
+	if ($res_obj === false) {
 		return false;
 	}
-
-	preg_match("#{\".*\"}#ui", $res, $mm);
-	$res_body = $mm[0];
-
-	if (empty($res_body)) {
-		return false;
-	}
-
-	$res_obj = json_decode($res_body, true);
-
-
-	if ($res_obj['status'] !== 'ok') {
-		return false;
-	}
-
 
 	$res = array();
 	$res['provider_name'] = '任玩堂';

@@ -808,6 +808,19 @@ function object_read_url($req_url)
 	return json_decode($res_body, true);
 }
 
+function get_remote_json($req_url)
+{
+	$res_obj = object_read_url($req_url);
+
+	if ($res_obj['status'] !== 'ok') {
+		return false;
+	}
+
+	return $res_obj;
+}
+
+
+
 function prety_json($obj)
 {
 	return indent_json(json_encode($obj));

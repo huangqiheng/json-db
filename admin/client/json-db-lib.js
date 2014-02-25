@@ -492,6 +492,7 @@ function edit_fields_windows(title, input, cb_done)
 
 	var time = new Date().getTime();
 	var window_id = 'win_'+time.toString(); 
+	var tabs_id = window_id+'_tabs';
 	var ok_id = window_id+'_ok';
 	var no_id = window_id+'_no';
 	var list_id = window_id+'_list';
@@ -514,43 +515,65 @@ function edit_fields_windows(title, input, cb_done)
 	$('body').append([
             '<div id="'+window_id+'" class="'+this_windows_class+'">',
                 '<div>',
-                    '<img width="20" height="20" src="images/new-table.png" alt="" style="float:left;" /><strong style="font-size:16px;">'+title+'</strong></div>',
+		    '<table id="header_table"><tr><td>',
+                    '<img width="20" height="20" src="images/new-table.png" alt="" style="float:left;" />',
+		    '</td><td>',
+		    	'<strong style="font-size:13px;line-height:23px;">'+title+'</strong>',
+		    '</td><td align="right">',
+			    '<div style="width:480px; float:right;">',
+				'<input type="button" id="'+ok_id+'" value="'+T('OK')+'" style="margin-right: 1px" />',
+				'<input type="button" id="'+no_id+'" value="'+T('Cancel')+'" />',
+			    '</div>',
+		    '</td></tr></table>',
+		'</div>',
                 '<div>',
-                    '<div align="center"><p><table>',
-		        '<tr><td rowspan="2">',
-			    '<div id="'+list_id+'"></div>',
-			    '<div style="width:230px; height:30px;"><div style="float:right;">',
-				'<input type="button" id="'+delbtn_id+'" value="✖︎" />',
-				'<input type="button" id="'+upbtn_id+'" value="⬆︎" />',
-				'<input type="button" id="'+downbtn_id+'" value="⬇︎" />',
-			    '</div></div>',
-			    '<div style="width:230px; border: 1px solid rgb(224, 224, 224);">',
-			    	'<table style="font-size:13; width:100%;">',
-				    '<tr><td colspan="2" align="center">'+T('onebox')+'</td></tr>',
+                    '<div id="'+tabs_id+'" align="center">',
+			    //页签
+			    '<ul style="margin-left: 20px;">',
+				'<li>'+T('fields editor')+'</li>',
+				'<li>'+T('onebox editor')+'</li>',
+				'<li>'+T('custom buttons')+'</li>',
+				'</ul>',
+			    //表字段编辑器
+			    '<div><p><table style="width:100%;">',
+				'<tr><td>',
+				    '<div id="'+list_id+'"></div>',
+				    '<div style="width:230px; height:30px;"><div style="float:right;">',
+					'<input type="button" id="'+delbtn_id+'" value="✖︎" />',
+					'<input type="button" id="'+upbtn_id+'" value="⬆︎" />',
+					'<input type="button" id="'+downbtn_id+'" value="⬇︎" />',
+				    '</div></div>',
+				    '</td>',
+				'<td><table style="font-size:13;">',
+				    '<tr><td align="right">'+T('category')+':</td><td><input type="text" id="'+category_id+'" /></td><td rowspan="4"><input type="button" id="'+add_id+'" value="'+T('Add/Modify')+'" /></td></tr>',
+				    '<tr><td align="right">'+T('name')+':</td><td><input type="text" id="'+name_id+'" /></td></tr>',
+				    '<tr><td align="right">'+T('view')+':</td><td><div id="'+view_id+'"><img height="15" width="30" src="images/eye.png"/></div></td></tr>',
+				    '<tr><td align="right">'+T('type')+':</td><td><div id="'+type_id+'"></div></td></tr>',
+				    '<tr><td></td><td colspan="2"><div style="width:300px; height:300px; border: 1px solid rgb(224, 224, 224);" id="'+image_id+'" /></td></tr>',
+				'</table></td><tr><td vlign="bottom">',
+				    '<div id="'+notify_id+'" style="color:red; text-align:center;"></div>',
+				'</td></tr>',
+			    '</table></div>',
+			    //onebox编辑框
+			    '<div><p>',
+				'<table style="font-size:13; width:100%;">',
 				    '<tr><td align="right">'+T('title')+':</td><td><div id="'+ob_title_id+'"></div></td></tr>',
 				    '<tr><td align="right">'+T('desc')+':</td><td><div id="'+ob_desc_id+'"></div></td></tr>',
 				    '<tr><td align="right">'+T('thumbnail')+':</td><td><div id="'+ob_image_id+'"></div></td></tr>',
 				'</table>',
 			    '</div>',
-			    '</td>',
-			'<td><table style="font-size:13;">',
-			    '<tr><td ><input type="button" id="'+add_id+'" value="'+T('Add/Modify')+'" /></td><td>',
-				    '<div style="float:right;">',
-					'<input type="button" id="'+ok_id+'" value="'+T('OK')+'" style="margin-right: 10px" />',
-					'<input type="button" id="'+no_id+'" value="'+T('Cancel')+'" />',
-				    '</div>',
-			    	'</td></tr>',
-			    '<tr><td align="right">'+T('category')+':</td><td><input type="text" id="'+category_id+'" /></td></tr>',
-			    '<tr><td align="right">'+T('name')+':</td><td><input type="text" id="'+name_id+'" /></td></tr>',
-			    '<tr><td align="right">'+T('view')+':</td><td><div id="'+view_id+'"><img height="15" width="30" src="images/eye.png"/></div></td></tr>',
-			    '<tr><td align="right">'+T('type')+':</td><td><div id="'+type_id+'"></div></td></tr>',
-			    '<tr><td></td><td><div style="width:300px; height:300px; border: 1px solid rgb(224, 224, 224);" id="'+image_id+'" /></td></tr>',
-			'</table></td><tr><td vlign="bottom">',
-			    '<div id="'+notify_id+'" style="color:red; text-align:center;"></div>',
-			'</td></tr>',
-                    '</table></div>',
+			    '<div><p>',
+			    '</div>',
+		    '</div>',
                 '</div>',
             '</div>'].join(''));
+
+	$('#'+tabs_id).jqxTabs({ 
+		position: 'top', 
+		width: 'auto', 
+		height: 495, 
+		scrollable:false,
+	});
 
 	var show_notify = function(msg){
 		$('#'+notify_id).text(msg);
@@ -558,7 +581,7 @@ function edit_fields_windows(title, input, cb_done)
 
 	var win_count = $('.'+this_windows_class).length;
 
-	$('#'+window_id).jqxWindow({height: 540, width: 660,
+	$('#'+window_id).jqxWindow({height: 546, width: 660,
 			position: {x:win_count*30, y:12+win_count*41},
 			resizable: false, isModal: true, modalOpacity: 0.3,
 			cancelButton: $('#'+no_id),
@@ -574,12 +597,12 @@ function edit_fields_windows(title, input, cb_done)
 		$('#'+downbtn_id).on('click', event_tree_down);
 
 
-		$('#'+category_id).jqxInput({width:300, height: 25});
-		$('#'+name_id).jqxInput({width:300, height: 25});
-		$('#'+view_id).jqxCheckBox({width: 300, height: 25});
+		$('#'+category_id).jqxInput({width:215, height: 25});
+		$('#'+name_id).jqxInput({width:215, height: 25});
+		$('#'+view_id).jqxCheckBox({width: 215, height: 25});
 		$('#'+type_id).jqxDropDownList({source:fields_types, autoDropDownHeight:true,  
 					placeHolder: T('Please choose field type'),
-					width:300, height: 25});
+					width:215, height: 25});
 		$('#'+type_id).on('select', function (event){
 			var args = event.args;
 			if (args) {
@@ -594,8 +617,8 @@ function edit_fields_windows(title, input, cb_done)
 		});
 
 
-		$('#'+ok_id).jqxButton({width: 65, height:35});
-		$('#'+no_id).jqxButton({width: 65, height:35});
+		$('#'+ok_id).jqxButton({width: 65, height:23});
+		$('#'+no_id).jqxButton({width: 65, height:23});
 		$('#'+ok_id).on('click', function(e){
 			var items = $('#'+list_id).jqxTree('getItems');
 			var listview = [];
@@ -674,7 +697,7 @@ function edit_fields_windows(title, input, cb_done)
 		});
 		dataAdapter.dataBind();
 		var records = dataAdapter.getRecordsHierarchy('id', 'parentid', 'items');
-		$('#'+list_id).jqxTree({source: records, width:'230px', height:'320px', 
+		$('#'+list_id).jqxTree({source: records, width:'230px', height:'390px', 
 					hasThreeStates:true, checkboxes:true,
 					allowDrag:false
 					});
@@ -773,7 +796,7 @@ function edit_fields_windows(title, input, cb_done)
 
 
 
-		$('#'+add_id).jqxButton({width: 65, height:35});
+		$('#'+add_id).jqxButton({width: 81, height:'100%'});
 		$('#'+add_id).on('click', function(e){
 			var same_name = function(name){
 				var treeItems = $('#'+list_id).jqxTree('getItems');
@@ -1807,18 +1830,25 @@ function event_listbox_add(e)
 
 	var input_str = $('#'+input_id).val();
 	if (input_str.length > 0) {
-		check_valid(input_str, function(url) {
-			if (url === null) {
-				render([input_str, listbox_id], function (p) {
-					var input_str=p[0], listbox_id=p[1], label=p[2], value=p[3];
-					$('#'+listbox_id).jqxListBox('insertAt', {label: label, value: value}, 0); 
-				});
-				$('#'+input_id).val('');
-			} else {
-				env.popup(T('ERROR'), T('The key name already exists.')+'<a target="blank" href="'+url+'">'+url+'</a>');
-				$('#'+input_id).select();
-			}
-		});
+		var insert_to_list = function() {
+			render([input_str, listbox_id], function (p) {
+				var input_str=p[0], listbox_id=p[1], label=p[2], value=p[3];
+				$('#'+listbox_id).jqxListBox('insertAt', {label: label, value: value}, 0); 
+			});
+			$('#'+input_id).val('');
+		};
+		if (check_valid) {
+			check_valid(input_str, function(url) {
+				if (url === null) {
+					insert_to_list();
+				} else {
+					env.popup(T('ERROR'), T('The key name already exists.')+'<a target="blank" href="'+url+'">'+url+'</a>');
+					$('#'+input_id).select();
+				}
+			});
+		} else {
+			insert_to_list();
+		}
 	}
 }
 
