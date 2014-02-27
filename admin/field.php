@@ -34,7 +34,7 @@ function update_fields_exit($req)
 	object_save($schema_file, $schema);
 
 	if (!$is_same) {
-		refresh_data($db_name, $table_name);
+		refresh_listview($db_name, $table_name);
 	}
 
 	jsonp_nocache_exit(['status'=>'ok']); 
@@ -77,7 +77,7 @@ function combobox_to_radiobox_exit($req)
 	$schema['fields'][$group_name][$field] = 'jqxRadioButton';
 	object_save("{$data_path}/schema.json", $schema);
 
-	$counter = refresh_data($db_name, $table_name);
+	$counter = refresh_listview($db_name, $table_name);
 	jsonp_nocache_exit(['status'=>'ok', 'counter'=>$counter]); 
 }
 
@@ -137,7 +137,7 @@ function combobox_to_checkbox_exit($req)
 		object_save($file, $data_obj);
 	}
 
-	$counter = refresh_data($db_name, $table_name);
+	$counter = refresh_listview($db_name, $table_name);
 	jsonp_nocache_exit(['status'=>'ok', 'counter'=>$counter]); 
 }
 

@@ -474,7 +474,7 @@ function jsondb_main()
 
 				if (value === 'CLEANUP') {
 					var data = {};
-					data.cmd = 'refresh_data';
+					data.cmd = 'refresh_listview';
 					data.db_name = get_db_name();
 					data.table_name = get_table_name();
 					submit_data(data, function(d){

@@ -8,7 +8,6 @@ $table_name = @$req['table_name'];
 $table_name || $table_name = 'default';
 
 $data = @$req['data'];
-$data || $data = [];
 
 if (empty($data)) {
 	jsonp_nocache_exit(['status'=>'error', 'error'=>'input data is empty']);
@@ -57,7 +56,7 @@ if (empty($mapper)) {
 if ($is_new_data) {
 	$output = create_new_data($db_name, $table_name, $data);
 } else {
-	list($output, $ori_data) = update_current_data($db_name, $table_name, $data);
+	$output = update_current_data($db_name, $table_name, $data);
 }
 
 jsonp_nocache_exit($output); 
