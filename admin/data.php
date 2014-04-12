@@ -17,6 +17,7 @@ function refresh_listview_exit($req)
 	$db_name = @$req['db_name'];
 	$table_name = @$req['table_name'];
 	$counter = refresh_listview($db_name, $table_name);
+	clean_unmapper_data($db_name, $table_name);
 	jsonp_nocache_exit(['status'=>'ok', 'counter'=>$counter]); 
 }
 

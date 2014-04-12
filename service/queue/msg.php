@@ -47,12 +47,27 @@ function enqueue_items($name, $items)
 	return file_put_contents($file_to_write, $data_to_write, FILE_APPEND | LOCK_EX);
 }
 
-function dequeue_items($name, $max)
+function lock_que_on($callback)
 {
-	if (empty($max)) {
-		$max = MAX_DEQUEUE_COUNT;
+        $mutex = sem_get(ftok(__FILE__, 'g'), 1);
+	sem_acquire($mutex);
+	try {
+		$res = call_user_func($callback);
+	} catch (Exception $e) {
 	}
-		
+	sem_release($mutex);
+	return $res;
+}
+
+function dequeue_items($name, $max = MAX_DEQUEUE_COUNT)
+{
+	return lock_que_on(function()use($name, $max){
+		return __dequeue_items($name, $max);
+	});
+}
+
+function __dequeue_items($name, $max = MAX_DEQUEUE_COUNT)
+{
 	$now_writing_id = now_name();
 
 	$item_ids = [];
@@ -102,18 +117,6 @@ function dequeue_items($name, $max)
 	return $output_items;
 }
 
-function is_dir_empty($dir) 
-{
-	if (!is_readable($dir)) return NULL; 
-	$handle = opendir($dir);
-	while (false !== ($entry = readdir($handle))) {
-		if ($entry != "." && $entry != "..") {
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
-
 function get_queue_file($que_name, $id)
 {
 	return get_queue_dir($que_name).'/'.$id.'.'.ITEMS_SUFFIX;
@@ -151,5 +154,3 @@ function is_direct_call()
 {
 	return ($_SERVER['SCRIPT_FILENAME'] === __FILE__);
 }
-
-

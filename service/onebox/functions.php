@@ -66,6 +66,7 @@ function process_jsondb_url($req_url)
 	}
 
 	$res = array();
+	$res['onebox'] = 'jsondb';
 	$res['provider_name'] = '任玩堂';
 	$res['provider_url'] = 'http://www.appgame.com/';
 	$res['favicon_url'] = 'http://www.appgame.com/favicon.ico';
@@ -119,6 +120,7 @@ function process_bbs_appgame_url($req_url)
 	$user_img = get_redirect_url($user_pic);
 
 	$res = array();
+	$res['onebox'] = 'appgame-bbs';
 	$res['provider_name'] = '任玩堂论坛';
 	$res['provider_url'] = 'http://bbs.appgame.com/';
 	$res['favicon_url'] = 'http://www.appgame.com/favicon.ico';
@@ -167,6 +169,7 @@ function process_appgame_url($req_url)
 	}
 
 	$res = array();
+	$res['onebox'] = 'appgame-cms';
 	$res['provider_name'] = '任玩堂';
 	$res['provider_url'] = 'http://www.appgame.com/';
 	$res['favicon_url'] = 'http://www.appgame.com/favicon.ico';
@@ -177,6 +180,65 @@ function process_appgame_url($req_url)
 	$res['update_time'] = format_time($res_obj['post']['modified']);
 	$res['create_time'] = format_time($res_obj['post']['date']);
 	$res['description'] = strip_tags(trim($res_obj['post']['excerpt']));
+	return $res;
+}
+
+function get_itunes($appid, $country)
+{
+	$itunes_cache = 'http://www.appgame.com/itunes_js.php?id='.$appid.'&country='.$country.'&cache=true';
+	$itunes_url = 'http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/wa/wsLookup?id=' . $appid . '&country=' . $country;
+
+	$res_itunes = object_read_url($itunes_cache, 10, 10);
+	if (empty($res_itunes)) {
+		$res_itunes = object_read_url($itunes_cache, 10, 10);
+		if (empty($res_itunes)) {
+			return false;
+		}
+	}
+
+	if ($res_itunes['resultCount'] === 0){
+		return false;
+	}
+
+	$res_obj = @$res_itunes['results'][0];
+	if (empty($res_obj)) {
+		return false;
+	}
+
+	$app_logo = substr($res_obj['artworkUrl512'],0,-4).'.175x175-75.jpg';
+	$app_logo = str_replace('.512x512-75','',$app_logo);
+
+	$res = array();
+	$res['onebox'] = 'itunes';
+	$res['provider_name'] = 'Apple itunes';
+	$res['provider_url'] = 'http://itunes.apple.com/';
+	$res['favicon_url'] = 'http://www.apple.com/favicon.ico';
+	$res['ori_url'] = $res_obj['trackViewUrl'];
+	$res['title'] = $res_obj['trackName'];
+	$res['update_time'] = format_time($res_obj['releaseDate']);
+	$res['create_time'] = $res['update_time'];
+	$res['image'] = $app_logo;
+	$res['ID'] = intval($appid);
+	$res['description'] = trim($res_obj['description']);
+	$res['data'] = array(
+		'id' => $appid,
+		'country' => $country,
+		'src_url' => $itunes_url,
+		'cache_url' => $itunes_cache,
+		'kind' => $res_obj['kind'],
+		'trackName' => $res_obj['trackName'],
+		'artworkUrl512' => @$res_obj['artworkUrl512'],
+		'trackViewUrl' => $res_obj['trackViewUrl'],
+		'fileSizeBytes' => intval($res_obj['fileSizeBytes']),
+		'currency' => $res_obj['currency'],
+		'formattedPrice' => @$res_obj['formattedPrice'],
+		'screenshotUrls' => @$res_obj['screenshotUrls'],
+		'ipadScreenshotUrls' => @$res_obj['ipadScreenshotUrls'],
+		'bundleId' => @$res_obj['bundleId'],
+		'releaseDate' => format_time($res_obj['releaseDate']),
+		'supportedDevices' =>$res_obj['supportedDevices'],
+	);
+
 	return $res;
 }
 
@@ -199,28 +261,5 @@ function process_itunes_url($req_url)
 		$country = substr($country, 0, 2);
 	}
 
-	$res_itunes = file_get_contents("http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/wa/wsLookup?id=" . $appid . "&country=" . $country);
-	if (($res_itunes == null) || (trim($res_itunes) == '')) {
-		return false;
-	}
-
-	$obj = json_decode($res_itunes, true);
-	$res_obj = $obj['results'][0];
-
-	$app_logo = substr($res_obj['artworkUrl512'],0,-4).'.175x175-75.jpg';
-	$app_logo = str_replace('.512x512-75','',$app_logo);
-
-	$res = array();
-	$res['provider_name'] = 'Apple itunes';
-	$res['provider_url'] = 'http://itunes.appgame.com/';
-	$res['favicon_url'] = 'http://www.apple.com/favicon.ico';
-	$res['ori_url'] = $res_obj['trackViewUrl'];
-	$res['title'] = $res_obj['trackName'];
-	$res['update_time'] = format_time($res_obj['releaseDate']);
-	$res['create_time'] = $res['update_time'];
-	$res['image'] = $app_logo;
-	$res['ID'] = intval($appid);
-	$res['description'] = trim($res_obj['description']);
-
-	return $res;
+	return get_itunes($appid, $country);
 }

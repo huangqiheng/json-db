@@ -61,11 +61,15 @@ function items_exit()
 		jsonp_nocache_exit(['status'=>'error', 'error'=>'no time field']);
 	}
 
+	$res = [];
 	foreach($var_arr as $var) {
 		if (!array_key_exists($var, $merged_data)) {
 			jsonp_nocache_exit(['status'=>'error', 'error'=>'no field: '.$var]);
 		}
+		$res[] = $merged_data[$var];
 	}
+
+	return $res;
 }
 
 function null_exit()
@@ -170,6 +174,7 @@ function get_onebox_data($schema, $data)
 	if (!empty($key_image)) {
 		$ob_image = $res_obj[$key_image];
 	}
+
 	return [$ob_title, $ob_desc, $ob_image];
 }
 
@@ -180,8 +185,11 @@ function onebox_object($schema, $data_file, $data=null)
 	$http_prefix = 'http://'.$_SERVER['HTTP_HOST'];
 	list($ob_title, $ob_desc, $ob_image) = get_onebox_data($schema, $data);
 
-	if ($ob_image[0] === '/') {
-		$ob_image = $http_prefix.$ob_image;
+
+	if (strlen($ob_image) > 1) {
+		if ($ob_image[0] === '/') {
+			$ob_image = $http_prefix.$ob_image;
+		}
 	}
 
 	$res_obj = merge_fields($data);
@@ -229,7 +237,11 @@ function delete_current_data($db_name, $table_name, $req_list)
 	$listview_new = [];
 	$rep_list = [];
 	foreach($listview_data as $subitem) {
-		$id_cmp = $subitem[$id_index];
+		$id_cmp = intval($subitem[$id_index]);
+		if (empty($id_cmp)) {
+			continue;
+		}
+
 		if (in_array($id_cmp, $req_list)) {
 			$rep_list[] = $id_cmp;
 		} else {
@@ -237,7 +249,7 @@ function delete_current_data($db_name, $table_name, $req_list)
 		}
 	}
 
-	foreach($rep_list as $item_id) {
+	foreach($req_list as $item_id) {
 		$id_file = "{$table_root}/{$item_id}.json";
 		if (file_exists($id_file)) {
 			unlink($id_file);
@@ -246,17 +258,6 @@ function delete_current_data($db_name, $table_name, $req_list)
 
 	object_save($listview_file, $listview_new);
 	return ['status'=>'ok', 'id_list'=>$rep_list]; 
-}
-
-function set_data_id(&$data, $new_id)
-{
-	foreach($data as $group=>&$items){
-		if (array_key_exists('ID', $items)) {
-			$items['ID'] = $new_id;
-			return true;
-		}
-	}
-	return false;
 }
 
 function append_new_data($db_name, $table_name, $data)
@@ -335,34 +336,58 @@ function append_listview_json($file_name, $item)
 }
 
 
-function format_fields($schema, $req_data)
+function format_fields($schema, $new_data, $ori_data=null)
 {
 	$fields = $schema['fields'];
-	$fix_data = array_merge(array(), $req_data);
+	$formated_data = array_merge(array(), $new_data);
+	$ori_data = merge_fields($ori_data);
 
+	//以schema为模板
 	foreach($fields as $group=>$items) {
-		$group_obj = @$fix_data[$group];
+		//填充和完善新数据
+		$group_obj = @$formated_data[$group];
 		if (empty($group_obj)) {
 			$group_obj = [];
 		}
 		foreach($items as $field_name=>$field_type) {
 			$field_value = @$group_obj[$field_name];
-			if (empty($field_value)) {
-				$field_value = '';
-				if (preg_match('/^jqxInput/i', $field_type)) {$field_value='';}
-				if (preg_match('/^jqxInput-text-json/i', $field_type)) {$field_value=json_decode('{}');}
-				if (preg_match('/^jqxComboBox/i', $field_type)) {$field_value='';}
-				if (preg_match('/^jqxRadioButton/i', $field_type)) {$field_value='';}
-				if (preg_match('/^jqxCheckBox/i', $field_type)) {$field_value=[];}
-				if (preg_match('/^jqxListBox/i', $field_type)) {$field_value=[];}
-				if (preg_match('/^jqxNumberInput/i', $field_type)) {$field_value='0';}
-				if (preg_match('/^jqxDateTimeInput/i', $field_type)) {$field_value=gm_date(time());}
+			$filed_exists = array_key_exists($field_name, $group_obj);
+
+			//如果该字段没有被设置，
+			if (!$filed_exists) {
+				//如果是更新的，则需要保留原值
+				if ($ori_data) {
+					$field_value = @$ori_data[$field_name];
+				//只有创建时，才强制设置默认值
+				} else {
+					$field_value = '';
+					if (preg_match('/^jqxInput/i', $field_type)) {$field_value='';}
+					if (preg_match('/^jqxInput-text-json/i', $field_type)) {$field_value=json_decode('{}');}
+					if (preg_match('/^jqxComboBox/i', $field_type)) {$field_value='';}
+					if (preg_match('/^jqxRadioButton/i', $field_type)) {$field_value='';}
+					if (preg_match('/^jqxCheckBox/i', $field_type)) {$field_value=[];}
+					if (preg_match('/^jqxListBox/i', $field_type)) {$field_value=[];}
+					if (preg_match('/^jqxNumberInput/i', $field_type)) {$field_value='0';}
+					if (preg_match('/^jqxDateTimeInput/i', $field_type)) {$field_value=gm_date(time());}
+
+					if ($field_name === 'CREATE') {
+						$field_value=gm_date(time());
+					}
+				}
+			//如果字段有数据，则标准化一下
+			} else {
+				if ($field_name === 'ID') {
+					$field_value = intval($field_value);
+				}
+				if (($field_name === 'CREATE') || ($field_name === 'TIME')) {
+					$field_value = format_time($field_value);
+				}
 			}
 			$group_obj[$field_name] = $field_value;
 		}
-		$fix_data[$group] = $group_obj;
+		$formated_data[$group] = $group_obj;
 	}
-	return $fix_data;
+	return $formated_data;
 }
 
 function update_single_data($table_root, $data)
@@ -376,7 +401,7 @@ function update_single_data($table_root, $data)
 		return [null, null, null];
 	}
 
-	$req_id = id_from_data($data);
+	$req_id = get_data_id($data);
 	if (empty($req_id)) {
 		return [null, null, null];
 	}
@@ -386,16 +411,25 @@ function update_single_data($table_root, $data)
 	$ori_data_output = array_merge(array(), $ori_data);
 
 	//格式化输入结构，填充空白字段
-	$req_data = format_fields($schema, $data);
+	//有时候用户的输入并不完整
+	$req_data = format_fields($schema, $data, $ori_data);
 
 	//将请求的数据，逐个压入现有数据中
+	//这样即使现有数据有"多余"字段，也不会被覆盖
 	foreach($req_data as $req_group=>$req_items){
 		foreach($req_items as $req_field=>$req_val){
 			$handled = false;
 			foreach($ori_data as $group=>&$items){
+				if (!is_iterable($items)) continue;
 				foreach($items as $ori_field=>&$ori_val){
 					if ($ori_field === $req_field) {
-						$ori_val = $req_val;
+						if ($ori_field === 'CREATE') {
+							$ori_time = __strtotime($ori_val);
+							$req_time = __strtotime($req_val);
+							$ori_val = gm_date(min($ori_time, $req_time));
+						} else {
+							$ori_val = $req_val;
+						}
 						$handled = true;
 						break 2;
 					}
@@ -403,6 +437,7 @@ function update_single_data($table_root, $data)
 			}
 			if ($handled){continue;}
 
+			//有时候现有的数据字段缺失,可以强制填入,一切以schema为准了
 			$new_items = @$ori_data[$req_group];
 			if (empty($new_items)) {
 				$ori_data[$req_group] = [];
@@ -414,6 +449,16 @@ function update_single_data($table_root, $data)
 	$new_data = $ori_data;
 
 	return [$req_id, object_save($data_file, $new_data), $ori_data_output];
+}
+
+function is_iterable($var)
+{
+	return $var !== null 
+		&& (is_array($var) 
+				|| $var instanceof Traversable 
+				|| $var instanceof Iterator 
+				|| $var instanceof IteratorAggregate
+		   );
 }
 
 function create_single_data($table_root, $data)
@@ -473,7 +518,67 @@ function create_new_data($db_name, $table_name, $req_data)
 	return ['status'=>'ok', 'ID'=>$req_id, 'reload'=>(count($affected)>0), 'listview'=>$listview_item];
 }
 
-function id_from_data($data)
+function join_new_data($db_name, $table_name, $data)
+{
+	$table_root = table_root($db_name, $table_name);
+
+	//判断是单个数据，还是数组
+	if (is_data($data)) {
+		if (data_exists($db_name, $table_name, $data)) {
+			return update_current_data($db_name, $table_name, $data);
+		} else {
+			return create_new_data($db_name, $table_name, $data);
+		}
+	} else {
+		$schema = object_read("{$table_root}/schema.json");
+		$mapper = object_read("{$table_root}/mapper.json");
+		$refresh_files = [];
+		$listviews = [];
+
+		//批量处理各个数据
+		foreach($data as $sub_data) {
+			if ($req_id = __data_exists($table_root, $schema, $mapper, $sub_data)) {
+				set_data_id($sub_data, $req_id);
+				list($req_id, $new_data, $ori_data) = update_single_data($table_root, $sub_data);
+				if ($new_data) {
+					//共享字段的同步
+					foreach(sync_share_fields($table_root, $req_id, $ori_data) as $file) {
+						$refresh_files[] = $file;
+					}
+					//记录需要刷新listview的数据文件名
+					$refresh_files[] = "{$table_root}/{$req_id}.json";
+					$listviews[] = make_listview_item($table_root, $new_data);
+				}
+			} else {
+				list($req_id, $new_data) = create_single_data($table_root, $sub_data);
+				if ($new_data) {
+					foreach(sync_share_fields($table_root, $req_id) as $file) {
+						$refresh_files[] = $file;
+					}
+					$refresh_files[] = "{$table_root}/{$req_id}.json";
+					$listviews[] = make_listview_item($table_root, $new_data);
+				}
+			}
+		}
+
+		//批量刷新listview
+		refresh_listview($db_name, $table_name, $refresh_files);
+		return ['status'=>'ok', 'listview'=>$listviews];
+	}
+}
+
+function set_data_id(&$data, $new_id)
+{
+	foreach($data as $group=>&$items){
+		if (array_key_exists('ID', $items)) {
+			$items['ID'] = $new_id;
+			return true;
+		}
+	}
+	return false;
+}
+
+function get_data_id($data)
 {
 	$merged_data = merge_fields($data);
 	return @$merged_data['ID'];
@@ -696,10 +801,13 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 					if (empty($id_input)) {
 						continue;
 					}
+					$id_input = intval($id_input);
+
 					
 					//找到就是替换并直接退出，找不到就是追加，并抛给下一个流程
 					foreach($listview_data as &$subitem) {
-						if ($subitem[$id_index] !== $id_input) {continue;}
+						$id_list = intval($subitem[$id_index]);
+						if ($id_list !== $id_input) {continue;}
 						//替换listview，完成任务退出
 						$subitem = new_listview_item($listview, $merge_items, $merged_fields);
 						update_mappers($mapper_data, $mapper_fields, $merge_items);
@@ -725,25 +833,36 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 				$glob_files[] = $append_data_file;
 			}
 		} else {
+			set_time_limit(0);
 			$glob_files = glob("{$data_path}/*.json");
 		}
+
+		$listview_maker = function($file)use(&$listview, &$merged_fields, &$listview_data,
+				&$mapper_data, &$mapper_fields, &$options_data, &$options_fields) {
+			$data_obj = object_read($file);
+			if (empty($data_obj)) {return;}
+
+			$merge_items = merge_fields($data_obj);
+
+			//生成listview
+			$new_listview = new_listview_item($listview, $merge_items, $merged_fields);
+			array_unshift($listview_data, $new_listview);
+			//生成mapper
+			update_mappers($mapper_data, $mapper_fields, $merge_items);
+			//更新options
+			update_options($options_data, $options_fields, $merge_items);
+			unset($data_obj);
+			unset($merge_items);
+			unset($new_listview);
+		};
+
+		ini_set('memory_limit', '1024M');
 
 		foreach($glob_files as $file) {
 			if (is_dir($file)) {continue;}
 			if (!preg_match('~/(\d+)\.json$~',$file, $matches)){continue;}
 			$item_id = $matches[1];
-
-			$data_obj = object_read($file);
-			if (empty($data_obj)) {continue;}
-
-			$merge_items = merge_fields($data_obj);
-
-			//生成listview
-			array_unshift($listview_data, new_listview_item($listview, $merge_items, $merged_fields));
-			//生成mapper
-			update_mappers($mapper_data, $mapper_fields, $merge_items);
-			//更新options
-			update_options($options_data, $options_fields, $merge_items);
+			call_user_func($listview_maker, $file);
 		}
 
 	}while(false);
@@ -754,7 +873,30 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 	return count($listview_data);
 }
 
-function update_options(&$options_data, $options_fields, $merged_item)
+function get_unmapper_list($db_name, $table_name)
+{
+	$data_path = table_root($db_name, $table_name);
+	$mapper_data = object_read("{$data_path}/mapper.json");
+	$valid_ids = array_unique(array_values($mapper_data));
+
+	$total_ids = [];
+	foreach(glob("{$data_path}/*.json") as $file) {
+		if (is_dir($file)) {continue;}
+		if (!preg_match('~/(\d+)\.json$~',$file, $matches)){continue;}
+		$item_id = $matches[1];
+		$total_ids[] = intval($item_id);
+	}
+
+	return array_values(array_diff($total_ids, $valid_ids));
+}
+
+function clean_unmapper_data($db_name, $table_name)
+{
+	$rm_ids = get_unmapper_list($db_name, $table_name);
+	return delete_current_data($db_name, $table_name, $rm_ids);
+}
+
+function update_options(&$options_data, &$options_fields, &$merged_item)
 {
 	foreach($options_fields as $opt_name) {
 		$opt_val = @$merged_item[$opt_name];
@@ -806,7 +948,11 @@ function new_listview_item($listview, $merge_items, $merged_fields)
 		if ($value) {
 			$field_name = @$merged_fields[$view_item];
 			if ($field_name) {
-				if ($field_name === 'jqxDateTimeInput'){
+				if ($field_name === 'ID'){
+					$value = intval($value);
+				}
+
+				if (($field_name==='jqxDateTimeInput') || ($field_name==='jqxInput-time')){
 					try {
 						$fixed_date = preg_replace('/\(.+\)$/', '', $value);
 						$date = new DateTime($fixed_date);
@@ -820,11 +966,11 @@ function new_listview_item($listview, $merge_items, $merged_fields)
 					foreach($value as $onebox_item) {
 						$value_out[] = $onebox_item['title'];
 					}
-					$value = implode(',<br>',$value_out);
+					$value = implode(',',$value_out);
 				}
 
 				if (preg_match('/^jqxCheckBox/i', $field_name)) {
-					$value = implode(',<br>',$value);
+					$value = implode(',',$value);
 				}
 			}
 
@@ -844,10 +990,11 @@ function __data_exists($table_root, $schema, $mapper, $data)
 	$merged_data = merge_fields($data);
 
 	$check_id_valid = function($item_val) use($mapper, $table_root) {
-		if ($map_val = @$mapper[$item_val]) {
+		$map_key= mapper_key($item_val);
+		if ($map_val = @$mapper[md5($map_key)]) {
 			$map_file = "{$table_root}/{$map_val}.json";
 			if (file_exists($map_file)) {
-				return true;
+				return $map_val;
 			}
 		}
 		return false;
@@ -855,15 +1002,14 @@ function __data_exists($table_root, $schema, $mapper, $data)
 
 	foreach($mapper_fields as $field) {
 		$value = @$merged_data[$field];
-		if (is_array($value)) {
-			foreach($value as $sub_val) {
-				if (call_user_func($check_id_valid, $sub_val)) {
-					return true;
-				}
-			}
-		} else {
-			if (call_user_func($check_id_valid, $value)) {
-				return true;
+
+		if (!is_array($value)) {
+			$value = [$value];
+		}
+
+		foreach($value as $sub_val) {
+			if ($item_id = call_user_func($check_id_valid, $sub_val)) {
+				return $item_id;
 			}
 		}
 	}
@@ -877,7 +1023,7 @@ function data_exists($table_root, $data)
 	return __data_exists($table_root, $schema, $mapper, $data);
 }
 
-function update_mappers(&$mapper_data, $mapper_fields, $merged_item)
+function update_mappers(&$mapper_data, &$mapper_fields, &$merged_item)
 {
 	foreach($mapper_fields as $map_name) {
 		$map_key = @$merged_item[$map_name];
@@ -983,9 +1129,12 @@ function get_mapper_fields($merge_fields)
 function merge_fields($group_obj)
 {
 	$merge_items = [];
-	foreach($group_obj as $group=>$items) {
-		foreach($items as $name=>$value) {
-			$merge_items[$name] = $value;
+	if (!empty($group_obj)) {
+		foreach($group_obj as $group=>$items) {
+			if (!is_iterable($items)) continue;
+			foreach($items as $name=>$value) {
+				$merge_items[$name] = $value;
+			}
 		}
 	}
 	return $merge_items;
@@ -1068,16 +1217,30 @@ function object_read($filename)
 	return json_decode($data_str, true);
 }
 
-function object_read_url($req_url)
+function clean_html($json)
 {
-	$res = curl_get_content($req_url);
+	$json = preg_replace( '/[[:cntrl:]]+/', ' ',$json);
+	$json = preg_replace( '/[\s]+/', ' ',$json);
+	return $json;
+}
+
+function clean_space($json)
+{
+	$json = preg_replace( '/[[:cntrl:]]+/', '',$json);
+	$json = preg_replace( '/[\s]+/', '',$json);
+	return $json;
+}
+
+function object_read_url($req_url, $conn_timeout=7, $timeout=5)
+{
+	$res = curl_get_content($req_url,null,$conn_timeout,$timeout);
 
 	if (empty($res)) {
 		return [];
 	}
 
-	$res = preg_replace( '/[^[:print:]]/', '',$res);
-	$res = preg_replace( '/[\s]+/', '',$res);
+	$res = clean_html($res);
+
 	preg_match("#{[\s]*\".*[\s]*}#ui", $res, $mm);
 
 	$res_body = @$mm[0];
@@ -1089,11 +1252,30 @@ function object_read_url($req_url)
 	return json_decode($res_body, true);
 }
 
-function get_remote_json($req_url)
+function get_remote_jsonex($url,$conn_timeout=7, $timeout=5)
 {
-	$res_obj = object_read_url($req_url);
+	if ($full_obj = get_remote_json($url.'?json=1', $conn_timeout, $timeout)) {
+		$post = &$full_obj['post'];
+		$content = $post['content'];
+		if (($post_count = $post['page_count']) > 1) {
+			for($iter_count = 2; $iter_count<=$post_count; $iter_count++) {
+				$new_url = $url.'/'.$iter_count;
+				if ($json_obj = get_remote_json($new_url.'?json=1')) {
+					$content .= $json_obj['post']['content'];
+				}
+			}
+		}
+		$post['content'] = $content;
+	}
+	return $full_obj;
+}
 
-	if ($res_obj['status'] !== 'ok') {
+
+function get_remote_json($req_url,$conn_timeout=7, $timeout=5)
+{
+	$res_obj = object_read_url($req_url,$conn_timeout,$timeout);
+
+	if (@$res_obj['status'] !== 'ok') {
 		return false;
 	}
 
@@ -1392,7 +1574,7 @@ function is_valid_jsonp_callback($subject)
 /***************  curl ********************/
 /****/
 
-function curl_get_content($url, $user_agent=null)
+function curl_get_content($url, $user_agent=null, $conn_timeout=7, $timeout=5)
 {
 	$headers = array(
 		"Accept: application/json",
@@ -1410,9 +1592,9 @@ function curl_get_content($url, $user_agent=null)
 	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	curl_setopt($ch, CURLOPT_HEADER, 0);
-	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $conn_timeout);
 	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
-	curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+	curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
 
 	$res = curl_exec($ch);
 	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -1425,6 +1607,289 @@ function curl_get_content($url, $user_agent=null)
 
 	return $res;
 }
+
+function curl_post_content($url, $data, $user_agent=null, $conn_timeout=7, $timeout=5)
+{
+	$headers = array(
+		'Accept: application/json',
+		'Accept-Encoding: deflate',
+		'Accept-Charset: utf-8;q=1'
+		);
+
+	if ($user_agent === null) {
+		$user_agent = 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36';
+	}
+	$headers[] = $user_agent;
+
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $conn_timeout);
+	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, TRUE);
+	curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+
+	if ($data) {
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+	}
+
+	$res = curl_exec($ch);
+	$httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	$err = curl_errno($ch);
+	curl_close($ch);
+
+	if (($err) || ($httpcode !== 200)) {
+		return null;
+	}
+
+	return $res;
+}
+
+function async_call($script_path=null, $data=null)
+{
+	defined('ASYNC_USERAGENT') or define('ASYNC_USERAGENT', 'async_call_client');
+
+	if ($script_path === null) {
+		return ($_SERVER['HTTP_USER_AGENT'] === ASYNC_USERAGENT);
+	}
+
+	$headers = array(
+		'Host: '.$_SERVER['SERVER_NAME'],
+		'User-Agent: '.ASYNC_USERAGENT,
+	);
+	
+	$url = 'http://127.0.0.1:'.$_SERVER['SERVER_PORT'].$script_path;
+
+	$curl_opt = array(
+		CURLOPT_URL => $url,
+		CURLOPT_HTTPHEADER => $headers,
+		CURLOPT_PORT => $_SERVER['SERVER_PORT'], 
+		CURLOPT_RETURNTRANSFER => 1,
+		CURLOPT_NOSIGNAL => 1,
+		CURLOPT_CONNECTTIMEOUT_MS => 3000,
+		CURLOPT_TIMEOUT_MS =>  1,
+	);
+
+	if ($data) {
+		$curl_opt[CURLOPT_POST] = 1;
+		$curl_opt[CURLOPT_POSTFIELDS] = http_build_query($data);
+	}
+
+	$ch = curl_init();
+	curl_setopt_array($ch, $curl_opt);
+	curl_exec($ch);
+
+	curl_close($ch);
+	return true;
+}
+
+function is_dir_empty($dir) 
+{
+	if (!is_readable($dir)) return NULL; 
+	$handle = opendir($dir);
+	while (false !== ($entry = readdir($handle))) {
+		if ($entry != "." && $entry != "..") {
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+function is_direct_called($full_name)
+{
+        return ($_SERVER['SCRIPT_FILENAME'] === $full_name);
+}
+
+/*--------------------------------
+	lock
+*------------------------------*/
+
+function lock_do($callback, $tok_file=null, $ident='g')
+{
+        $res = false;
+
+        if (empty($tok_file)) {
+                $tok_file = __FILE__;
+        }
+
+        if (!file_exists($tok_file)) {
+                $tok_file = __FILE__;
+        }
+
+        $key = ftok($tok_file, $ident);
+        if ($key === -1) {
+                return call_user_func($callback);
+        }
+
+        $mutex = sem_get($key, 1);
+
+        if ($mutex === false) {
+                return call_user_func($callback);
+        }
+
+        if (sem_acquire($mutex) === false) {
+                return call_user_func($callback);
+        }
+
+        try {
+                $res = call_user_func($callback);
+        } catch (Exception $e) {
+
+        //} finally {
+        }
+	sem_release($mutex);
+
+        return $res;
+}
+
+
+/*------------------------------------
+ -		enqueue 	    --
+-------------------------------------*/
+
+defined('QUEUE_TIME_INTERVAL') or (define('QUEUE_TIME_INTERVAL', 60));
+defined('QUEUE_ITEMS_SUFFIX') or (define('QUEUE_ITEMS_SUFFIX', 'bucket'));
+defined('QUEUE_MAX_DEQUEUE') or (define('QUEUE_MAX_DEQUEUE', 1000));
+
+function queue_id()
+{
+	return intval(time() / QUEUE_TIME_INTERVAL);
+}
+
+function queue_file($cache_dir, $name, $id=null)
+{
+	$dir = $cache_dir.'/'.md5($name);
+	if ($id === null) {
+		return $dir;
+	}
+	return $dir.'/'.$id.'.'.QUEUE_ITEMS_SUFFIX;
+}
+
+function queue_info($cache_dir, $name)
+{
+	$file_to_write = queue_file($cache_dir, $name, queue_id());
+	if (file_exists($file_to_write)) {
+		$time_to_wait = QUEUE_TIME_INTERVAL - intval(time()) % QUEUE_TIME_INTERVAL;
+	} else {
+		$time_to_wait = 0;
+	}
+
+	$buckets = glob(queue_file($cache_dir, $name, '*'));
+
+	return [
+		'file_to_enqueue' => $file_to_write,
+		'is_queueing' => file_exists($file_to_write),
+		'time_to_wait' => $time_to_wait,
+		'is_empty' => is_dir_empty(queue_file($cache_dir, $name)) !== false,
+		'bucket_interval' => QUEUE_TIME_INTERVAL,
+		'max_dequeue' => QUEUE_MAX_DEQUEUE,
+		'bucket_count' => count($buckets),
+		'buckets' => $buckets
+	];
+}
+
+function queue_empty($cache_dir, $name)
+{
+	$buckets = glob(queue_file($cache_dir, $name, '*'));
+	$bucket_count = count($buckets);
+
+	$file_to_write = queue_file($cache_dir, $name, queue_id());
+	if (!file_exists($file_to_write)) {
+		return ($bucket_count===0)? true : false;
+	}
+
+	return ($bucket_count>1)? false : true;
+}
+
+function queue_in($cache_dir, $name, $items)
+{
+	$file_to_write = queue_file($cache_dir, $name, queue_id());
+
+	if (!file_exists($file_to_write)) {
+		if (!file_exists($cache_dir)) {
+			return false;
+		}
+
+		$dir = queue_file($cache_dir, $name);
+		if (!file_exists($dir)) {
+			mkdir($dir);
+		}
+		touch($file_to_write);
+	}
+
+	$data_to_write = '';
+
+	if (is_array($items)) {
+		foreach ($items as $item) {
+			$item_text = json_encode($item);
+			$data_to_write .= $item_text.PHP_EOL;
+		}
+	} else {
+		$data_to_write = json_encode($items).PHP_EOL;
+	}
+	return file_put_contents($file_to_write, $data_to_write, FILE_APPEND | LOCK_EX);
+
+}
+
+function queue_out($cache_dir, $name, $max=QUEUE_MAX_DEQUEUE)
+{
+	if (empty($max)) {
+		$max = QUEUE_MAX_DEQUEUE;
+	}
+
+	$now_writing_id = queue_id();
+
+	$item_ids = [];
+	foreach(glob(queue_file($cache_dir, $name, '*')) as $file) {
+		if (is_dir($file)) {continue;}
+		if (!preg_match('~/(\d+)\.'.QUEUE_ITEMS_SUFFIX.'$~',$file, $matches)){continue;}
+		$item_id = intval($matches[1]);
+		if ($item_id < $now_writing_id) {
+			$item_ids[] = $item_id;
+		}
+	}
+
+	if (count($item_ids)) {
+		sort($item_ids, SORT_NUMERIC);
+	}
+
+	$output_items = [];
+	foreach ($item_ids as $id) {
+		$file_name = queue_file($cache_dir, $name, $id);
+		$data_str = file_get_contents($file_name);
+		$data_arr = explode(PHP_EOL, $data_str);
+		while($item_str = array_shift($data_arr)) {
+			if ($item_str === '') {
+				continue;
+			}
+
+			$item = json_decode($item_str, true);
+			if (empty($item)) {
+				continue;
+			}
+
+			$output_items[] = $item;
+			if (count($output_items) >= $max) {
+				if (!empty($data_arr)) {
+					$resave_str = implode(PHP_EOL, $data_arr);
+					file_put_contents($file_name, $resave_str);
+					break 2;
+				}
+			}
+		}
+		unlink($file_name);
+	}
+
+	$que_dir = queue_file($cache_dir, $name);
+	if (is_dir_empty($que_dir)) {
+		rmdir($que_dir);
+	}
+
+	return $output_items;
+}
+
 
 
 ?>

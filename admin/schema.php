@@ -12,7 +12,22 @@ switch($req['cmd']) {
     case 'edit_table': edit_table_exit($req);
     case 'del_database': del_database_exit($req);
     case 'del_table': del_table_exit($req);
+    case 'key_data': get_keydata_exit($req);
     default: jsonp_nocache_exit(['status'=>'error', 'error'=>'unknow command.']);
+}
+
+function get_keydata_exit($req)
+{
+	list($key_file,$db_name) = null_exit($req, 'file', 'db_name');
+
+	$table_name = @$req['table_name'];
+	if (empty($table_name)) {
+		$db_root = db_root($db_name);
+		jsonp_nocache_exit(object_read("{$db_root}/{$key_file}.json"));
+	}
+
+	$table_root = table_root($db_name, $table_name);
+	jsonp_nocache_exit(object_read("{$table_root}/{$key_file}.json"));
 }
 
 function backup_database_exit($req)
@@ -192,10 +207,11 @@ function edit_table_exit($req)
 	$schema = object_read($filename);
 
 	$caption = [];
-	$caption['title'] = $req['title']; 
-	$caption['content'] = $req['content']; 
-	$caption['image'] = $req['image']; 
-	$caption['key'] = $req['key']; 
+	$caption['title'] = @$req['title']; 
+	$caption['content'] = @$req['content']; 
+	$caption['image'] = @$req['image']; 
+	$caption['key'] = @$req['key']; 
+	$caption['hooks'] = isset($req['hooks'])? array_values($req['hooks']) : [];
 	$schema['caption'] = $caption;
 
 	object_save($filename, $schema);

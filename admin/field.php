@@ -19,18 +19,19 @@ function update_fields_exit($req)
 	$schema_file = "{$table_root}/schema.json";
 	$schema = object_read($schema_file);
 
-	$fields_req = @$req['fields'];
 	$listview_req = @$req['listview'];
-	$onebox_req = @$req['onebox'];
 	$listview = $schema['listview'];
 
 	$diff1 = array_diff($listview_req, $listview);
 	$diff2 = array_diff($listview, $listview_req);
 	$is_same = (empty($diff1) && empty($diff2));
 
-	$schema['fields'] = $fields_req;
 	$schema['listview'] = $listview_req;
-	$schema['onebox'] = $onebox_req;
+	$schema['fields'] = isset($req['fields'])? $req['fields'] : null;
+	$schema['initials'] = isset($req['initials'])? $req['initials'] : [];
+	$schema['options'] = isset($req['options'])? $req['options'] : [];
+	$schema['buttons'] = isset($req['buttons'])? $req['buttons']: [];
+	$schema['onebox'] = isset($req['onebox'])? $req['onebox'] : [];
 	object_save($schema_file, $schema);
 
 	if (!$is_same) {

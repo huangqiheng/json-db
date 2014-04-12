@@ -3,18 +3,18 @@
 $log_db_name = null;
 $log_table_name = null;
 $log_apikey = '';
-$log_ident = null;
-$log_facility = null;
+$log_ident = 'system';
+$log_facility = 'module';
 
 $log_domain = 'log.hqh.me';
 $log_host = '120.31.130.152';
 $log_port = '80';
 
-function jsondb_logger_init($facility, $ident, $db_name=null, $table_name=null, $apikey=null)
+function jsondb_logger_init($facility, $ident=null, $db_name=null, $table_name=null, $apikey=null)
 {
 	global $log_db_name, $log_table_name, $log_apikey, $log_ident, $log_facility;
-	$log_ident = $ident;
 	$log_facility = $facility;
+	$ident && ($log_ident = $ident);
 
 	$db_name && ($log_db_name = $db_name);
 	$table_name && ($log_table_name = $table_name);
@@ -49,7 +49,8 @@ function jsondb_logger($priority, $msg_title, $msg_data=null)
 		'data' => [
 			'general' => [
 				'ID' => '',
-				'TIME' => gm_date(time())
+				'TIME' => gm_date(time()),
+				'CREATE' => gm_date(time())
 			],
 			'log' => [
 				'ident' => $log_ident,

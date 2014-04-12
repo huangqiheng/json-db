@@ -394,6 +394,9 @@ TableTools.prototype = {
 	"fnIsSelected": function ( n )
 	{
 		var pos = this.s.dt.oInstance.fnGetPosition( n );
+		if (!pos) {
+			return false;
+		}
 		return (this.s.dt.aoData[pos]._DTTT_selected===true) ? true : false;
 	},
 
@@ -1073,7 +1076,8 @@ TableTools.prototype = {
 		var
 			that = this,
 			data = this._fnSelectData( src ),
-			firstTr = data.length===0 ? null : data[0].nTr,
+			data = data.filter(function(n){ return n != undefined }),
+			firstTr = data.length===0 ? null : (data[0]? data[0].nTr : null),
 			anSelected = [],
 			i, len;
 
