@@ -3,6 +3,67 @@ require_once 'login.php';
 require_once 'config.php';
 
 /*****************************************
+	系统常量
+*****************************************/
+
+$mapper_types = [
+	'jqxInput-name',
+	'jqxListBox-name'
+];
+
+$options_types = [
+	'jqxComboBox',
+	'jqxCheckBox',
+	'jqxRadioButton'
+];
+
+$id_same_types = [
+	'jqxListBox-onebox-id-same'
+];
+
+$id_share_types = [
+	'jqxInput',
+	'jqxInput-text',
+	'jqxInput-text-json',
+	'jqxComboBox',
+	'jqxCheckBox',
+	'jqxRadioButton',
+	'jqxListBox',
+	'jqxListBox-images',
+	'jqxListBox-onebox-url',
+	'jqxListBox-onebox-id'
+];
+
+$id_rank_types = [
+	'jqxNumberInput'
+];
+
+$field_types = [
+	'jqxInput',
+	'jqxInput-text',
+	'jqxInput-text-json',
+	'jqxInput-name',
+	'jqxComboBox',
+	'jqxCheckBox',
+	'jqxRadioButton',
+	'jqxListBox',
+	'jqxListBox-name',
+	'jqxListBox-onebox-url',
+	'jqxListBox-onebox-id',
+	'jqxListBox-onebox-id-same',
+	'jqxListBox-images',
+	'jqxNumberInput',
+	'jqxNumberInput-price',
+	'jqxNumberInput-size',
+	'jqxDateTimeInput',
+	'jqxInput-id',
+	'jqxInput-time'
+];
+
+define('BACKUP_DIR', '__backup__');
+define('WWWROOT_DIR', '__wwwroot__');
+
+/*****************************************
 	共享函数
 *****************************************/
 
@@ -34,6 +95,76 @@ function is_data()
 	}
 
 	return false;
+}
+
+function and_values()
+{
+	$var_arr= func_get_args();
+	$data = array_shift($var_arr);
+	$default = array_pop($var_arr);
+
+	if (empty($data)) {
+		return $default;
+	}
+
+	$res = [];
+	foreach($var_arr as $var) {
+		if (!array_key_exists($var, $data)) {
+			continue;
+		}
+		$res[] = $data[$var];
+	}
+
+	if (empty($res)) {
+		$res[] = $default;
+	}
+
+	return implode(',', $res);
+}
+
+function or_values()
+{
+	$var_arr= func_get_args();
+	$data = array_shift($var_arr);
+	$default = array_pop($var_arr);
+
+	if (empty($data)) {
+		return $default;
+	}
+
+	foreach($var_arr as $var) {
+		if (!array_key_exists($var, $data)) {
+			continue;
+		}
+		$value = $data[$var];
+		if (empty($value)) {
+			continue;
+		}
+		return $value;
+	}
+	return $default;
+}
+
+function id_exit($db_name, $table_name, $id)
+{
+	if (!preg_match('|^\d+$|', $id)) {
+		$mapped_vals = get_mapper_value($db_name, $table_name, $id);
+		if ($mapped_vals === false) {
+			jsonp_nocache_exit(['status'=>'error', 'error'=>'id not valid']);
+		}
+		return $mapped_vals[0]; 
+	}
+
+	$table_root = table_root($db_name, $table_name);
+	if (!file_exists($table_root.'/'.$id.'.json')) {
+		$mapped_vals = get_mapper_value($db_name, $table_name, strval($id));
+		if ($mapped_vals === false) {
+			jsonp_nocache_exit(['status'=>'error', 'error'=>'id not exists']);
+		}
+		return $mapped_vals[0]; 
+	}
+
+	return intval($id);
 }
 
 function items_exit()
@@ -70,6 +201,51 @@ function items_exit()
 	}
 
 	return $res;
+}
+
+function jsondb_url_exit($url)
+{
+	if (!preg_match('|databases/(\w+?)/(\w+?)/(\d+)\.json$|', $url, $matchs)) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'inputed jsondb url invalid']);
+	}
+	return [$matchs[1], $matchs[2], $matchs[3]];
+}
+
+function get_object_exit($db_name, $table_name, $base_name)
+{
+	$res = get_object($db_name, $table_name, $base_name);
+	if (empty($res)) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>$base_name.' object not exists.']);
+	}
+	return $res;
+}
+
+function gen_signature($token)
+{
+	$randlen=9;
+	$charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	$nonce = '';
+	for ($i=0; $i<$randlen; $i++) {
+		$nonce .= $charset[(mt_rand(0,strlen($charset)-1))];        
+	}
+
+	$timestamp = strval(time());
+	$arr = [$token, $timestamp, $nonce];
+	sort($arr);
+	$signature = sha1(implode('', $arr));
+	return [$timestamp,$nonce,$signature];
+}
+
+function token_exit($token,$timestamp,$nonce,$signature)
+{
+	$timestamp = strval($timestamp);
+	$nonce = trim($nonce);
+	$arr = [$token, $timestamp, $nonce];
+	sort($arr);
+	$signature_real = sha1(implode('', $arr));
+	if ($signature_real !== $signature) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'token validation error']);
+	}
 }
 
 function null_exit()
@@ -160,10 +336,17 @@ function get_onebox_data($schema, $data)
 
 	$res_obj = merge_fields($data);
 
-	$ob_title = $res_obj[$key_title];
+	$ob_title = @$res_obj[$key_title];
+	if (empty($ob_title)) {
+		$ob_title= 'no title.';
+	}
+
 	$ob_desc = 'no description.';
 	if (!empty($key_desc)) {
-		$ob_desc = $res_obj[$key_desc];
+		$ob_desc = @$res_obj[$key_desc];
+		if (empty($ob_desc)) {
+			$ob_desc = 'no description.';
+		}
 	}
 
 	if (is_array($ob_desc)) {
@@ -172,7 +355,9 @@ function get_onebox_data($schema, $data)
 
 	$ob_image = $schema['caption']['image'];
 	if (!empty($key_image)) {
-		$ob_image = $res_obj[$key_image];
+		if (!empty($res_obj[$key_image])) {
+			$ob_image = $res_obj[$key_image];
+		}
 	}
 
 	return [$ob_title, $ob_desc, $ob_image];
@@ -493,7 +678,7 @@ function update_current_data($db_name, $table_name, $req_data)
 		return ['status'=>'error', 'error'=>'update single data error'];
 	}
 
-	$affected = sync_share_fields($table_root, $req_id, $ori_data);
+	$affected = sync_affected_fields($table_root, $req_id, $ori_data);
 	$affected[] = "{$table_root}/{$req_id}.json";
 	refresh_listview($db_name, $table_name, $affected);
 
@@ -510,7 +695,7 @@ function create_new_data($db_name, $table_name, $req_data)
 		return ['status'=>'error', 'error'=>'create single data error'];
 	}
 
-	$affected = sync_share_fields($table_root, $req_id);
+	$affected = sync_affected_fields($table_root, $req_id);
 	$affected[] = "{$table_root}/{$req_id}.json";
 	refresh_listview($db_name, $table_name, $affected);
 
@@ -518,52 +703,62 @@ function create_new_data($db_name, $table_name, $req_data)
 	return ['status'=>'ok', 'ID'=>$req_id, 'reload'=>(count($affected)>0), 'listview'=>$listview_item];
 }
 
-function join_new_data($db_name, $table_name, $data)
+function join_single_data($db_name, $table_name, $data)
+{
+	if (data_exists($db_name, $table_name, $data)) {
+		return update_current_data($db_name, $table_name, $data);
+	} else {
+		return create_new_data($db_name, $table_name, $data);
+	}
+}
+
+function join_multiple_data($db_name, $table_name, $data)
 {
 	$table_root = table_root($db_name, $table_name);
 
-	//判断是单个数据，还是数组
-	if (is_data($data)) {
-		if (data_exists($db_name, $table_name, $data)) {
-			return update_current_data($db_name, $table_name, $data);
-		} else {
-			return create_new_data($db_name, $table_name, $data);
-		}
-	} else {
-		$schema = object_read("{$table_root}/schema.json");
-		$mapper = object_read("{$table_root}/mapper.json");
-		$refresh_files = [];
-		$listviews = [];
+	$schema = object_read("{$table_root}/schema.json");
+	$mapper = object_read("{$table_root}/mapper.json");
+	$refresh_files = [];
+	$listviews = [];
 
-		//批量处理各个数据
-		foreach($data as $sub_data) {
-			if ($req_id = __data_exists($table_root, $schema, $mapper, $sub_data)) {
-				set_data_id($sub_data, $req_id);
-				list($req_id, $new_data, $ori_data) = update_single_data($table_root, $sub_data);
-				if ($new_data) {
-					//共享字段的同步
-					foreach(sync_share_fields($table_root, $req_id, $ori_data) as $file) {
-						$refresh_files[] = $file;
-					}
-					//记录需要刷新listview的数据文件名
-					$refresh_files[] = "{$table_root}/{$req_id}.json";
-					$listviews[] = make_listview_item($table_root, $new_data);
+	//批量处理各个数据
+	foreach($data as $sub_data) {
+		if ($req_id = __data_exists($table_root, $schema, $mapper, $sub_data)) {
+			set_data_id($sub_data, $req_id);
+			list($req_id, $new_data, $ori_data) = update_single_data($table_root, $sub_data);
+			if ($new_data) {
+				//共享字段的同步
+				foreach(sync_affected_fields($table_root, $req_id, $ori_data) as $file) {
+					$refresh_files[] = $file;
 				}
-			} else {
-				list($req_id, $new_data) = create_single_data($table_root, $sub_data);
-				if ($new_data) {
-					foreach(sync_share_fields($table_root, $req_id) as $file) {
-						$refresh_files[] = $file;
-					}
-					$refresh_files[] = "{$table_root}/{$req_id}.json";
-					$listviews[] = make_listview_item($table_root, $new_data);
+				//记录需要刷新listview的数据文件名
+				$refresh_files[] = "{$table_root}/{$req_id}.json";
+				$listviews[] = make_listview_item($table_root, $new_data);
+			}
+		} else {
+			list($req_id, $new_data) = create_single_data($table_root, $sub_data);
+			if ($new_data) {
+				foreach(sync_affected_fields($table_root, $req_id) as $file) {
+					$refresh_files[] = $file;
 				}
+				$refresh_files[] = "{$table_root}/{$req_id}.json";
+				$listviews[] = make_listview_item($table_root, $new_data);
 			}
 		}
+	}
 
-		//批量刷新listview
-		refresh_listview($db_name, $table_name, $refresh_files);
-		return ['status'=>'ok', 'listview'=>$listviews];
+	//批量刷新listview
+	refresh_listview($db_name, $table_name, $refresh_files);
+	return ['status'=>'ok', 'listview'=>$listviews];
+}
+
+function join_new_data($db_name, $table_name, $data)
+{
+	//判断是单个数据，还是数组
+	if (is_data($data)) {
+		return join_single_data($db_name, $table_name, $data);
+	} else {
+		return join_multiple_data($db_name, $table_name, $data);
 	}
 }
 
@@ -589,28 +784,90 @@ function sync_remove_sameid($db_name, $table_name, $item_ids)
 
 }
 
-function sync_share_fields($table_root, $item_id, $ori_data=null)
+function is_group_key($field_type)
 {
-	global $id_same_types, $id_share_types;
+	global $id_same_types;
+	return in_array($field_type, $id_same_types);
+}
+
+function is_share_key($schema, $field_caption, $field_type)
+{
+	global $id_share_types;
+
+	$initials = @$schema['initials'];
+	if (empty($initials)) {
+		return false;
+	}
+
+	$found = false;
+	foreach($initials as $initial) {
+		if (@$initial['share'] === 'true') {
+			if(@$initial['field'] === $field_caption) {
+				$found = true;
+				break;
+			}
+		}
+	}
+
+	if ($found === false) {
+		return false;
+	}
+
+	return in_array($field_type, $id_share_types);
+}
+
+function is_rank_key($schema, $field_caption, $field_type)
+{
+	global $id_rank_types;
+
+	$initials = @$schema['initials'];
+	if (empty($initials)) {
+		return false;
+	}
+
+	$found = false;
+	foreach($initials as $initial) {
+		if (@$initial['rank'] === 'true') {
+			if(@$initial['field'] === $field_caption) {
+				$found = true;
+				break;
+			}
+		}
+	}
+
+	if ($found === false) {
+		return false;
+	}
+
+	return in_array($field_type, $id_rank_types);
+}
+
+
+function sync_affected_fields($table_root, $item_id, $ori_data=null)
+{
 	$item_id = intval($item_id);
 	$affected_files = [];
 
-	//找出sameid的访问路径
+	//找出sameid的访问路径，只取第一个出现的
 	$schema = object_read("{$table_root}/schema.json");
 	$fields = @$schema['fields'];
 	$sameid_group = null;
 	$sameid_key = null;
 	$shared_keys = [];
+	$rank_keys = [];
 	foreach($fields as $group=>$items) {
 		foreach($items as $key=>$value) {
 			if ($sameid_key === null) {
-				if(in_array($value, $id_same_types)) {
+				if(is_group_key($value)) {
 					$sameid_group = $group;
 					$sameid_key = $key;
 				}
 			}
-			if(in_array($value, $id_share_types)) {
+			if(is_share_key($schema, $key, $value)) {
 				$shared_keys[] = $key;
+			}
+			if(is_rank_key($schema, $key, $value)) {
+				$rank_keys[] = $key;
 			}
 		}
 	}
@@ -622,17 +879,19 @@ function sync_share_fields($table_root, $item_id, $ori_data=null)
 	//枚举出所有的sameid组成员
 	$sameid_objs = [];
 	$onebox_list = [];
-	$checked_ids = [];
 
-	$check_ids = [$item_id];
+	$checked_ids = [];
+	$uncheck_ids = [$item_id];
+
 	$data_file = "{$table_root}/{$item_id}.json";
 	$new_data = object_read($data_file);
 	$onebox_list[$item_id] = onebox_object($schema, $data_file, $new_data);
+	//需要删除的ID列表
 	$rm_ids = remove_ids($ori_data, $new_data, $sameid_group, $sameid_key);
 
 	//枚举
-	while (!empty($check_ids)) {
-		$id = array_pop($check_ids);
+	while (!empty($uncheck_ids)) {
+		$id = array_pop($uncheck_ids);
 		$data_file = "{$table_root}/{$id}.json";
 		$data = object_read($data_file);
 
@@ -647,7 +906,7 @@ function sync_share_fields($table_root, $item_id, $ori_data=null)
 			if ($new_id === 0) {continue;}
 			if (in_array($new_id, $checked_ids)) {continue;}
 
-			$check_ids[] = $new_id;
+			$uncheck_ids[] = $new_id;
 			if (!in_array($new_id, $rm_ids)) {
 				$onebox_list[$new_id] = $onebox;
 			}
@@ -657,6 +916,10 @@ function sync_share_fields($table_root, $item_id, $ori_data=null)
 	//更新字段内容
 	foreach($sameid_objs as $id=>$data) {
 		$need_save = false;
+
+		/************************
+		    维护groud key字段
+		************************/
 
 		//生成新的onebox清单
 		$new_oneboxs = [];
@@ -677,12 +940,62 @@ function sync_share_fields($table_root, $item_id, $ori_data=null)
 			$need_save = true;
 		}
 
-		//覆盖所有的share字段
+		/************************
+		    维护共享字段
+		************************/
+
+		//处理特殊字段，如共享字段，排行榜字段	
 		foreach($data as $group=>&$items) {
 			foreach($items as $name=>&$value) {
+				//处理“共享”字段
+				//用新的数据，覆盖所有的share字段
 				if (in_array($name, $shared_keys)) {
 					$value = $new_data[$group][$name];
 					$need_save = true;
+				}
+
+				//处理“排行”字段
+				if (in_array($name, $rank_keys)) {
+					$max_rank = count($sameid_objs);
+					if ($ori_data) {
+						$old_rank = intval(@$ori_data[$group][$name]);
+						if ($old_rank === 0) {
+							$old_rank = 1;
+						}
+					} else {
+						$old_rank = $max_rank;
+					}
+
+					$new_rank = intval($new_data[$group][$name]);
+					$this_rank = intval($value);
+					if (($new_rank < 1) || ($new_rank > $max_rank)) {
+						$new_rank = $max_rank;
+					}
+					//这是自己新排行的数据
+					if ($id === $item_id) {
+						if ($this_rank !== $new_rank) {
+							$value = $new_rank;
+							$need_save = true;
+						}
+					} else {
+						$low_rank = min($old_rank, $new_rank);
+						$high_rank = max($old_rank, $new_rank);
+
+						if ($low_rank !== $high_rank) {
+							if (($this_rank >= $low_rank) && ($this_rank <= $high_rank)) {
+								if ($this_rank === $old_rank) {
+									$value = $new_rank;
+								} else {
+									if ($new_rank > $old_rank) {
+										$value--;
+									} else {
+										$value++;
+									}
+								}
+								$need_save = true;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -810,7 +1123,7 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 						if ($id_list !== $id_input) {continue;}
 						//替换listview，完成任务退出
 						$subitem = new_listview_item($listview, $merge_items, $merged_fields);
-						update_mappers($mapper_data, $mapper_fields, $merge_items);
+						update_mappers($schema, $mapper_data, $mapper_fields, $merge_items);
 						update_options($options_data, $options_fields, $merge_items);
 						continue 2;
 					}
@@ -825,7 +1138,7 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 					if ($subitem[$id_index] !== $id_input) {continue;}
 					//替换listview，完成任务退出
 					$subitem = new_listview_item($listview, $merge_items, $merged_fields);
-					update_mappers($mapper_data, $mapper_fields, $merge_items);
+					update_mappers($schema, $mapper_data, $mapper_fields, $merge_items);
 					update_options($options_data, $options_fields, $merge_items);
 					break 2;
 				}
@@ -837,7 +1150,7 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 			$glob_files = glob("{$data_path}/*.json");
 		}
 
-		$listview_maker = function($file)use(&$listview, &$merged_fields, &$listview_data,
+		$listview_maker = function($file)use(&$schema, &$listview, &$merged_fields, &$listview_data,
 				&$mapper_data, &$mapper_fields, &$options_data, &$options_fields) {
 			$data_obj = object_read($file);
 			if (empty($data_obj)) {return;}
@@ -848,7 +1161,7 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 			$new_listview = new_listview_item($listview, $merge_items, $merged_fields);
 			array_unshift($listview_data, $new_listview);
 			//生成mapper
-			update_mappers($mapper_data, $mapper_fields, $merge_items);
+			update_mappers($schema, $mapper_data, $mapper_fields, $merge_items);
 			//更新options
 			update_options($options_data, $options_fields, $merge_items);
 			unset($data_obj);
@@ -1023,11 +1336,12 @@ function data_exists($table_root, $data)
 	return __data_exists($table_root, $schema, $mapper, $data);
 }
 
-function update_mappers(&$mapper_data, &$mapper_fields, &$merged_item)
+function update_mappers($schema, &$mapper_data, &$mapper_fields, &$merged_item)
 {
+	$item_id = @$merged_item['ID'];
+
 	foreach($mapper_fields as $map_name) {
 		$map_key = @$merged_item[$map_name];
-		$item_id = @$merged_item['ID'];
 		if (empty($map_key)) {continue;}
 
 		if (is_string($map_key)) {
@@ -1044,6 +1358,19 @@ function update_mappers(&$mapper_data, &$mapper_fields, &$merged_item)
 				$mapper_data[md5($key)] = $item_id;
 			}
 		}
+	}
+
+	$custom_mapper = @$schema['mapper'];
+	if (!empty($custom_mapper)) {
+		$map_keys = '';
+		foreach($custom_mapper as $map_name) {
+			$map_key = @$merged_item[$map_name];
+			if ($map_key) {
+				$map_keys .= $map_key;
+			}
+		}
+		$map_key= mapper_key($map_keys);
+		$mapper_data[$map_key] = $item_id;
 	}
 }
 
@@ -1070,6 +1397,8 @@ function get_mapper_value($db_name, $table_name, $map_key)
 	if (empty($map_val)) {
 		return false;
 	}
+
+	$map_val = intval($map_val);
 
 	$data_file = "{$table_root}/{$map_val}.json";
 	if (!file_exists($data_file)) {
@@ -1200,6 +1529,12 @@ function object_save($filename, $data)
 	return $data;
 }
 
+function object_append($filename, $data)
+{
+	file_put_contents($filename, prety_json($data).',', FILE_APPEND | LOCK_EX);
+	return $data;
+}
+
 function object_read($filename)
 {
 	if (preg_match('#^https?://#i', $filename)) {
@@ -1241,7 +1576,7 @@ function object_read_url($req_url, $conn_timeout=7, $timeout=5)
 
 	$res = clean_html($res);
 
-	preg_match("#{[\s]*\".*[\s]*}#ui", $res, $mm);
+	preg_match("#(\[|{){1,2}[\s]*\".*[\s]*(\]|}){1,2}#ui", $res, $mm);
 
 	$res_body = @$mm[0];
 
@@ -1534,6 +1869,13 @@ function __strtotime($time_str)
 {
 	$time_str = preg_replace('/中国标准时间/', 'CST', $time_str);
 	return strtotime($time_str);
+}
+
+function short_date($time_str)
+{
+	$fixed_date = preg_replace('/\(.+\)$/', '', $time_str);
+	$date = new DateTime($fixed_date);
+	return $date->format('Y-m-d');
 }
 
 function format_time($time_str)

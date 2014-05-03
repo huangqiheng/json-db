@@ -10,9 +10,9 @@ $table_name || $table_name = 'default';
 $table_root = table_root($db_name, $table_name);
 $http_prefix = 'http://'.$_SERVER['HTTP_HOST'];
 
-$mapper = object_read("{$table_root}/mapper.json");
-if (empty($mapper)) {
-	jsonp_nocache_exit(['status'=>'error', 'error'=>'not found mapper.json']);
+$req_map_key = @$req['name'];
+if (empty($req_map_key)) {
+	jsonp_nocache_exit(['status'=>'error', 'error'=>'map_key is empty.']);
 }
 
 $schema = object_read("{$table_root}/schema.json");
@@ -20,16 +20,12 @@ if (empty($schema)) {
 	jsonp_nocache_exit(['status'=>'error', 'error'=>'not found schema.json']);
 }
 
-$map_key = @$req['name'];
-if (empty($map_key)) {
-	jsonp_nocache_exit(['status'=>'error', 'error'=>'map_key is empty.']);
-}
-
-$map_key= mapper_key($map_key);
+$mapper = object_read("{$table_root}/mapper.json");
+$map_key= mapper_key($req_map_key);
 $map_val = @$mapper[$map_key];
 
 if (empty($map_val)) {
-	$map_val = strval(intval($map_key));
+	$map_val = strval(intval($req_map_key));
 }
 
 $map_file = "{$table_root}/{$map_val}.json";

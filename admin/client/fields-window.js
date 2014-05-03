@@ -18,7 +18,9 @@ function edit_fields(db_name, table_name)
 				initials :p[2],
 				options  :p[3],
 				buttons  :p[4],
-				onebox   :p[5]
+				onebox   :p[5],
+				mapper	 :p[6],
+				timers   :p[7]
 			};
 			post('field.php', data, function(d){
 				if (d.hasOwnProperty('status')) {
@@ -46,6 +48,16 @@ function edit_fields_windows(title, input, cb_done)
 	var options = schema_data.options;
 	var buttons = schema_data.buttons;
 	var onebox = schema_data.onebox;
+	var mapper = schema_data.mapper;
+	var timers = schema_data.timers;
+
+	if (mapper === undefined) {
+		mapper = [];
+	}
+
+	if (timers === undefined) {
+		timers = [];
+	}
 
 	if (options === undefined) {
 		options = [];
@@ -94,6 +106,7 @@ function edit_fields_windows(title, input, cb_done)
 	var init_share_id = window_id+'_i_share';
 	var init_readonly_id = window_id+'_i_readonly';
 	var init_vital_id = window_id+'_i_vital';
+	var init_rank_id = window_id+'_i_rank';
 	var init_addbtn_id = window_id+'_i_addbtn';
 	var init_delbtn_id = window_id+'_i_delbtn';
 	var init_tips_id = window_id+'_i_tips';
@@ -104,6 +117,19 @@ function edit_fields_windows(title, input, cb_done)
 	var opt_fixed_id = window_id+'_o_fixed';
 	var opt_addbtn_id = window_id+'_o_addbtn';
 	var opt_delbtn_id = window_id+'_o_delbtn';
+
+	var map_list_id = window_id+'_m_list';
+	var map_field_id = window_id+'_m_field';
+	var map_addbtn_id = window_id+'_m_addbtn';
+	var map_delbtn_id = window_id+'_m_delbtn';
+	var map_upbtn_id = window_id+'_m_up';
+	var map_downbtn_id = window_id+'_m_down';
+
+	var timer_list_id = window_id+'_t_list';
+	var timer_url_id = window_id+'_t_url';
+	var timer_interval_id = window_id+'_t_val';
+	var timer_addbtn_id = window_id+'_t_addbtn';
+	var timer_delbtn_id = window_id+'_t_delbtn';
 
 	var c_list_id = window_id+'_c_list';
 	var c_img_id = window_id+'_c_img';
@@ -163,15 +189,16 @@ function edit_fields_windows(title, input, cb_done)
 				'<div align="center">',
 				    '<div id="'+init_list_id+'"></div>',
 				    '<div>',
-					'<div id="'+init_field_id+'" style="float:left; margin-left:8px;"></div>',
+					'<div id="'+init_field_id+'" style="float:left; margin-left:9px;"></div>',
 					'<input type="text" id="'+init_value_id+'" style="float:left;" />',
 					'<input type="text" id="'+init_suffix_id+'" style="float:left;" />',
 					'<div id="'+init_share_id+'" style="float:left;margin:4px;">'+T('share')+'</div>',
-					'<div id="'+init_readonly_id+'" style="float:left;margin:4px;">'+T('readonly')+'</div>',
+					'<div id="'+init_rank_id+'" style="float:left;margin:4px;">'+T('rank')+'</div>',
 					'<div id="'+init_addbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/add.png"/></div>',
 					'<div id="'+init_delbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/delete.png"/></div>',
-					'<textarea id="'+init_tips_id+'" style="float: left;margin-left: 8px;"></textarea>',
+					'<textarea id="'+init_tips_id+'" style="float: left;margin-left: 9px;"></textarea>',
 					'<div id="'+init_vital_id+'" style="float:left;margin:4px;">'+T('vital')+'</div>',
+					'<div id="'+init_readonly_id+'" style="float:left;margin:4px;">'+T('readonly')+'</div>',
 				    '</div>',
 				'</div>',
 			    '</div>',
@@ -205,15 +232,43 @@ function edit_fields_windows(title, input, cb_done)
 			    '</div>',
 			    //onebox编辑框
 			    '<div>',
-			    	'<div style="width:100px; text-align: center; border: 1px solid rgb(224, 224, 224);top: 25px;left: 20px;padding: 5px;position: relative;background: white;">',
+			    	'<div style="width:100px; text-align: center; border: 1px solid rgb(224, 224, 224);top: 15px;left: 20px;padding: 5px;position: relative;background: white;">',
 				    T('onebox editor'),
 				'</div>',
-			        '<div style="width:580px; margin:10px; padding:15px; border: 1px solid rgb(224, 224, 224);">',
-				  '<table style="font-size:13; width:100%;">',
+			        '<div style="width:560px; margin-left:40px; padding-top:15px; border: 1px solid rgb(224, 224, 224);">',
+				  '<table style="font-size:13; margin-left:120px;">',
 				    '<tr><td align="right">'+T('title')+':</td><td><div id="'+ob_title_id+'"></div></td></tr>',
 				    '<tr><td align="right">'+T('desc')+':</td><td><div id="'+ob_desc_id+'"></div></td></tr>',
 				    '<tr><td align="right">'+T('thumbnail')+':</td><td><div id="'+ob_image_id+'"></div></td></tr>',
 				  '</table>',
+				'</div>',
+
+				//自定义映射名称
+			    	'<div style="width:100px; text-align: center; border: 1px solid rgb(224, 224, 224);top: 15px;left: 20px;padding: 5px;position: relative;background: white;">',
+				    T('custom mapper key'),
+				'</div>',
+			        '<div style="width:560px; margin-left:40px; padding-top:15px; padding-bottom:35px; border: 1px solid rgb(224, 224, 224);">',
+				    '<div id="'+map_list_id+'" style="margin-left:120px;"></div>',
+				    '<div>',
+					'<div id="'+map_field_id+'" style="float:left; margin-left:120px;"></div>',
+					'<div id="'+map_addbtn_id+'" style="padding:0px;float:left;"><img height="'+(btn_height)+'" width="'+btn_width+'" src="images/add.png"/></div>',
+					'<div id="'+map_delbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/delete.png"/></div>',
+					'<div id="'+map_upbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/up.png"/></div>',
+					'<div id="'+map_downbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/down.png"/></div>',
+				    '</div>',
+				'</div>',
+				//设置定时触发器
+			    	'<div style="width:100px; text-align: center; border: 1px solid rgb(224, 224, 224);top: 15px;left: 20px;padding: 5px;position: relative;background: white;">',
+				    T('define time trigger'),
+				'</div>',
+			        '<div style="width:560px; margin-left:40px; padding-top:15px; padding-bottom:35px; border: 1px solid rgb(224, 224, 224);">',
+				    '<div id="'+timer_list_id+'" style="margin-left:90px;"></div>',
+				    '<div>',
+					'<input type="text" id="'+timer_url_id+'" style="float:left; margin-left:90px;" />',
+					'<input type="text" id="'+timer_interval_id+'" style="float:left;" />',
+					'<div id="'+timer_addbtn_id+'" style="padding:0px;float:left;"><img height="'+(btn_height)+'" width="'+btn_width+'" src="images/add.png"/></div>',
+					'<div id="'+timer_delbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/delete.png"/></div>',
+				    '</div>',
 				'</div>',
 			    '</div>',
 		    '</div>',
@@ -301,10 +356,12 @@ function edit_fields_windows(title, input, cb_done)
 			var initials = get_listbox_values(init_list_id);
 			var options = get_listbox_values(opt_list_id);
 			var custom_btns = get_listbox_values(c_list_id);
+			var custom_mapper = get_listbox_values(map_list_id);
+			var timers = get_listbox_values(timer_list_id);
 
 			cb_done([listview, fields, 
 				 initials, options, custom_btns, 
-				 res_onebox]);
+				 res_onebox, custom_mapper, timers]);
 			$('#'+window_id).jqxWindow('close');
 		});
 
@@ -661,18 +718,20 @@ function edit_fields_windows(title, input, cb_done)
 		var source_fields = array_remove(get_list_items(), ['ID','CREATE','TIME']);
 
 		//设置字段属性
-		var initval_item = function(field, init_val, suffix, isshare, readonly, vital, tips){
+		var initval_item = function(field, init_val, suffix, is_share, is_rank, readonly, vital, tips){
 			var init_str = (init_val==='')? '--' : init_val;
 			var suffix_str = (suffix==='')? '--' : suffix;
 			var readonly_str = (readonly) ? T('readonly') : '--'; 
 			var vital_str = (vital) ? T('vital') : '--'; 
-			var share_str = (isshare) ? T('share') : '--'; 
+			var share_str = (is_share) ? T('share') : '--'; 
+			var rank_str = (is_rank) ? T('rank') : '--'; 
 			var tips_str = (tips===undefined)? '--' : ((tips==='')? '--' : tips);
 			var html = '<table style="width:100%; border:none; border-spacing:0px; font-size:12;"><tr>'+
 				'<td style="width:90px;">'+ field +'</td>'+
 				'<td>'+ init_str + '</td>'+
 				'<td style="width:40px;">'+ suffix_str+ '</td>'+
 				'<td style="width:40px;">'+ share_str + '</td>'+
+				'<td style="width:40px;">'+ rank_str + '</td>'+
 				'<td style="width:40px;">'+ readonly_str +'</td>'+
 				'<td style="width:40px;">'+ vital_str+'</td>'+
 				'<td style="width:200px;">'+ tips_str +'</td>'+
@@ -681,7 +740,8 @@ function edit_fields_windows(title, input, cb_done)
 				field: field,
 				value: init_val,
 				suffix: suffix,
-				share: isshare,
+				share: is_share,
+				rank: is_rank,
 				readonly: readonly,
 				vital: vital,
 				tips: tips
@@ -690,7 +750,7 @@ function edit_fields_windows(title, input, cb_done)
 		};
 
 		var initval_render = function(data, finish) {
-			finish(data.concat(initval_item(data[0],data[1],data[2],data[3],data[4],data[5],data[6])));
+			finish(data.concat(initval_item(data[0],data[1],data[2],data[3],data[4],data[5],data[6],data[7])));
 		};
 
 		var initval_source = function(init) {
@@ -699,7 +759,7 @@ function edit_fields_windows(title, input, cb_done)
 				for(var i in init) {
 					var item = init[i];
 					var format_item = initval_item(item['field'], item['value'], item['suffix'],item['share']==='true', 
-							item['readonly']==='true', item['vital']==='true', item['tips']);
+							item['rank']==='true', item['readonly']==='true', item['vital']==='true', item['tips']);
 					source.push({html:format_item[0], label:format_item[1], value:format_item[1]});
 				}
 			}
@@ -713,11 +773,12 @@ function edit_fields_windows(title, input, cb_done)
 		$('#'+init_suffix_id).jqxInput({width: 48, height: btn_height, placeHolder: T('input suffix string')});
 
 		$('#'+init_share_id).jqxCheckBox({width: 50, height: btn_height-8});
-		$('#'+init_readonly_id).jqxCheckBox({width: 80, height: btn_height-8});
+		$('#'+init_rank_id).jqxCheckBox({width: 80, height: btn_height-8});
+		$('#'+init_readonly_id).jqxCheckBox({width: 50, height: btn_height-8});
 		$('#'+init_vital_id).jqxCheckBox({width: 50, height: btn_height-8});
 		$('#'+init_addbtn_id).jqxButton({width: btn_width, height:btn_height});
 		$('#'+init_delbtn_id).jqxButton({width: btn_width, height:btn_height});
-		$('#'+init_tips_id).jqxInput({width: 436, height: 35, placeHolder:T('Please input the help tips of the field')});
+		$('#'+init_tips_id).jqxInput({width: 435, height: 35, placeHolder:T('Please input the help tips of the field')});
 		$('#'+init_delbtn_id).on('click', [init_list_id], event_listbox_delete);
 		$('#'+init_addbtn_id).on('click',function(e){
 			var field_name = $('#'+init_field_id).val();
@@ -726,18 +787,20 @@ function edit_fields_windows(title, input, cb_done)
 			var is_share = $('#'+init_share_id).jqxCheckBox('checked');
 			var is_readonly = $('#'+init_readonly_id).jqxCheckBox('checked');
 			var is_vital = $('#'+init_vital_id).jqxCheckBox('checked');
+			var is_rank = $('#'+init_rank_id).jqxCheckBox('checked');
 			var tips_str = $('#'+init_tips_id).val();
+			var rand_arr = [field_name, field_value, field_suffix, is_share, is_rank, is_readonly, is_vital, tips_str, init_list_id];
 			if (field_name.length == 0) {return;}
 
 			var update_to_list = function(item){
-				initval_render([field_name, field_value, field_suffix, is_share, is_readonly, is_vital, tips_str, init_list_id], function (p) {
+				initval_render(rand_arr, function (p) {
 					var value=p.pop(), label=p.pop();
 					$('#'+init_list_id).jqxListBox('updateAt', { label: label, value: value}, item.index);
 				});
 			};
 
 			var insert_to_list = function() {
-				initval_render([field_name, field_value, field_suffix, is_share, is_readonly, is_vital, tips_str, init_list_id], function (p) {
+				initval_render(rand_arr, function (p) {
 					var value=p.pop(), label=p.pop();
 					$('#'+init_list_id).jqxListBox('insertAt', {label: label, value: value}, 0); 
 				});
@@ -763,10 +826,28 @@ function edit_fields_windows(title, input, cb_done)
 				$('#'+init_value_id).val((item.value)?item.value:'');
 				$('#'+init_suffix_id).val((item.suffix)?item.suffix:'');
 				$('#'+init_share_id).jqxCheckBox({checked:(item.share)});
+				$('#'+init_rank_id).jqxCheckBox({checked:(item.rank)});
 				$('#'+init_readonly_id).jqxCheckBox({checked:(item.readonly)});
 				$('#'+init_vital_id).jqxCheckBox({checked:(item.vital)});
 				$('#'+init_tips_id).val((item.tips)?item.tips:'');
 			}
+		});
+
+		//自定义映射名
+		$('#'+map_list_id).jqxListBox({source: mapper, width: 150+btn_width*4+7, height: btn_height*3});
+		$('#'+map_field_id).jqxDropDownList({source:source_fields, autoDropDownHeight:true,  
+						placeHolder: T('Please choose field name'), width:150, height: btn_height});
+		$('#'+map_addbtn_id).jqxButton({width: btn_width, height:btn_height});
+		$('#'+map_delbtn_id).jqxButton({width: btn_width, height:btn_height});
+		$('#'+map_upbtn_id).jqxButton({width: btn_width, height:btn_height});
+		$('#'+map_downbtn_id).jqxButton({width: btn_width, height:btn_height});
+		$('#'+map_delbtn_id).on('click', [map_list_id], event_listbox_delete);
+		$('#'+map_upbtn_id).on('click', [map_list_id], event_listbox_up);
+		$('#'+map_downbtn_id).on('click', [map_list_id], event_listbox_down);
+		$('#'+map_addbtn_id).on('click',function(e){
+			var field_name = $('#'+map_field_id).val();
+			if (field_name.length == 0) {return;}
+			$('#'+map_list_id).jqxListBox('addItem', { label: field_name, value: field_name});
 		});
 
 		//选项值配置
@@ -958,6 +1039,70 @@ function edit_fields_windows(title, input, cb_done)
 			}
 		});
 
+		//设置“时间触发器”
+		var timers_item = function(url, minutes) {
+			var html = '<table style="width:100%; border:none; border-spacing:0px; font-size:12;"><tr>'+
+				'<td>'+url+'</td>'+
+				'<td>'+ minutes+'</td>'+
+				'</tr></table>';
+			var value = {
+				url: url,
+				minutes: minutes
+			};
+			return [html, value];
+		};
+
+		var timers_render = function(data, finish) {
+			finish(data.concat(timers_item(data[0],data[1])));
+		};
+
+		var timers_source = function(init) {
+			var source = [];
+			if (init instanceof Array) {
+				for(var i in init) {
+					var item = init[i];
+					var format_item = timers_item(item['url'], item['minutes']);
+					source.push({html:format_item[0], label:item, value:item});
+				}
+			}
+			return source;
+		};
+		$('#'+timer_list_id).jqxListBox({source: timers_source(timers), width: 400, height: btn_height*3});
+		$('#'+timer_url_id).jqxInput({width: 400-(btn_width+2)*2-50-1, height: btn_height, placeHolder: T('Please input trigger url')});
+		$('#'+timer_interval_id).jqxInput({width: 50, height: btn_height, placeHolder: T('minutes interval')});
+		$('#'+timer_addbtn_id).jqxButton({width: btn_width, height:btn_height});
+		$('#'+timer_delbtn_id).jqxButton({width: btn_width, height:btn_height});
+		$('#'+timer_delbtn_id).on('click', [timer_list_id], event_listbox_delete);
+		$('#'+timer_addbtn_id).on('click',function(e){
+			var url = $('#'+timer_url_id).val();
+			var minutes = $('#'+timer_interval_id).val();
+			if (url.length == 0) {return;}
+			if (!url.match(/^https?:\/\//i)) {return;}
+			if (minutes.length == 0) {return;}
+			minutes = parseInt(minutes);
+			join_item(timer_list_id, 'url', timers_item(url, minutes));
+
+			function join_item(list_id, key_name, rended) {
+				var items = $('#'+timer_list_id).jqxListBox('getItems');
+				var new_key = rended[1][key_name];
+				for(var index in items) {
+					var item = items[index];
+					if (new_key === item.value[key_name]) {
+						$('#'+list_id).jqxListBox('updateAt', {label: rended[0], value: rended[1]}, item.index);
+						return;
+					}
+				}
+				$('#'+list_id).jqxListBox('insertAt', {label: rended[0], value: rended[1]}, 0); 
+			}
+		});
+		$('#'+timer_list_id).on('select', function(e) {
+			var args = e.args;
+			if (args) {
+				var item = args.item.value;
+				$('#'+timer_url_id).val(item.url);
+				$('#'+timer_interval_id).val(item.minutes);
+			}
+		});
 
 	}
 }

@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+require_once 'crontab.php';
 denies_with_json();
 
 $req = get_param();
@@ -32,10 +33,16 @@ function update_fields_exit($req)
 	$schema['options'] = isset($req['options'])? $req['options'] : [];
 	$schema['buttons'] = isset($req['buttons'])? $req['buttons']: [];
 	$schema['onebox'] = isset($req['onebox'])? $req['onebox'] : [];
+	$schema['mapper'] = isset($req['mapper'])? $req['mapper'] : [];
+	$schema['timers'] = isset($req['timers'])? $req['timers'] : [];
 	object_save($schema_file, $schema);
 
 	if (!$is_same) {
 		refresh_listview($db_name, $table_name);
+	}
+
+	if (!empty($schema['timers'])) {
+		cron_jobs_update();
 	}
 
 	jsonp_nocache_exit(['status'=>'ok']); 

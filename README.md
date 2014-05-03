@@ -57,6 +57,15 @@ nginx 配置
 ```
 cd /srv/http/json-db
 chown www-data:www-data ./databases -R
+chown www-data:www-data ./cache -R
 chown www-data:www-data ./admin/uploads -R
 chown www-data:www-data ./service/queue/cache -R
+```
+
+配置定时器
+======
+这样就会每分钟调用本脚本一次，is_cron_calling函数是用来检查来自系统cron的调用
+```
+vim /etc/crontab，添加：
+*  *    * * *	www-data /usr/bin/php -q /srv/http/json-db/admin/crontab.php > /dev/null 2>&2
 ```

@@ -1,5 +1,6 @@
 <?php
 
+define('DISABLE_CREATE', true);
 define('DEFAULT_LANGUAGE', 'cn');
 define('DEFAULT_REFERER_FIELD', 'referer');
 define('COOKIE_LIFETIME', 3600*24*365);
@@ -173,6 +174,11 @@ class Login
 
 	private function create_new_user()
 	{
+		if (DISABLE_CREATE) {
+			$this->feedback = T('Sorry, system had shutdown the registration of new user.');
+			return false;
+		}
+
 		$user_name = htmlentities($_POST['user_name'], ENT_QUOTES);
 		$user_email = htmlentities($_POST['user_email'], ENT_QUOTES);
 		$user_password = $_POST['user_password_new'];
@@ -186,7 +192,7 @@ class Login
 			$user_datas = $this->userdata();
 			array_unshift($user_datas, $new_data);
 			$this->userdata($user_datas);
-			$this->feedback = T('Your account has been created successfully. You can now log in.');
+			$this->feedback = T('Your account has been created successfully. You can log in now.');
 			return true;
 		}
 		return false;
@@ -524,8 +530,10 @@ $Language_data = [
 				['cn'=>'用户名不符合规则：只能a-Z字符和数字，2到64个字符数'],
 	'Sorry, that username is already taken. Please choose another one.' =>				
 				['cn'=>'非常抱歉，你输入的用户名已经被其他人拥有，请再选另外一个。'],
-	'Your account has been created successfully. You can now log in.' =>				
+	'Your account has been created successfully. You can log in now.' =>				
 				['cn'=>'您的账户已经成功创建了。您现在能够登陆了。'],
+	'Sorry, system had shutdown the registration of new user.' =>				
+				['cn'=>'非常抱歉，系统已经关闭注册了。'],
 ];
 
 function T($ori)

@@ -81,3 +81,32 @@ function get_listview_column($db_name, $table_name, $field_name)
 	}
 	return $rep_list;
 }
+
+function get_img_data($url)
+{
+	if (empty($url)) {
+		return false;
+	}
+
+	$md5 = md5($url);
+	$cache_file = __DIR__.'/cache/'.$md5.'.img';
+	if (file_exists($cache_file)) {
+		return file_get_contents($cache_file);
+	}
+
+	$res = curl_get_content($url, null, 7, 30);
+	if (empty($res)) {
+		return false;
+	}
+
+	$img_data = 'data:image/'.image_type($url).';base64,'.base64_encode($res);
+	file_put_contents($cache_file, $img_data);
+	return $img_data;
+}
+
+function image_type($img_url)
+{
+	if (preg_match('~.+\.(jpg|png|gif)$~i', $img_url, $matchs)) {return $matchs[1];}
+	return 'jpg';
+}
+

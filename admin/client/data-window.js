@@ -154,20 +154,10 @@ function edit_data_window(title, input, cb_done)
 				if (field_value === 'jqxListBox-onebox-id-same')   {res_val=getval_jqxListBox_onebox_id(p);break;}
 				if (field_value === 'jqxListBox-images')   	   {res_val=getval_jqxListBox_images(p);break;}
 				if (field_value === 'jqxComboBox') 	   	   {res_val=getval_jqxComboBox(p);break;}
+				if (field_value === 'jqxNumberInput') 	   	   {res_val=getval_jqxNumberInput(p);break;}
 				if (field_value === 'jqxNumberInput-size') 	   {res_val=getval_jqxNumberInput(p);break;}
 				if (field_value === 'jqxNumberInput-price')	   {res_val=getval_jqxNumberInput(p);break;}
 				if (field_value === 'jqxDateTimeInput')    	   {res_val=getval_jqxDateTimeInput(p);break;}
-
-				if (field_value === 'jqxInput-share') 	   	   {res_val=getval_jqxInput(p);break;}
-				if (field_value === 'jqxInput-text-share') 	   {res_val=getval_jqxInput_text(p);break;}
-				if (field_value === 'jqxInput-text-json-share')    {res_val=getval_jqxInput_text_json(p);break;}
-				if (field_value === 'jqxCheckBox-share')   	   {res_val=getval_jqxCheckBox(p);break;}
-				if (field_value === 'jqxRadioButton-share')	   {res_val=getval_jqxRadioButton(p);break;}
-				if (field_value === 'jqxListBox-share')	   	   {res_val=getval_jqxListBox(p);break;}
-				if (field_value === 'jqxListBox-onebox-url-share') {res_val=getval_jqxListBox_onebox_url(p);break;}
-				if (field_value === 'jqxListBox-onebox-id-share')  {res_val=getval_jqxListBox_onebox_id(p);break;}
-				if (field_value === 'jqxListBox-images-share')     {res_val=getval_jqxListBox_images(p);break;}
-				if (field_value === 'jqxComboBox-share')   	   {res_val=getval_jqxComboBox(p);break;}
 				}while(false);
 				res_data[tab_name][field_name] = res_val;
 
@@ -192,6 +182,19 @@ function edit_data_window(title, input, cb_done)
 		}
 	}
 
+	window.retrieve_p=function (src_p, tab_name, field_name, field_value) {
+		var old_tab_id = src_p[0];
+		var window_id = old_tab_id.match(/win_\d+/)[0];
+		var tabs_id = old_tab_id.match(/win_\d+_tab/)[0];
+
+		var ids = get_tabtable_id(tabs_id, tab_name);
+		var tab_id=ids[0], table_id=ids[1];
+
+		var field_id = get_tableitem_id(window_id, tab_name, field_name);
+		var p = [tab_id, table_id, field_id, field_name, src_p[4]];
+		return p;
+	};
+
 	function init_data_component()
 	{
 		init_tab(fields, tabs_id);
@@ -204,7 +207,7 @@ function edit_data_window(title, input, cb_done)
 			for (var field_name in val_obj) {
 				var field_value = val_obj[field_name];
 				var field_id = get_tableitem_id(window_id, tab_name, field_name);
-				var p = [tab_id, table_id, field_id, field_name];
+				var p = [tab_id, table_id, field_id, field_name, schema];
 
 				//设置初始化值
 				var init_value = null;
@@ -277,23 +280,13 @@ function edit_data_window(title, input, cb_done)
 				if (field_value === 'jqxListBox-name') 		{addItem_jqxListBox_name(p, init_val);continue;}
 				if (field_value === 'jqxListBox-onebox-url')	{addItem_jqxListBox_onebox_url(p, init_val);continue;}
 				if (field_value === 'jqxListBox-onebox-id')	{addItem_jqxListBox_onebox_id(p, init_val);continue;}
-				if (field_value === 'jqxListBox-onebox-id-same'){addItem_jqxListBox_onebox_id(p, init_val);continue;}
+				if (field_value === 'jqxListBox-onebox-id-same'){addItem_jqxListBox_onebox_id_same(p, init_val);continue;}
 				if (field_value === 'jqxListBox-images')	{addItem_jqxListBox_images(p, init_val);continue;}
 				if (field_value === 'jqxComboBox') 		{addItem_jqxComboBox(p, init_val, option_val);continue;}
+				if (field_value === 'jqxNumberInput') 		{addItem_jqxNumberInput(p, init_val, 0);continue;}
 				if (field_value === 'jqxNumberInput-size') 	{addItem_jqxNumberInput(p, init_val, 2,' MB');continue;}
 				if (field_value === 'jqxNumberInput-price') 	{addItem_jqxNumberInput(p, init_val, 2);continue;}
 				if (field_value === 'jqxDateTimeInput') 	{addItem_jqxDateTimeInput(p, init_val);continue;}
-
-				if (field_value === 'jqxInput-share') 		{addItem_jqxInput(p, init_val);continue;}
-				if (field_value === 'jqxInput-text-share')	{addItem_jqxInput_text(p, init_val);continue;}
-				if (field_value === 'jqxInput-text-json-share')	{addItem_jqxInput_text_json(p, init_val);continue;}
-				if (field_value === 'jqxCheckBox-share')	{addItem_jqxCheckBox(p, init_val, option_val);continue;}
-				if (field_value === 'jqxRadioButton-share')   	{addItem_jqxRadioButton(p, init_val, option_val);continue;}
-				if (field_value === 'jqxListBox-share') 	{addItem_jqxListBox(p, init_val);continue;}
-				if (field_value === 'jqxListBox-onebox-url-share')	{addItem_jqxListBox_onebox_url(p, init_val);continue;}
-				if (field_value === 'jqxListBox-onebox-id-share') {addItem_jqxListBox_onebox_id(p, init_val);continue;}
-				if (field_value === 'jqxListBox-images-share')	{addItem_jqxListBox_images(p, init_val);continue;}
-				if (field_value === 'jqxComboBox-share') 	{addItem_jqxComboBox(p, init_val, option_val);continue;}
 			}
 		}
 	}
@@ -301,7 +294,7 @@ function edit_data_window(title, input, cb_done)
 
 function getval_jqxComboBox(p)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	return $('#'+field_id).jqxComboBox('val');
 }
 
@@ -314,7 +307,7 @@ function combobox_readonly(field_id)
 
 function addItem_jqxComboBox(p, init_val, source, height, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	width = width || 200; height = height || 25;
 	source = source || []; 
@@ -339,13 +332,13 @@ function getval_jqxNumberInput_size(p){return getval_jqxNumberInput(p);}
 function getval_jqxNumberInput_price(p){return getval_jqxNumberInput(p);}
 function getval_jqxNumberInput(p)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	return $('#'+field_id).jqxNumberInput('val');
 }
 
 function addItem_jqxNumberInput(p, init_val, digits, symbol, height, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	width = width || 200; height = height || 25;
 	symbol = symbol || '';
@@ -359,14 +352,14 @@ function addItem_jqxNumberInput(p, init_val, digits, symbol, height, width)
 
 function getval_jqxDateTimeInput(p)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var date_obj = $('#'+field_id).jqxDateTimeInput('getDate');
 	return date_obj;
 }
 
 function addItem_jqxDateTimeInput(p, init_val, height, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	width = width || 200; height = height || 25;
 	$('#'+table_id).append(['<tr><td align="right">'+caption+': </td>',
@@ -380,7 +373,7 @@ function addItem_jqxDateTimeInput(p, init_val, height, width)
 
 function addItem_jqxInput_id(p, id, width, height)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	width = width || 200;
 	addItem_jqxInput(p, id, [], height, width);
 	$('#'+field_id).jqxInput({disabled: true});
@@ -394,7 +387,7 @@ function addItem_jqxInput_name(p, init_val, source, height, width)
 
 function addItem_jqxInput_time(p, init_val, source, height, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	if (caption === 'TIME') {
 		init_value = new Date().toUTCString();
@@ -422,7 +415,7 @@ function addItem_jqxInput_text_json(p, init_val, source, height, width)
 
 function addItem_jqxInput_text(p, init_val, source, height, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	width = width || 400; height = height || 50;
 	source = source || []; 
@@ -438,7 +431,7 @@ function addItem_jqxInput_text(p, init_val, source, height, width)
 
 function addItem_jqxInput(p, init_val, source, height, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	width = width || 300; height = height || 23;
 	source = source || []; 
@@ -468,7 +461,7 @@ function getval_jqxInput_name(p){return getval_jqxInput(p);}
 function getval_jqxInput_text(p){return getval_jqxInput(p);}
 function getval_jqxInput(p)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	return $('#'+field_id).jqxInput('val');
 }
 
@@ -551,7 +544,7 @@ function render_onebox_url(data, finish)
 
 function addItem_jqxListBox_images(p, init_val, height, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	width = width || 400; height = height || 250;
 	var img_width = 332;
@@ -630,11 +623,65 @@ function addItem_jqxListBox_images(p, init_val, height, width)
 	$('#'+field_id).jqxListBox('selectIndex', 0 ); 
 }
 
+
 function addItem_jqxListBox_onebox_id(p, init_val, render, height, width)
 {
 	render = render || render_onebox_id;
 	height = height || 250;
 	addItem_jqxListBox(p, init_val, render, height, width);
+}
+
+function addItem_jqxListBox_onebox_id_same(p, init_val, render, height, width)
+{
+	var schema = p[4];
+	var initials = schema.initials || [];
+	var fields = schema.fields || [];
+	render = render || render_onebox_id;
+
+	function fill_share(group, caption, type, value) {
+		var new_p = retrieve_p(p, group, caption, value);
+		if (type === 'jqxInput') {
+			var field_id = new_p[2];
+			$('#'+field_id).val(value);
+		}
+		if (type === 'jqxCheckBox') {
+			for(var j=0; j<value.length; j++) {
+				add_checkbox_item(new_p, value[j]);
+			}
+		}
+		if (type === 'jqxRadioButton') {
+			add_radiobtn_item(new_p, value);
+		}
+	}
+
+	var render_hooker = function(data, finish) {
+		render(data, function(data) {
+			finish(data);
+			var data_url = data[3]['url'];
+			json(data_url, function(d){
+				var field_types = merge_fields(fields);
+				for(var i=0; i<initials.length; i++) {
+					var item = initials[i];
+					if (item.share !== 'true') {
+						continue;
+					}
+					for(var group_name in d) {
+						var items = d[group_name];
+						for(var field_name in items) {
+							if (field_name !== item.field) {
+								continue;
+							}
+							var field_value = items[field_name];
+							var field_type = field_types[field_name];
+							fill_share(group_name, field_name, field_type, field_value);
+						}
+					}
+
+				}
+			});
+		});
+	};
+	addItem_jqxListBox_onebox_id(p, init_val, render_hooker, height, width);
 }
 
 function addItem_jqxListBox_name(p, init_val, render, height, width)
@@ -657,7 +704,7 @@ function getval_jqxListBox_onebox_id(p){return getval_jqxListBox(p);}
 function getval_jqxListBox_images(p){return getval_jqxListBox(p);}
 function getval_jqxListBox(p)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var res_objs = [];
 	var items = $('#'+field_id).jqxListBox('getItems'); 
 	for (var index in items) {
@@ -667,28 +714,40 @@ function getval_jqxListBox(p)
 	return res_objs;
 }
 
-function getval_jqxRadioButton(p)
+function getval_jqxRadioButton(p, only_checked)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	if (only_checked===undefined) only_checked=true;
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var tr_class = field_id+'_trclass';
 	var td_class = field_id+'_tdclass';
 	var radiobtn_class = field_id+'_radiobtn_class';
 	var radio_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class+' div.'+radiobtn_class);
-	var res_val = '';
-	for(var i=0; i<radio_objs.length; i++) {
-		var td_item = radio_objs[i];
-		var checked = $(td_item).jqxRadioButton('checked');
-		if (checked) {
-			var caption = $(td_item)[0].textContent;
-			return caption;
+
+	if (only_checked) {
+		var res_val = '';
+		for(var i=0; i<radio_objs.length; i++) {
+			var td_item = radio_objs[i];
+			var checked = $(td_item).jqxRadioButton('checked');
+			if (checked) {
+				var caption = $(td_item)[0].textContent;
+				return caption;
+			}
 		}
+		return res_val;
+	} else {
+		var res_arr = [];
+		for(var i=0; i<radio_objs.length; i++) {
+			var td_item = radio_objs[i];
+			var caption = $(td_item)[0].textContent;
+			res_arr.push(caption);
+		}
+		return res_arr;
 	}
-	return res_val;
 }
 
 function getid_jqxRadioButton(p)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 
 	var input_id = field_id+'_input';
 	var sub_table_id = field_id+'_table';
@@ -703,7 +762,7 @@ function getid_jqxRadioButton(p)
 
 function addItem_jqxRadioButton(p, init_val, options, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	var ids=getid_jqxRadioButton(p);
 	var input_id=ids[0],sub_table_id=ids[1],tr_class=ids[2],td_class=ids[3],group=ids[4],addbtn_id=ids[5],tips_id=ids[6],radiobtn_class=ids[7];
@@ -738,21 +797,21 @@ function addItem_jqxRadioButton(p, init_val, options, width)
 		for (var i in options) {
 			var item = options[i];
 			var checked = (init_value === item);
-			add_radiobtn_item(sub_table_id, tr_class, td_class, radiobtn_class, item, group,checked);
+			add_radiobtn_item(p, item, group,checked);
 		}
 	}
 
 	$('#'+addbtn_id).on('click', function(e){
 		var input_caption = $('#'+input_id).val();
 		if (input_caption != '') {
-			add_radiobtn_item(sub_table_id, tr_class, td_class, radiobtn_class, input_caption, group);
+			add_radiobtn_item(p, input_caption, group);
 			$('#'+input_id).val('');
 		}
 	});
 
 }
 
-function add_radiobtn_item(table_id, tr_class, td_class, radiobtn_class, caption, group, checked)
+function add_radiobtn_item(p, caption, group, checked)
 {
 	if (checked === undefined) {
 		checked = true;
@@ -760,21 +819,46 @@ function add_radiobtn_item(table_id, tr_class, td_class, radiobtn_class, caption
 	if (group === undefined) {
 		group = '';
 	}
+
+	var ids=getid_jqxRadioButton(p);
+	var input_id=ids[0],sub_table_id=ids[1],tr_class=ids[2],td_class=ids[3],group=ids[4],addbtn_id=ids[5],tips_id=ids[6],radiobtn_class=ids[7];
+
+	//如果该值已经存在，则略过添加，只需勾选即可
+	var now_has = getval_jqxRadioButton(p, false);
+	for (var i in now_has) {
+		if (now_has[i]=== caption) {
+			var radio_objs = $('table#'+sub_table_id+' tr.'+tr_class+' td.'+td_class+' div.'+radiobtn_class);
+			for(var k=0; k<radio_objs.length; k++) {
+				var radio_elmt = radio_objs[k];
+				if (radio_elmt) {
+					var radio_text = $(radio_elmt).text();
+					if (radio_text === caption) {
+						$(radio_elmt).jqxRadioButton({groupName:group, checked: true});
+						break;
+					}
+				}
+			}
+
+			$('#'+input_id).focus();
+			return;
+		}
+	}
+
 	var item_elmt = '<div class="'+radiobtn_class+'" style="float: left;">'+caption+'</div>';
 	var td_elmt = '<td class="'+td_class+'" style="padding:0px;">'+item_elmt+'</td>';
 
-	var tr_objs = $('table#'+table_id+' tr.'+tr_class);
-	var td_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class);
+	var tr_objs = $('table#'+sub_table_id+' tr.'+tr_class);
+	var td_objs = $('table#'+sub_table_id+' tr.'+tr_class+' td.'+td_class);
 	var mod_val = parseInt(td_objs.length % 3);
 
 	if ((mod_val === 0) || isNaN(mod_val)) {
-		$('table#'+table_id).append('<tr class="'+tr_class+'"></tr>');
-		tr_objs = $('table#'+table_id+' tr.'+tr_class);
+		$('table#'+sub_table_id).append('<tr class="'+tr_class+'"></tr>');
+		tr_objs = $('table#'+sub_table_id+' tr.'+tr_class);
 	}
 
 	var tr_elmt = tr_objs[tr_objs.length-1];
 	$(tr_elmt).append(td_elmt);
-	var radio_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class+' div.'+radiobtn_class);
+	var radio_objs = $('table#'+sub_table_id+' tr.'+tr_class+' td.'+td_class+' div.'+radiobtn_class);
 	$(radio_objs[radio_objs.length-1]).jqxRadioButton({groupName:group, checked: checked});
 }
 
@@ -785,7 +869,7 @@ function addOptions_jqxComboBox(p, init_val, url_options)
 
 function addOptions_jqxRadioButton(p, init_val, url_options)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	var ids=getid_jqxRadioButton(p);
 	var input_id=ids[0],sub_table_id=ids[1],tr_class=ids[2],td_class=ids[3],group=ids[4],addbtn_id=ids[5],tips_id=ids[6],radiobtn_class=ids[7];
@@ -805,7 +889,7 @@ function addOptions_jqxRadioButton(p, init_val, url_options)
 				} else {
 					checked = (item === init_value);
 				}
-				add_radiobtn_item(sub_table_id, tr_class, td_class, radiobtn_class, item, group,checked);
+				add_radiobtn_item(p, item, group,checked);
 			}
 		});
 	}
@@ -813,7 +897,7 @@ function addOptions_jqxRadioButton(p, init_val, url_options)
 
 function addOptions_jqxCheckBox(p, init_val, url_options)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	var ids = getid_jqxCheckBox(p);
 	var input_id=ids[0], sub_table_id=ids[1], tr_class=ids[2], td_class=ids[3], checkbox_class=ids[4];
@@ -833,7 +917,7 @@ function addOptions_jqxCheckBox(p, init_val, url_options)
 				} else {
 					checked = (item === init_value);
 				}
-				add_checkbox_item(sub_table_id, tr_class, td_class, checkbox_class, item, checked);
+				add_checkbox_item(p, item, checked);
 			}
 		});
 	}
@@ -842,7 +926,7 @@ function addOptions_jqxCheckBox(p, init_val, url_options)
 
 function getid_jqxCheckBox(p)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var input_id = field_id+'_input';
 	var sub_table_id = field_id+'_table';
 	var tr_class = field_id+'_trclass';
@@ -855,7 +939,7 @@ function getid_jqxCheckBox(p)
 
 function addItem_jqxCheckBox(p, init_val, options, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	var ids = getid_jqxCheckBox(p);
 	var input_id=ids[0], sub_table_id=ids[1], tr_class=ids[2], td_class=ids[3], checkbox_class=ids[4], tips_id=ids[5], addbtn_id=ids[6];
@@ -894,46 +978,72 @@ function addItem_jqxCheckBox(p, init_val, options, width)
 			} else {
 				checked = (item === init_value);
 			}
-			add_checkbox_item(sub_table_id, tr_class, td_class, checkbox_class, item, checked);
+			add_checkbox_item(p, item, checked);
 		}
 	}
 
 	$('#'+addbtn_id).on('click', function(e){
 		var input_caption = $('#'+input_id).val();
 		if (input_caption != '') {
-			add_checkbox_item(sub_table_id, tr_class, td_class, checkbox_class, input_caption);
+			add_checkbox_item(p, input_caption);
 			$('#'+input_id).val('');
 		}
 	});
 
 }
 
-function add_checkbox_item(table_id, tr_class, td_class, checkbox_class, caption, checked)
+function add_checkbox_item(p, caption, checked)
 {
+	var ids = getid_jqxCheckBox(p);
+	var input_id=ids[0], sub_table_id=ids[1], tr_class=ids[2], td_class=ids[3], checkbox_class=ids[4];
+
 	if (checked === undefined) {
 		checked = true;
 	}
+
+	//如果该值已经存在，则略过添加，只需勾选即可
+	var now_has = getval_jqxCheckBox(p, false);
+	for (var i in now_has) {
+		if (now_has[i]=== caption) {
+			var checkb_objs = $('table#'+sub_table_id+' tr.'+tr_class+' td.'+td_class+' div.'+checkbox_class);
+			for(var k=0; k<checkb_objs.length; k++) {
+				var checkb_elmt = checkb_objs[k];
+				if (checkb_elmt) {
+					var radio_text = $(checkb_elmt).text();
+					if (radio_text === caption) {
+						$(checkb_elmt).jqxCheckBox({checked: true});
+						break;
+					}
+				}
+			}
+
+			$('#'+input_id).focus();
+			return;
+		}
+	}
+
 	var item_elmt = '<div class="'+checkbox_class+'" style="float: left;">'+caption+'</div>';
 	var td_elmt = '<td class="'+td_class+'" style="padding:0px;">'+item_elmt+'</td>';
 
-	var tr_objs = $('table#'+table_id+' tr.'+tr_class);
-	var td_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class);
+	var tr_objs = $('table#'+sub_table_id+' tr.'+tr_class);
+	var td_objs = $('table#'+sub_table_id+' tr.'+tr_class+' td.'+td_class);
 	var mod_val = parseInt(td_objs.length % 3);
 
 	if ((mod_val === 0) || isNaN(mod_val)) {
-		$('table#'+table_id).append('<tr class="'+tr_class+'"></tr>');
-		tr_objs = $('table#'+table_id+' tr.'+tr_class);
+		$('table#'+sub_table_id).append('<tr class="'+tr_class+'"></tr>');
+		tr_objs = $('table#'+sub_table_id+' tr.'+tr_class);
 	}
 
 	var tr_elmt = tr_objs[tr_objs.length-1];
 	$(tr_elmt).append(td_elmt);
-	var checkb_objs = $('table#'+table_id+' tr.'+tr_class+' td.'+td_class+' div.'+checkbox_class);
+	var checkb_objs = $('table#'+sub_table_id+' tr.'+tr_class+' td.'+td_class+' div.'+checkbox_class);
 	$(checkb_objs[checkb_objs.length-1]).jqxCheckBox({checked: checked});
 }
 
-function getval_jqxCheckBox(p)
+function getval_jqxCheckBox(p, only_checked)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3];
+	if (only_checked===undefined) only_checked=true;
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=[4];
 	var tr_class = field_id+'_trclass';
 	var td_class = field_id+'_tdclass';
 	var checkbox_class = field_id+'_checkbox_class';
@@ -942,7 +1052,7 @@ function getval_jqxCheckBox(p)
 	for(var i=0; i<checkb_objs.length; i++) {
 		var td_item = checkb_objs[i];
 		var checked = $(td_item).jqxCheckBox('checked');
-		if (checked) {
+		if (checked || !only_checked) {
 			var caption = $(td_item)[0].textContent;
 			if (res_obj.indexOf(caption) === -1) {
 				res_obj.push(caption);
@@ -954,7 +1064,7 @@ function getval_jqxCheckBox(p)
 
 function addItem_jqxListBox(p, init_val, render, height, width)
 {
-	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], check_valid=p[4];
+	var tab_id=p[0], table_id=p[1], field_id=p[2], caption=p[3], schema=p[4], check_valid=p[5];
 	var init_value=init_val[0], is_share=init_val[1], is_readonly=init_val[2], tips=init_val[3], is_vital=init_val[4], suffix_value=init_val[5];
 	width = width || 400; height = height || 90;
 	render = render || render_null;
