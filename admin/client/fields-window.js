@@ -139,6 +139,8 @@ function edit_fields_windows(title, input, cb_done)
 	var c_upbtn_id = window_id+'_c_up';
 	var c_downbtn_id = window_id+'_c_down';
 	var c_tips_id = window_id+'_c_tips';
+	var c_title_id = window_id+'_c_title';
+
 	var btn_width = 22;
 	var btn_height = 22;
 
@@ -188,15 +190,15 @@ function edit_fields_windows(title, input, cb_done)
 			    '<div><p>',
 				'<div align="center">',
 				    '<div id="'+init_list_id+'"></div>',
-				    '<div>',
-					'<div id="'+init_field_id+'" style="float:left; margin-left:9px;"></div>',
+				    '<div style="margin-left:9px;">',
+					'<div id="'+init_field_id+'" style="float:left;"></div>',
 					'<input type="text" id="'+init_value_id+'" style="float:left;" />',
 					'<input type="text" id="'+init_suffix_id+'" style="float:left;" />',
 					'<div id="'+init_share_id+'" style="float:left;margin:4px;">'+T('share')+'</div>',
 					'<div id="'+init_rank_id+'" style="float:left;margin:4px;">'+T('rank')+'</div>',
 					'<div id="'+init_addbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/add.png"/></div>',
 					'<div id="'+init_delbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/delete.png"/></div>',
-					'<textarea id="'+init_tips_id+'" style="float: left;margin-left: 9px;"></textarea>',
+					'<textarea id="'+init_tips_id+'" style="float: left;"></textarea>',
 					'<div id="'+init_vital_id+'" style="float:left;margin:4px;">'+T('vital')+'</div>',
 					'<div id="'+init_readonly_id+'" style="float:left;margin:4px;">'+T('readonly')+'</div>',
 				    '</div>',
@@ -206,8 +208,8 @@ function edit_fields_windows(title, input, cb_done)
 			    '<div><p>',
 				'<div align="center">',
 				    '<div id="'+opt_list_id+'"></div>',
-				    '<div>',
-					'<div id="'+opt_field_id+'" style="float:left; margin-left:8px;"></div>',
+				    '<div style="margin-left:9px;">',
+					'<div id="'+opt_field_id+'" style="float:left;"></div>',
 					'<input type="text" id="'+opt_value_id+'" style="float:left;" />',
 					'<div id="'+opt_fixed_id+'" style="float:left;margin:4px;">'+T('fixed')+'</div>',
 					'<div id="'+opt_addbtn_id+'" style="padding:0px;float:left;"><img height="'+(btn_height)+'" width="'+btn_width+'" src="images/add.png"/></div>',
@@ -219,14 +221,15 @@ function edit_fields_windows(title, input, cb_done)
 			    '<div><p>',
 				'<div align="center">',
 				    '<div id="'+c_list_id+'"></div>',
-				    '<div>',
-					'<input type="text" id="'+c_img_id+'" style="float:left; margin-left:8px;" />',
+				    '<div style="margin-left:9px;">',
+					'<input type="text" id="'+c_img_id+'" style="float:left;" />',
 					'<input type="text" id="'+c_url_id+'" style="float:left;" />',
 					'<div id="'+c_addbtn_id+'" style="padding:0px;float:left;"><img height="'+(btn_height)+'" width="'+btn_width+'" src="images/add.png"/></div>',
 					'<div id="'+c_delbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/delete.png"/></div>',
 					'<div id="'+c_upbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/up.png"/></div>',
 					'<div id="'+c_downbtn_id+'" style="padding:0px;float:left;"><img height="'+btn_height+'" width="'+btn_width+'" src="images/down.png"/></div>',
-					'<textarea id="'+c_tips_id+'"></textarea>',
+					'<textarea id="'+c_title_id+'" style="float:left;"></textarea>',
+					'<textarea id="'+c_tips_id+'" style="float:left;"></textarea>',
 				    '</div>',
 				'</div>',
 			    '</div>',
@@ -938,21 +941,23 @@ function edit_fields_windows(title, input, cb_done)
 		});
 
 		//自定义按钮
-		var imgurl_item = function(img, url, tips) {
+		var imgurl_item = function(img, url, title, tips) {
 			var html = '<table style="width:100%; border:none; border-spacing:0px; font-size:12;"><tr>'+
-				'<td><img height="25" width="25" src="'+img+'"/></td>'+
-				'<td>'+ url +'</td>'+
-				'<td style="width:40%;">'+ tips + '</td></tr></table>';
+				'<td style="width:25;"><img height="25" width="25" src="'+img+'"/></td>'+
+				'<td style="width:50;">'+ title+ '</td>' +
+				'<td style="width:150;">'+ tips +'</td>'+
+				'<td>'+ url + '</td></tr></table>';
 			var value = {
 				image: img,
 				url: url,
+				title: title,
 				tips: tips
 			};
 			return [html, value];
 		};
 
 		var imgurl_render = function(data, finish) {
-			finish(data.concat(imgurl_item(data[0],data[1],data[2])));
+			finish(data.concat(imgurl_item(data[0],data[1],data[2],data[3])));
 		};
 
 		var imgurl_source = function(init) {
@@ -960,7 +965,7 @@ function edit_fields_windows(title, input, cb_done)
 			if (init instanceof Array) {
 				for(var i in init) {
 					var item = init[i];
-					var format_item = imgurl_item(item['image'], item['url'], item['tips']);
+					var format_item = imgurl_item(item['image'], item['url'], item['title'], item['tips']);
 					source.push({html:format_item[0], label:item, value:item});
 				}
 			}
@@ -968,13 +973,14 @@ function edit_fields_windows(title, input, cb_done)
 		};
 
 		$('#'+c_list_id).jqxListBox({source: imgurl_source(buttons), width: width, height: height});
-		$('#'+c_img_id).jqxInput({width: (width-(btn_width+2)*4-2)/2, height: btn_height, placeHolder: T('Please input image url')});
+		$('#'+c_img_id).jqxInput({width: (width-(btn_width+2)*4)/2, height: btn_height, placeHolder: T('Please input image url')});
 		$('#'+c_url_id).jqxInput({width: (width-(btn_width+2)*4-2)/2, height: btn_height, placeHolder: T('Please input execute command url')});
 		$('#'+c_addbtn_id).jqxButton({width: btn_width, height:btn_height});
 		$('#'+c_delbtn_id).jqxButton({width: btn_width, height:btn_height});
 		$('#'+c_upbtn_id).jqxButton({width: btn_width, height:btn_height});
 		$('#'+c_downbtn_id).jqxButton({width: btn_width, height:btn_height});
-		$('#'+c_tips_id).jqxInput({width: width, height: 35, placeHolder:T('Please input the help tips of the button')});
+		$('#'+c_title_id).jqxInput({width: 150, height: 35, placeHolder:T('Input the title of tips')});
+		$('#'+c_tips_id).jqxInput({width: width-150-2, height: 35, placeHolder:T('Please input the help tips of the button')});
 
 		$('#'+c_delbtn_id).on('click', [c_list_id], event_listbox_delete);
 		$('#'+c_upbtn_id).on('click', [c_list_id], event_listbox_up);
@@ -983,50 +989,35 @@ function edit_fields_windows(title, input, cb_done)
 			var check_valid = null;
 			var img_str = $('#'+c_img_id).val();
 			var url_str = $('#'+c_url_id).val();
+			var title_str = $('#'+c_title_id).val();
 			var tips_str = $('#'+c_tips_id).val();
 			if (img_str.length == 0) {return;}
 			if (url_str.length == 0) {return;}
+			if (title_str.length == 0) {return;}
 			if (tips_str.length == 0) {return;}
 
-			var update_to_list = function(item){
-				imgurl_render([img_str, url_str, tips_str, c_list_id], function (p) {
-					var label=p[4], value=p[5];
-					$('#'+c_list_id).jqxListBox('updateAt', { label: label, value: value}, item.index);
-				});
-			};
-
-			var insert_to_list = function() {
-				imgurl_render([img_str, url_str, tips_str, c_list_id], function (p) {
-					var label=p[4], value=p[5];
-					$('#'+c_list_id).jqxListBox('insertAt', {label: label, value: value}, 0); 
-				});
-			};
-
-			var update_list = function(){
-				var items = $('#'+c_list_id).jqxListBox('getItems');
+			function join_item(list_id, key_name, rended) {
+				var items = $('#'+list_id).jqxListBox('getItems');
+				var new_key = rended[1][key_name];
 				for(var index in items) {
 					var item = items[index];
-					//证明了这是修改
-					if (url_str === item.value.url) {
-						update_to_list(item);
-						return true;
+					if (new_key === item.value[key_name]) {
+						$('#'+list_id).jqxListBox('updateAt', {label: rended[0], value: rended[1]}, item.index);
+						return;
 					}
 				}
-				return false;
-			};
+				$('#'+list_id).jqxListBox('insertAt', {label: rended[0], value: rended[1]}, 0); 
+			}
 
+			var rended = imgurl_item(img_str, url_str, title_str, tips_str);
 			if (check_valid) {
 				check_valid(c_url_id, function(url) {
 					if (url === null) {
-						if (!update_list()) {
-							insert_to_list();
-						}
+						join_item(c_list_id, 'url', rended);
 					}
 				});
 			} else {
-				if (!update_list()) {
-					insert_to_list();
-				}
+				join_item(c_list_id, 'url', rended);
 			}
 		});
 		$('#'+c_list_id).on('select', function(e) {
@@ -1035,6 +1026,7 @@ function edit_fields_windows(title, input, cb_done)
 				var item = args.item.value;
 				$('#'+c_img_id).val(item.image);
 				$('#'+c_url_id).val(item.url);
+				$('#'+c_title_id).val(item.title);
 				$('#'+c_tips_id).val(item.tips);
 			}
 		});
@@ -1083,7 +1075,7 @@ function edit_fields_windows(title, input, cb_done)
 			join_item(timer_list_id, 'url', timers_item(url, minutes));
 
 			function join_item(list_id, key_name, rended) {
-				var items = $('#'+timer_list_id).jqxListBox('getItems');
+				var items = $('#'+list_id).jqxListBox('getItems');
 				var new_key = rended[1][key_name];
 				for(var index in items) {
 					var item = items[index];

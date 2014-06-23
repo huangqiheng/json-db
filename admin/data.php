@@ -1,5 +1,6 @@
 <?php
 require_once 'functions.php';
+require_once 'webhook.php';
 denies_with_json();
 
 $req = get_param();
@@ -27,8 +28,7 @@ function delete_data_exit($req)
 	$table_name = @$req['table_name'];
 	$req_list = @$req['list'];
 	sync_remove_sameid($db_name, $table_name, $req_list);
-	$res = delete_current_data($db_name, $table_name, $req_list);
-	jsonp_nocache_exit($res); 
+	jsonp_nocache_exit(delete_current_data($db_name, $table_name, $req_list)); 
 }
 
 function create_data_exit($req)

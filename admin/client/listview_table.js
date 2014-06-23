@@ -26,8 +26,10 @@ function refresh_listview(db_name, table_name)
 		for(var i in buttons) {
 			var button = buttons[i];
 			var button_id = id_prefix + i;
+
 			$('#custom_btns').append('<div id="'+button_id+'" style="float:left; padding:0px"><img height="25" width="25" src="'+button.image+'"/></div>');
 			$('#'+button_id).jqxButton({width: nav_btn_width, height: nav_btn_height});
+			$('#'+button_id).jqxTooltip(tip_data(button.title, button.tips));
 			$('#'+button_id).on('click', button, function(e){
 				var button = e.data;
 				var selected = datatables_selected(listview_id);

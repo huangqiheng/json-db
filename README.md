@@ -33,6 +33,11 @@ nginx 配置
 				break;
 			}
 
+			if ($uri = /) {
+				rewrite ^(.*)$ /index.php last;
+				break;
+			}
+
 			rewrite ^/(.*)$ /databases/$http_host/__wwwroot__/$1 break;
 		}
 

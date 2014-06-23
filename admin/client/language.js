@@ -29,6 +29,7 @@ var langdata = {
     'minutes interval':					{cn:'分钟数'},
     'The list has the same value':			{cn:'列表中已经有相同的值了'},
     'Please input execute command url':			{cn:'请输入执行命令的URL'},
+    'Input the title of tips'		:		{cn:'输入按钮提示标题'},
     'Please input the help tips of the button':		{cn:'请输入该按钮的提示帮助信息'},
     'Please input the help tips of the field':		{cn:'请输入该字段的提示帮助信息'},
     'input initial value, seperated with comma if array':{cn:'请输入初始化值，如数组则逗号隔开'},

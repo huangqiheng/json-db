@@ -1,61 +1,37 @@
 <?php
 require_once 'functions.php';
 
-define('QUEUE_CACHE', __DIR__.'/uploads/cache');
-
-function wh_event($db, $table, $event, $data)
-{
-	$table_root = table_root($db, $table);
-	$table_schema = object_read("{$table_root}/schema.json");
-	$hooks = @$table_schema['caption']['hooks'];
-
-	if (empty($hooks)) {
-		return;
+if (is_direct_called(__FILE__)) {
+	//特定的异步方式来触发
+	if (async_call()) {
+		wh_handler();
+		exit;
 	}
 
-	$data['db'] = $db;
-	$data['table'] = $table;
-	queue_in(QUEUE_CACHE, 'webhook', ['hooks'=>$hooks, 'event'=>$event, 'data'=>$data]);
-
-	wh_checkpoint();
-}
-
-function wh_checkpoint()
-{
-	if (queue_empty(QUEUE_CACHE, 'webhook')) {
-		return false;
-	}
-	return async_call('/admin/webhook.php');
-}
-
-function wh_remote_call()
-{
-	$items = queue_out(QUEUE_CACHE, 'webhook');
-	if (empty($items)) return;
-
-	$hooks_data = [];
-	foreach($items as $item) {
-		$hooks = $item['hooks'];
-		$event = $item['event'];
-		foreach($hooks as $hook) {
-			if (!isset($hooks_data[$hook])) {
-				$hooks_data[$hook] = [];
-			}
-			$hook_data = &$hooks_data[$hook];
-
-			if (!isset($hook_data[$event])) {
-				$hook_data[$event] = [];
-			}
-			$datas = &$hook_data[$event];
-			$datas[] = $item['data'];
+	//直接使用shell来触发：php -q webhook.php crontab
+	if (isset($argv)) {
+		if ($argv[1] === 'crontab') {
+			wh_handler();
+			exit;
 		}
 	}
 
-	foreach($hooks_data as $hook_url=>$data) {
-		curl_post_content($hook_url, $data);
+	//使用外部url来处罚
+	$req = get_param();
+	switch($req['cmd']) {
+		case 'crontab': wh_handler(); exit;
+		case 'trigger': wh_trigger_exit(@$req['db'],@$req['table'],@$req['event'],@$req['data']); 
 	}
 }
 
-if (is_direct_called(__FILE__) and async_call()) {
-	wh_remote_call();
+function wh_trigger_exit($db, $table, $event, $data)
+{
+	denies_with_json();
+	if (!in_array($event, ['update', 'refresh'])) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'invalid event type']);
+	}
+	wh_event($db, $table, $event, $data);
+	jsonp_nocache_exit(['status'=>'ok']);
 }
+
+

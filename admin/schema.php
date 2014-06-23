@@ -65,6 +65,7 @@ function del_table_exit($req)
 	$table_name = $req['table_name'];
 	$table_root = table_root($db_name, $table_name);
 	rmdir_Rf($table_root);
+	wh_event($req['db_name'], $req['table_name'], 'destroy');
 	jsonp_nocache_exit(['status'=>'ok']); 
 }
 
@@ -122,6 +123,7 @@ function edit_database_exit($req)
 	$caption['content'] = $req['content']; 
 	$caption['image'] = $req['image']; 
 	$caption['key'] = $req['key']; 
+	$caption['hooks'] = isset($req['hooks'])? array_values($req['hooks']) : [];
 	$schema['caption'] = $caption;
 
 	object_save($filename, $schema);
@@ -177,6 +179,8 @@ function create_table_exit($req)
 
 	$filename = "{$filename}/schema.json";
 	object_save($filename, $schema);
+
+	wh_event($req['db_name'], $req['name'], 'create');
 	jsonp_nocache_exit(['status'=>'ok']); 
 }
 

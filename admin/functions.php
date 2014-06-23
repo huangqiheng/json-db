@@ -67,6 +67,17 @@ define('WWWROOT_DIR', '__wwwroot__');
 	共享函数
 *****************************************/
 
+function do_hard_work()
+{
+	ignore_user_abort();//关掉浏览器，PHP脚本也可以继续执行.
+	set_time_limit(0); //无限制时间
+}
+
+function _log_($object) 
+{
+	file_put_contents(cache_root().'/system.log', json_encode($object)."\r\n", FILE_APPEND);
+}
+
 function require_all ($path) 
 {
 	foreach (glob($path.'*.php') as $filename){
@@ -74,11 +85,8 @@ function require_all ($path)
 	}
 }
 
-function is_data()
+function is_data($data)
 {
-	$var_arr= func_get_args();
-	$data = array_shift($var_arr);
-
 	if (empty($data)) {
 		return false;
 	}
@@ -236,14 +244,19 @@ function gen_signature($token)
 	return [$timestamp,$nonce,$signature];
 }
 
-function token_exit($token,$timestamp,$nonce,$signature)
+function valid_signature($token,$timestamp,$nonce,$signature)
 {
 	$timestamp = strval($timestamp);
 	$nonce = trim($nonce);
 	$arr = [$token, $timestamp, $nonce];
 	sort($arr);
 	$signature_real = sha1(implode('', $arr));
-	if ($signature_real !== $signature) {
+	return $signature_real === $signature;
+}
+
+function token_exit($token,$timestamp,$nonce,$signature)
+{
+	if (!valid_signature($token,$timestamp,$nonce,$signature)) {
 		jsonp_nocache_exit(['status'=>'error', 'error'=>'token validation error']);
 	}
 }
@@ -442,6 +455,7 @@ function delete_current_data($db_name, $table_name, $req_list)
 	}
 
 	object_save($listview_file, $listview_new);
+	wh_event($db_name, $table_name, 'delete', $req_list);
 	return ['status'=>'ok', 'id_list'=>$rep_list]; 
 }
 
@@ -470,6 +484,7 @@ function append_new_data($db_name, $table_name, $data)
 	$listview_item = make_listview_item($table_root, $data);
 	append_listview_json("{$table_root}/listview.json", $listview_item);
 
+	wh_event_file($new_id_file, 'add');
 	return ['status'=>'ok', 'ID'=>$new_id, 'listview'=>$listview_item]; 
 }
 
@@ -631,8 +646,9 @@ function update_single_data($table_root, $data)
 		}
 	}
 
-	$new_data = $ori_data;
+	wh_event_file($data_file, 'update');
 
+	$new_data = $ori_data;
 	return [$req_id, object_save($data_file, $new_data), $ori_data_output];
 }
 
@@ -663,8 +679,9 @@ function create_single_data($table_root, $data)
 	}
 
 	$new_data = format_fields($schema, $data);
-
 	$new_id_file = "{$table_root}/{$new_id}.json";
+
+	wh_event_file($new_id_file, 'add');
 	
 	return [$new_id, object_save($new_id_file, $new_data)];
 }
@@ -726,6 +743,7 @@ function join_multiple_data($db_name, $table_name, $data)
 		if ($req_id = __data_exists($table_root, $schema, $mapper, $sub_data)) {
 			set_data_id($sub_data, $req_id);
 			list($req_id, $new_data, $ori_data) = update_single_data($table_root, $sub_data);
+
 			if ($new_data) {
 				//共享字段的同步
 				foreach(sync_affected_fields($table_root, $req_id, $ori_data) as $file) {
@@ -737,6 +755,7 @@ function join_multiple_data($db_name, $table_name, $data)
 			}
 		} else {
 			list($req_id, $new_data) = create_single_data($table_root, $sub_data);
+
 			if ($new_data) {
 				foreach(sync_affected_fields($table_root, $req_id) as $file) {
 					$refresh_files[] = $file;
@@ -749,6 +768,7 @@ function join_multiple_data($db_name, $table_name, $data)
 
 	//批量刷新listview
 	refresh_listview($db_name, $table_name, $refresh_files);
+
 	return ['status'=>'ok', 'listview'=>$listviews];
 }
 
@@ -1183,6 +1203,11 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 	object_save("{$data_path}/mapper.json", $mapper_data);
 	object_save("{$data_path}/listview.json", $listview_data);
 	object_save("{$data_path}/options.json", $options_data);
+
+	if ($append_data_file === null) {
+		wh_event($db_name, $table_name, 'refresh');
+	}
+
 	return count($listview_data);
 }
 
@@ -1298,10 +1323,16 @@ function new_listview_item($listview, $merge_items, $merged_fields)
 
 function __data_exists($table_root, $schema, $mapper, $data)
 {
-	$merged_fields = merge_fields($schema['fields']);
-	$mapper_fields = get_mapper_fields($merged_fields);
+	if (empty($schema)) {
+		return false;
+	}
+	//先平坦化，易于处理
 	$merged_data = merge_fields($data);
+	$merged_fields = merge_fields($schema['fields']);
+	//获得，究竟哪些是能够mapper的key
+	$mapper_fields = get_mapper_fields($merged_fields);
 
+	//查看数据是否存在
 	$check_id_valid = function($item_val) use($mapper, $table_root) {
 		$map_key= mapper_key($item_val);
 		if ($map_val = @$mapper[md5($map_key)]) {
@@ -1343,6 +1374,10 @@ function update_mappers($schema, &$mapper_data, &$mapper_fields, &$merged_item)
 	foreach($mapper_fields as $map_name) {
 		$map_key = @$merged_item[$map_name];
 		if (empty($map_key)) {continue;}
+
+		if (is_numeric($map_key)) {
+			$map_key = strval($map_key);
+		}
 
 		if (is_string($map_key)) {
 			$map_key= mapper_key($map_key);
@@ -1406,10 +1441,50 @@ function get_mapper_value($db_name, $table_name, $map_key)
 	}
 
 	$data_uri = substr($data_file, strlen($_SERVER['DOCUMENT_ROOT']));
-	$data_uri = preg_replace('/\/'.$_SERVER['HTTP_HOST'].'/i', '', $data_uri);
+	$data_uri = preg_replace('/\/'.db_domain().'/i', '', $data_uri);
 	$data_url = get_current_url(false).$data_uri;
 
 	return [$map_val, $data_file, $data_url];
+}
+
+function get_mapper_values($db_name, $table_name, $map_keys)
+{
+	$table_root = table_root($db_name, $table_name);
+	$mapper = object_read("{$table_root}/mapper.json");
+	if (empty($mapper)) {
+		return false;
+	}
+
+	$db_domain = db_domain();
+	$current_url = get_current_url(false);
+	$results = [];
+
+	foreach($map_keys as $ori_map_key) {
+		$map_key= mapper_key($ori_map_key);
+		$map_val = @$mapper[$map_key];
+
+		if (empty($map_val)) {
+			$results[$ori_map_key] = null;
+			continue;
+		}
+
+		$map_val = intval($map_val);
+
+		$data_file = "{$table_root}/{$map_val}.json";
+		if (!file_exists($data_file)) {
+			$results[$ori_map_key] = null;
+			continue;
+		}
+
+		$data_uri = substr($data_file, strlen($_SERVER['DOCUMENT_ROOT']));
+		$data_uri = preg_replace('/\/'.$db_domain.'/i', '', $data_uri);
+		$data_url = $current_url.$data_uri;
+
+		$result_item = [$map_val, $data_file, $data_url];
+		$results[$ori_map_key] = $result_item;
+	}
+
+	return $results;
 }
 
 function get_current_url($full = true)
@@ -1501,9 +1576,19 @@ function init_db_root($root_path)
 	object_save($index_file, $index);
 }
 
+function cache_root()
+{
+	return realpath(__DIR__.'/../cache');
+}
+
+function db_domain()
+{
+	return $_SERVER['HTTP_HOST'];
+}
+
 function dbs_path()
 {
-	$root_path = $_SERVER['DOCUMENT_ROOT'].'/databases/'.$_SERVER['HTTP_HOST'];
+	$root_path = $_SERVER['DOCUMENT_ROOT'].'/databases/'.db_domain();
 	if (!file_exists($root_path)) {
 		mkdir($root_path);
 		init_db_root($root_path);
@@ -1551,6 +1636,28 @@ function object_read($filename)
 	}
 	return json_decode($data_str, true);
 }
+
+function objects_read($db_name, $table_name)
+{
+	$table_root = table_root($db_name, $table_name);
+	$items = [];
+	foreach(glob("{$table_root}/*.json") as $file) {
+		if (is_dir($file)) {continue;}
+		if (!preg_match('~/(\d+)\.json$~',$file, $matches)){continue;}
+		$item_id = $matches[1];
+
+		$data_obj = object_read($file);
+		if (empty($data_obj)) {return;}
+
+		$merge_items = merge_fields($data_obj);
+		unset($merge_items['ID']);
+		unset($merge_items['CREATE']);
+		unset($merge_items['TIME']);
+		$items[] = $merge_items;
+	}
+	return $items;
+}
+
 
 function clean_html($json)
 {
@@ -1994,11 +2101,11 @@ function async_call($script_path=null, $data=null)
 	defined('ASYNC_USERAGENT') or define('ASYNC_USERAGENT', 'async_call_client');
 
 	if ($script_path === null) {
-		return ($_SERVER['HTTP_USER_AGENT'] === ASYNC_USERAGENT);
+		return (@$_SERVER['HTTP_USER_AGENT'] === ASYNC_USERAGENT);
 	}
 
 	$headers = array(
-		'Host: '.$_SERVER['SERVER_NAME'],
+		'Host: '.$_SERVER['HTTP_HOST'],
 		'User-Agent: '.ASYNC_USERAGENT,
 	);
 	
@@ -2041,7 +2148,8 @@ function is_dir_empty($dir)
 
 function is_direct_called($full_name)
 {
-        return ($_SERVER['SCRIPT_FILENAME'] === $full_name);
+	$real_script = realpath($_SERVER['SCRIPT_FILENAME']);
+        return ($real_script === $full_name);
 }
 
 /*--------------------------------
@@ -2100,8 +2208,12 @@ function queue_id()
 	return intval(time() / QUEUE_TIME_INTERVAL);
 }
 
-function queue_file($cache_dir, $name, $id=null)
+function queue_file($name, $id=null, $cache_dir=null)
 {
+	if (empty($cache_dir)) {
+		$cache_dir = cache_root();
+	}
+
 	$dir = $cache_dir.'/'.md5($name);
 	if ($id === null) {
 		return $dir;
@@ -2109,22 +2221,26 @@ function queue_file($cache_dir, $name, $id=null)
 	return $dir.'/'.$id.'.'.QUEUE_ITEMS_SUFFIX;
 }
 
-function queue_info($cache_dir, $name)
+function queue_info($name, $cache_dir=null)
 {
-	$file_to_write = queue_file($cache_dir, $name, queue_id());
+	if (empty($cache_dir)) {
+		$cache_dir = cache_root();
+	}
+
+	$file_to_write = queue_file($name, queue_id(), $cache_dir);
 	if (file_exists($file_to_write)) {
 		$time_to_wait = QUEUE_TIME_INTERVAL - intval(time()) % QUEUE_TIME_INTERVAL;
 	} else {
 		$time_to_wait = 0;
 	}
 
-	$buckets = glob(queue_file($cache_dir, $name, '*'));
+	$buckets = glob(queue_file($name, '*', $cache_dir));
 
 	return [
 		'file_to_enqueue' => $file_to_write,
 		'is_queueing' => file_exists($file_to_write),
 		'time_to_wait' => $time_to_wait,
-		'is_empty' => is_dir_empty(queue_file($cache_dir, $name)) !== false,
+		'is_empty' => is_dir_empty(queue_file($name, null, $cache_dir)) !== false,
 		'bucket_interval' => QUEUE_TIME_INTERVAL,
 		'max_dequeue' => QUEUE_MAX_DEQUEUE,
 		'bucket_count' => count($buckets),
@@ -2132,12 +2248,16 @@ function queue_info($cache_dir, $name)
 	];
 }
 
-function queue_empty($cache_dir, $name)
+function queue_empty($name, $cache_dir=null)
 {
-	$buckets = glob(queue_file($cache_dir, $name, '*'));
+	if (empty($cache_dir)) {
+		$cache_dir = cache_root();
+	}
+
+	$buckets = glob(queue_file($name, '*', $cache_dir));
 	$bucket_count = count($buckets);
 
-	$file_to_write = queue_file($cache_dir, $name, queue_id());
+	$file_to_write = queue_file($name, queue_id(), $cache_dir);
 	if (!file_exists($file_to_write)) {
 		return ($bucket_count===0)? true : false;
 	}
@@ -2145,16 +2265,20 @@ function queue_empty($cache_dir, $name)
 	return ($bucket_count>1)? false : true;
 }
 
-function queue_in($cache_dir, $name, $items)
+function queue_in($name, $items, $cache_dir=null)
 {
-	$file_to_write = queue_file($cache_dir, $name, queue_id());
+	if (empty($cache_dir)) {
+		$cache_dir = cache_root();
+	}
+
+	$file_to_write = queue_file($name, queue_id(), $cache_dir);
 
 	if (!file_exists($file_to_write)) {
 		if (!file_exists($cache_dir)) {
 			return false;
 		}
 
-		$dir = queue_file($cache_dir, $name);
+		$dir = queue_file($name, null, $cache_dir);
 		if (!file_exists($dir)) {
 			mkdir($dir);
 		}
@@ -2172,11 +2296,14 @@ function queue_in($cache_dir, $name, $items)
 		$data_to_write = json_encode($items).PHP_EOL;
 	}
 	return file_put_contents($file_to_write, $data_to_write, FILE_APPEND | LOCK_EX);
-
 }
 
-function queue_out($cache_dir, $name, $max=QUEUE_MAX_DEQUEUE)
+function queue_out($name, $max=QUEUE_MAX_DEQUEUE, $cache_dir=null)
 {
+	if (empty($cache_dir)) {
+		$cache_dir = cache_root();
+	}
+
 	if (empty($max)) {
 		$max = QUEUE_MAX_DEQUEUE;
 	}
@@ -2184,7 +2311,7 @@ function queue_out($cache_dir, $name, $max=QUEUE_MAX_DEQUEUE)
 	$now_writing_id = queue_id();
 
 	$item_ids = [];
-	foreach(glob(queue_file($cache_dir, $name, '*')) as $file) {
+	foreach(glob(queue_file($name, '*', $cache_dir)) as $file) {
 		if (is_dir($file)) {continue;}
 		if (!preg_match('~/(\d+)\.'.QUEUE_ITEMS_SUFFIX.'$~',$file, $matches)){continue;}
 		$item_id = intval($matches[1]);
@@ -2199,7 +2326,7 @@ function queue_out($cache_dir, $name, $max=QUEUE_MAX_DEQUEUE)
 
 	$output_items = [];
 	foreach ($item_ids as $id) {
-		$file_name = queue_file($cache_dir, $name, $id);
+		$file_name = queue_file($name, $id, $cache_dir);
 		$data_str = file_get_contents($file_name);
 		$data_arr = explode(PHP_EOL, $data_str);
 		while($item_str = array_shift($data_arr)) {
@@ -2224,7 +2351,7 @@ function queue_out($cache_dir, $name, $max=QUEUE_MAX_DEQUEUE)
 		unlink($file_name);
 	}
 
-	$que_dir = queue_file($cache_dir, $name);
+	$que_dir = queue_file($name, null, $cache_dir);
 	if (is_dir_empty($que_dir)) {
 		rmdir($que_dir);
 	}
@@ -2232,6 +2359,160 @@ function queue_out($cache_dir, $name, $max=QUEUE_MAX_DEQUEUE)
 	return $output_items;
 }
 
+/**********************************************
+	web hook
+**********************************************/
+
+/*
+函数：wh_event
+功能：系统内部，当数据发生变化的时候调用
+参数：
+	db：数据库名称
+	table：数据表名称
+	event：事件类型（add | update | delete | create | refresh | destroy）
+	data：数据操作：对于add|delete|update，data内容是所操作的数据记录
+	      表格操作：对于create|destroy|refresh，由于操作的是整张数据表，所以data为空
+*/
+
+function wh_event_file($data_file, $event)
+{
+	if (preg_match('~/databases/([^/]+)/([^/]+)/([^/]+)/([\d]+)\.json$~', $data_file, $matchs)) {
+		$db_name = $matchs[2];
+		$table_name = $matchs[3];
+		$id = $matchs[4];
+		wh_event($db_name, $table_name, $event, $id);
+	}
+}
+
+function wh_event($db, $table, $event, $data=null)
+{
+	$table_root = table_root($db, $table);
+	$db_schema = object_read(dirname($table_root).'/schema.json');
+	$db_hooks = @$db_schema['caption']['hooks'];
+	!empty($db_hooks) or ($db_hooks=[]);
+
+	$table_schema = object_read("{$table_root}/schema.json");
+	$table_hooks = @$table_schema['caption']['hooks'];
+	!empty($table_hooks) or ($table_hooks=[]);
+
+	$hooks = array_values(array_merge($db_hooks, $table_hooks));
+
+	if (empty($hooks)) {
+		return;
+	}
+
+	if (empty($data)) {
+		$data = [];
+	}
+
+	if (!is_array($data)) {
+		$data = [$data];
+	}
+
+	$wh_data = [];
+	$wh_data['domain'] = db_domain();
+	$wh_data['db'] = $db;
+	$wh_data['table'] = $table;
+	$wh_data['items'] = $data;
+	$wh_data['event'] = $event;
+	$wh_data['hooks'] = $hooks;
+
+	queue_in('webhook', [$wh_data]);
+
+	if (function_exists('wh_checkpoint')) {
+		wh_checkpoint();
+	}
+}
+
+/*
+函数：wh_checkpoint
+功能：触发出队处理，因为webhook事件是异步的
+*/
+function wh_checkpoint()
+{
+	if (queue_empty('webhook')) {
+		return false;
+	}
+	return async_call('/admin/webhook.php');
+}
+
+/*
+函数：wh_handler
+功能：web hook的异步处理过程，不要直接调用，可能很耗时。
+*/
+function wh_handler()
+{
+	set_time_limit(0);
+
+	$items = queue_out('webhook');
+	if (empty($items)) return;
+
+	$hooks_data = [];
+	foreach($items as $item) {
+		$hooks = $item['hooks'];
+		$domain = $item['domain'];
+		$db_name = $item['db'];
+		$table_name = $item['table'];
+		$event = $item['event'];
+		foreach($hooks as $hook_url) {
+			//顶层key：webhook的url
+			if (!isset($hooks_data[$hook_url])) {$hooks_data[$hook_url] = [];}
+			$send_obj = &$hooks_data[$hook_url];
+
+			//第一层key：域名如db.appgame.com
+			if (!isset($send_obj[$domain])) {$send_obj[$domain] = [];}
+			$domain_obj = &$send_obj[$domain];
+
+			//第二层key：数据库名称如default
+			if (!isset($domain_obj[$db_name])) {$domain_obj[$db_name] = [];}
+			$db_obj = &$domain_obj[$db_name];
+
+			//第三层key：数据表名称如default
+			if (!isset($db_obj[$table_name])) {$db_obj[$table_name] = [];}
+			$table_obj = &$db_obj[$table_name];
+
+			//第四层key：事件名称如update、create
+			if (!isset($table_obj[$event])) {$table_obj[$event] = [];}
+			$datas = &$table_obj[$event];
+
+			//第五层就是id数组了
+			if (empty($item['items'])) {
+				if (!in_array(0, $datas)) {
+					$datas[] = 0;
+				}
+			} else {
+				foreach($item['items'] as $itme_id) {
+					if (!in_array($item_id, $datas)) {
+						$datas[] = $itme_id;
+					}
+				}
+			}
+		}
+	}
+
+	list($timestamp,$nonce,$signature) = gen_signature('ECrLAewF9nZ4qwdm');
+	foreach($hooks_data as $hook_url=>$data) {
+		$get_params = http_build_query(array(
+			'source' => 'gamedb',
+			'timestamp'=>$timestamp,
+			'nonce'=> $nonce,
+			'signature' => $signature
+		));
+		$ori_query = parse_url($hook_url, PHP_URL_QUERY);
+		if (empty($ori_query)) {
+			$hook_url = $hook_url.'?'.$get_params;
+		} else {
+			$hook_url = $hook_url.'&'.$get_params;
+		}
+		curl_post_content($hook_url, $data);
+	}
+}
+
+function base_url($url) {
+	$url_path = parse_url($url, PHP_URL_PATH);
+	$pos = strpos($url, $url_path);
+	return substr($url, $pos);
+}
 
 
 ?>

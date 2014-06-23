@@ -268,12 +268,7 @@ function on_create_db(mode)
 	var init_data = undefined;
 	if (opt_cmd === 'edit_database') {
 		var caption = env.db_captions[env.db_index];
-		init_data = {};
-		init_data.name = caption.name;
-		init_data.title = caption.title;
-		init_data.content = caption.content;
-		init_data.key = caption.key;
-		init_data.image = caption.image;
+		init_data = caption;
 		init_data.notify = '';
 	}
 
@@ -290,6 +285,7 @@ function on_create_db(mode)
 				caption.image = data.image;
 				caption.key = data.key;
 				caption.name = data.name;
+				caption.hooks= data.hooks;
 			} else {
 				var caption= {};
 				caption.title = data.title;
@@ -297,6 +293,7 @@ function on_create_db(mode)
 				caption.image = data.image;
 				caption.key = data.key;
 				caption.name = data.name;
+				caption.hooks = data.hooks;
 				var captions = env.db_captions;
 				captions.splice(captions.length - env.db_cmd_count,0, caption);
 				init_table_captions(data.name);

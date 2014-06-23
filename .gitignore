@@ -2,6 +2,7 @@
 *.db
 *.swo
 test.php
+config.php
 debug.php
 databases/*
 /admin/uploads/*

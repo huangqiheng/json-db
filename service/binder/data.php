@@ -30,28 +30,24 @@ if (empty($map_key)) {
 	jsonp_nocache_exit(['status'=>'error', 'error'=>'not mapper in parameter']);
 }
 
-$is_new_data = false;
-if (empty($mapper)) {
-	$is_new_data = true;
-} else {
+$is_new_data = true;
+do {
+	if (empty($mapper)) break;
+
 	$map_val = @$mapper[$map_key];
-	if(empty($map_val)) {
-		$is_new_data = true;
-	} else {
-		$map_file = "{$table_root}/{$map_val}.json";
-		if (!file_exists($map_file)) {
-			$is_new_data = true;
-		} else {
-			$ori_data = object_read($map_file);
-			if (empty($ori_data)) {
-				$is_new_data = true;
-			}
-			if (!set_data_id($data, $map_val)) {
-				jsonp_nocache_exit(['status'=>'error', 'error'=>'no id field']);
-			}
-		}
+	if(empty($map_val)) break;
+
+	$map_file = "{$table_root}/{$map_val}.json";
+	if (!file_exists($map_file)) break;
+
+	$ori_data = object_read($map_file);
+	if (empty($ori_data)) break;
+
+	if (!set_data_id($data, $map_val)) {
+		jsonp_nocache_exit(['status'=>'error', 'error'=>'no id field']);
 	}
-}
+	$is_new_data = false;
+} while(false);
 
 if ($is_new_data) {
 	$output = create_new_data($db_name, $table_name, $data);

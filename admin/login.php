@@ -4,18 +4,29 @@ define('DISABLE_CREATE', true);
 define('DEFAULT_LANGUAGE', 'cn');
 define('DEFAULT_REFERER_FIELD', 'referer');
 define('COOKIE_LIFETIME', 3600*24*365);
+define('DEFAULT_DB_FILE', '/srv/http/json-db/databases/user.db');
 
 class Login
 {
-	private $db_file = '/srv/http/json-db/databases/user.db';
+	private $db_file = null;
 	private $user_is_logged_in = false;
 	public $feedback = "";
 
-	public function __construct()
+	public function __construct($db_file=null)
 	{
 		define('USER_INDEX', 0); 
 		define('PASS_INDEX', 1); 
 		define('MAIL_INDEX', 2); 
+
+		$this->db_file = $db_file;
+
+		if (!is_readable(dirname($this->db_file))) {
+			$this->db_file = null;
+		}
+
+		if (empty($this->db_file)) {
+			$this->db_file = DEFAULT_DB_FILE;
+		}
 
 		$this->password_init();
 
@@ -42,13 +53,27 @@ class Login
 	public function logined()
 	{
 		if (session_status() !== PHP_SESSION_ACTIVE) {
-			$this->session_start_expired();
+			if (!$this->is_call_me()) {
+				$this->session_start_expired();
+			}
 		}
 		$result = null;
 		if (!empty($_SESSION['user_name']) && ($_SESSION['user_is_logged_in'])) {
 			$result = [];
 			$result['user_name'] = $_SESSION['user_name'];
 			$result['user_email'] = $_SESSION['user_email'];
+		} else {
+			return null;
+		}
+
+		$userdata = $this->get_userdata($result['user_name']);
+		if (empty($userdata)) {
+			if (session_status() == PHP_SESSION_ACTIVE) {
+				session_destroy();
+			}
+			$this->user_is_logged_in = false;
+			$this->feedback = T('Your account not exists');
+			return null;
 		}
 
 		return $result;
@@ -229,12 +254,12 @@ class Login
 
 	private function show_page_login_form()
 	{
+		header('Content-Type: text/html; charset=utf-8');
+
 		if ($this->feedback) {
 			$this->referer_jump();
 			echo $this->feedback . "<br/><br/>";
 		}
-
-		header('Content-Type: text/html; charset=utf-8');
 
 		echo '<h2>'.T('Login').'</h2>';
 
@@ -308,6 +333,10 @@ class Login
 
 	private function get_userdata($req_username)
 	{
+		if (empty($req_username)) {
+			return null;
+		}
+
 		$user_datas = $this->userdata();
 		if (empty($user_datas)) {
 			return null;
@@ -334,7 +363,63 @@ class Login
 
 	public function object_save($filename, $data)
 	{
-		file_put_contents($filename, json_encode($data));
+		file_put_contents($filename, $this->json_encode_h($data));
+	}
+
+	public function json_encode_h($obj)
+	{
+		return $this->indent_json(json_encode($obj));
+	}
+
+	public function indent_json($json) 
+	{
+		$result      = '';
+		$pos         = 0;
+		$strLen      = strlen($json);
+		$indentStr   = '  ';
+		$newLine     = "\n";
+		$prevChar    = '';
+		$outOfQuotes = true;
+
+		for ($i=0; $i<=$strLen; $i++) {
+
+			// Grab the next character in the string.
+			$char = substr($json, $i, 1);
+
+			// Are we inside a quoted string?
+			if ($char == '"' && $prevChar != '\\') {
+				$outOfQuotes = !$outOfQuotes;
+
+				// If this character is the end of an element,
+				// output a new line and indent the next line.
+			} else if(($char == '}' || $char == ']') && $outOfQuotes) {
+				$result .= $newLine;
+				$pos --;
+				for ($j=0; $j<$pos; $j++) {
+					$result .= $indentStr;
+				}
+			}
+
+			// Add the character to the result string.
+			$result .= $char;
+
+			// If the last character was the beginning of an element,
+			// output a new line and indent the next line.
+			if (($char == ',' || $char == '{' || $char == '[') && $outOfQuotes) {
+				$result .= $newLine;
+				if ($char == '{' || $char == '[') {
+					$pos ++;
+				}
+
+				for ($j = 0; $j < $pos; $j++) {
+					$result .= $indentStr;
+				}
+			}
+
+			$prevChar = $char;
+		}
+
+		return $result;
 	}
 
 	public function object_read($filename)
@@ -508,6 +593,7 @@ $Language_data = [
 	'Re enter password' =>					['cn'=>'请再次输入上面输过的密码'],
 	'Homepage' => 						['cn'=>'返回主界面'],
 	'You were just logged out.' =>				['cn'=>'您刚刚登出了。'],
+	'Your account not exists' => 				['cn'=>'你的账户不存在'],
 	'Username field was empty.' =>				['cn'=>'用户名字段不能为空。'],
 	'Password field was empty.' =>				['cn'=>'密码字段不能为空。'],
 	'Wrong password.' =>					['cn'=>'密码错误。'],

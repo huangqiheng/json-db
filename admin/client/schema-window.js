@@ -55,7 +55,7 @@ function new_schema_window(title, cb_done, init_data)
 
 	var win_count = $('.'+this_windows_class).length;
 
-	$('#'+window_id).jqxWindow({height: 400, width: 450,
+	$('#'+window_id).jqxWindow({height: 450, width: 450,
 		position: {x:win_count*30+200, y:50+win_count*41},
 		resizable: false, isModal: true, modalOpacity: 0.3,
 		cancelButton: $('#'+no_id),
@@ -63,11 +63,14 @@ function new_schema_window(title, cb_done, init_data)
 			var right_width = 300;
 
 			var wk_source = [];
+
+			if (init_data) {
 			if (init_data.hooks) {
 				for(var i in init_data.hooks) {
 					var url = init_data.hooks[i];
 					wk_source.push({label: url, value: url});
 				}
+			}
 			}
 
 			$('#'+name_id).jqxInput({width:right_width, height: 25});
@@ -79,7 +82,7 @@ function new_schema_window(title, cb_done, init_data)
 			$('#'+image_btn_id).css('background-image', 'url(/admin/images/add.png)');
 			$('#'+image_btn_id).css('background-size', '100%');
 
-			$('#'+wk_list_id).jqxListBox({source: wk_source, width: right_width, height: 50});
+			$('#'+wk_list_id).jqxListBox({source: wk_source, width: right_width, height: 100});
 			$('#'+wk_input_id).jqxInput({width: (right_width-(btn_width+2)*2), height: btn_height,placeHolder: T('Please input webhook url')});
 			$('#'+wk_addbtn_id).jqxButton({width: btn_width, height:btn_height});
 			$('#'+wk_delbtn_id).jqxButton({width: btn_width, height:btn_height});

@@ -10,9 +10,18 @@ if (is_cron_calling()) {
 	$status = json_decode(file_get_contents(cron_status_file()), true);
 	if (empty($status)) {
 		$status = [];
+		$status['webhook_last_time'] = 0;
 		$status_changed = true;
 	}
 
+	//每5分钟，执行webhook处理检查
+	if (time()-$status['webhook_last_time'] >= 60*3) {
+		$status['webhook_last_time'] = time();
+		$status_changed = true;
+		shell_exec('php -q '.dirname(__FILE__).'/webhook.php crontab > /dev/null 2>/dev/null &');
+	}
+
+	//执行各个数据表设置的webhook网址
 	$jobs = cron_jobs();
 	foreach($jobs as $job) {
 		if (!array_key_exists('key', $job)) {
@@ -42,6 +51,7 @@ if (is_cron_calling()) {
 		}
 	}
 
+	//保存状态
 	if ($status_changed) {
 		file_put_contents(cron_status_file(), json_encode($status));
 	}
@@ -131,19 +141,24 @@ function cron_jobs_get()
 	return $result;
 }
 
+function cron_cache_root()
+{
+	return realpath(__DIR__.'/../cache');
+}
+
 function cron_status_file()
 {
-	return __DIR__.'/uploads/cache/crontab.status';
+	return cron_cache_root().'/crontab.status';
 }
 
 function cron_cached_file()
 {
-	return __DIR__.'/uploads/cache/crontab.cache';
+	return cron_cache_root().'/crontab.cache';
 }
 
 function logger($object)
 {
-	file_put_contents(__DIR__.'/uploads/cache/crontab.log', json_encode($object)."\r\n", FILE_APPEND);
+	file_put_contents(cron_cache_root().'/crontab.log', json_encode($object)."\r\n", FILE_APPEND);
 }
 
 
