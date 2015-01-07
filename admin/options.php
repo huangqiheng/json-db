@@ -43,11 +43,16 @@ if ($check_what === 'values') {
 		}
 
 		if (count($filters)) {
-			$filter_source = json_encode($data_obj);
+			$filter_source = '';
+			array_walk_recursive($data_obj, function($item, $key)use(&$filter_source){
+				$filter_source .= ' | '.$item;
+			});
+
 			$is_matched_all = true;
 			foreach($filters as $filter) {
 				if (mb_strpos($filter_source, $filter) === false) {
 					$is_matched_all = false;
+
 					break;
 				}
 			}

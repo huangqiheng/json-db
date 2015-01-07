@@ -25,8 +25,10 @@ $init_table = get_param('table', 'default');
 
 
 <!--加载jquery-->
-<script type="text/javascript" language="javascript" src="client/jquery/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/jquery/jquery-1.11.1.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/jquery/md5.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/contextMenu/jquery.contextMenu.js"></script>
+<script type="text/javascript" language="javascript" src="client/contextMenu/jquery.ui.position.js"></script>
 
 <!--加载gritter-->
 <link rel="stylesheet" href="client/gritter/jquery.gritter.css" type="text/css" />
@@ -40,16 +42,21 @@ $init_table = get_param('table', 'default');
 
 <!--加载datatables-->
 <style type="text/css" title="currentStyle">
-	@import "client/datatables/demo_table_jui.css";
-	@import "client/datatables/jquery-ui-1.8.4.custom.css";
-	@import "client/datatables/demo_page.css";
-	@import "client/datatables/header.css";
-	@import "client/datatables/demo_table.css";
-	@import "client/datatables/TableTools.css";
+	@import "client/datatables/jquery.dataTables.min.css";
+	@import "client/datatables/dataTables.tableTools.min.css";
+	@import "client/datatables/dataTables.responsive.css";
+	@import "client/datatables/dataTables.fixedHeader.css";
+	@import "client/datatables/dataTables.jqueryui.css";
+	@import "client/datatables/jquery-ui.css";
+	@import "client/contextMenu/jquery.contextMenu.css";
 </style>
 <script type="text/javascript" language="javascript" src="client/datatables/jquery.dataTables.min.js"></script>
-<script type="text/javascript" language="javascript" src="client/datatables/TableTools.js"></script>
-<script type="text/javascript" language="javascript" src="client/datatables/ZeroClipboard.js"></script>
+<script type="text/javascript" language="javascript" src="client/datatables/dataTables.tableTools.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/datatables/dataTables.scroller.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/datatables/dataTables.pagination.input.js"></script>
+<script type="text/javascript" language="javascript" src="client/datatables/dataTables.responsive.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/datatables/dataTables.fixedHeader.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/datatables/dataTables.jqueryui.js"></script>
 
 <!--加载自己的js-->
 <script type="text/javascript" language="javascript" src="client/functions.js"></script>
@@ -101,6 +108,15 @@ $(document).ready(function(){
 	trigger_refresh();
 });
 
+
+$(window).resize(function () {
+	if (window.fixedheader !== undefined) {
+		fixedheader._fnUpdateClones(true); // force redraw
+		fixedheader._fnUpdatePositions();
+	}
+});
+
+
 </script>
 </head>
 <body background="images/bg_tile.jpg">
@@ -114,7 +130,7 @@ $(document).ready(function(){
 	</div>
 	<div id="user_info" style="float:right; padding:4px; color: white;"></div>
 </td></tr><tr><td>
-	<div id="listview" style="width:100%;"></div>
+	<div id="listview" style="width:100%; background-color: rgb(180, 180, 180);"></div>
 </td></tr>
 </table>
 </body></html>

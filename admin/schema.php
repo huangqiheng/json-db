@@ -44,11 +44,25 @@ function backup_database_exit($req)
 		mkdir($bak_dir);
 	}
 
-	$bak_file = "{$backup_dir}/{$db_name}-".gmdate("YmdHis", time()).'.tar.gz';
-	exec("cd {$db_path} && tar -czf {$bak_file} {$db_name}");
+	$table_name = @$req['table_name'];
+	if (empty($table_name)) {
+		$cd_path = $db_path;
+		$target_name = $db_name;
+		$bak_file = "{$bak_dir}/{$db_name}-".gmdate("YmdHis", time()).'.tar.gz';
+	} else {
+		$cd_path = "{$db_path}/{$db_name}";
+		$target_name = $table_name;
+		if (!file_exists($cd_path)) {
+			jsonp_nocache_exit(['status'=>'error', 'error'=>'table_name error.']);
+		}
+		$bak_file = "{$bak_dir}/{$db_name}-{$table_name}-".gmdate("YmdHis", time()).'.tar.gz';
+	}
+
+	//执行命令行
+	exec("cd {$cd_path} && tar -czf {$bak_file} {$target_name}");
 
 	$bak_url = substr($bak_file, strlen($_SERVER['DOCUMENT_ROOT']));
-	jsonp_nocache_exit(['status'=>'ok', 'file'=>$bak_url]); 
+	jsonp_nocache_exit(['status'=>'ok', 'file'=>$bak_url, 'ori'=>$bak_file, 'db_path'=>$db_path]); 
 }
 
 function del_database_exit($req)

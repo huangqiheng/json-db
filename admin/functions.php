@@ -325,7 +325,6 @@ function api_valid($db_name, $table_name, $apikey)
 
 function get_onebox_keys($schema)
 {
-	global $mapper_types;
 	$onebox = @$schema['onebox'];
 	$key_title = @$onebox['title'];
 	$key_title || $key_title = 'ID';
@@ -333,7 +332,7 @@ function get_onebox_keys($schema)
 
 	if (empty($key_desc)) {
 		foreach(merge_fields($schema['fields']) as $key=>$type) {
-			if (in_array($type, $mapper_types)) {
+			if (is_mapper_fileld($type)) {
 				$key_desc = $key;
 				break;
 			}
@@ -535,8 +534,21 @@ function append_listview_json($file_name, $item)
 	sem_release($mutex);
 }
 
+function get_empty_val($field_type)
+{
+	$field_value = '';
+	if (preg_match('/^jqxInput/i', $field_type)) {$field_value='';}
+	if (preg_match('/^jqxInput-text-json/i', $field_type)) {$field_value=json_decode('{}');}
+	if (preg_match('/^jqxComboBox/i', $field_type)) {$field_value='';}
+	if (preg_match('/^jqxRadioButton/i', $field_type)) {$field_value='';}
+	if (preg_match('/^jqxCheckBox/i', $field_type)) {$field_value=[];}
+	if (preg_match('/^jqxListBox/i', $field_type)) {$field_value=[];}
+	if (preg_match('/^jqxNumberInput/i', $field_type)) {$field_value='0';}
+	if (preg_match('/^jqxDateTimeInput/i', $field_type)) {$field_value=gm_date(time());}
+	return $field_value;
+}
 
-function format_fields($schema, $new_data, $ori_data=null)
+function format_fields($schema, $new_data, $ori_data=null, $force_empty=false)
 {
 	$fields = $schema['fields'];
 	$formated_data = array_merge(array(), $new_data);
@@ -557,19 +569,14 @@ function format_fields($schema, $new_data, $ori_data=null)
 			if (!$filed_exists) {
 				//如果是更新的，则需要保留原值
 				if ($ori_data) {
-					$field_value = @$ori_data[$field_name];
+					if ($force_empty) {
+						$field_value = get_empty_val($field_type);
+					} else {
+						$field_value = @$ori_data[$field_name];
+					}
 				//只有创建时，才强制设置默认值
 				} else {
-					$field_value = '';
-					if (preg_match('/^jqxInput/i', $field_type)) {$field_value='';}
-					if (preg_match('/^jqxInput-text-json/i', $field_type)) {$field_value=json_decode('{}');}
-					if (preg_match('/^jqxComboBox/i', $field_type)) {$field_value='';}
-					if (preg_match('/^jqxRadioButton/i', $field_type)) {$field_value='';}
-					if (preg_match('/^jqxCheckBox/i', $field_type)) {$field_value=[];}
-					if (preg_match('/^jqxListBox/i', $field_type)) {$field_value=[];}
-					if (preg_match('/^jqxNumberInput/i', $field_type)) {$field_value='0';}
-					if (preg_match('/^jqxDateTimeInput/i', $field_type)) {$field_value=gm_date(time());}
-
+					$field_value = get_empty_val($field_type);
 					if ($field_name === 'CREATE') {
 						$field_value=gm_date(time());
 					}
@@ -590,7 +597,7 @@ function format_fields($schema, $new_data, $ori_data=null)
 	return $formated_data;
 }
 
-function update_single_data($table_root, $data)
+function update_single_data($table_root, $data, $force_empty=false)
 {
 	if (empty($data)) {
 		return [null, null, null];
@@ -608,11 +615,12 @@ function update_single_data($table_root, $data)
 
 	$data_file = "{$table_root}/{$req_id}.json";
 	$ori_data = object_read($data_file);
-	$ori_data_output = array_merge(array(), $ori_data);
+	$old_data = array_merge(array(), $ori_data);
+	$mapper_before = get_mapper_keys($schema, $ori_data);
 
 	//格式化输入结构，填充空白字段
 	//有时候用户的输入并不完整
-	$req_data = format_fields($schema, $data, $ori_data);
+	$req_data = format_fields($schema, $data, $ori_data, $force_empty);
 
 	//将请求的数据，逐个压入现有数据中
 	//这样即使现有数据有"多余"字段，也不会被覆盖
@@ -637,7 +645,7 @@ function update_single_data($table_root, $data)
 			}
 			if ($handled){continue;}
 
-			//有时候现有的数据字段缺失,可以强制填入,一切以schema为准了
+			//有时候存档的数据字段缺失,可以强制填入,一切以schema为准了
 			$new_items = @$ori_data[$req_group];
 			if (empty($new_items)) {
 				$ori_data[$req_group] = [];
@@ -646,15 +654,30 @@ function update_single_data($table_root, $data)
 		}
 	}
 
+	//删除映射的mapper键值
+	$mapper_after = get_mapper_keys($schema, $ori_data);
+	$mapper_dels = array_diff($mapper_before, $mapper_after);
+	if (!empty($mapper_dels)) {
+		$mapper_data = object_read("{$table_root}/mapper.json");
+		foreach($mapper_dels as $key) {
+			$map_key= mapper_key($key);
+			unset($mapper_data[$map_key]);
+			unset($mapper_data[md5($map_key)]);
+		}
+		object_save("{$table_root}/mapper.json", $mapper_data);
+	}
+
 	wh_event_file($data_file, 'update');
 
 	$new_data = $ori_data;
-	return [$req_id, object_save($data_file, $new_data), $ori_data_output];
+	object_save($data_file, $new_data);
+
+	return [$req_id, $new_data, $old_data];
 }
 
 function is_iterable($var)
 {
-	return $var !== null 
+	return ($var !== null )
 		&& (is_array($var) 
 				|| $var instanceof Traversable 
 				|| $var instanceof Iterator 
@@ -686,10 +709,10 @@ function create_single_data($table_root, $data)
 	return [$new_id, object_save($new_id_file, $new_data)];
 }
 
-function update_current_data($db_name, $table_name, $req_data)
+function update_current_data($db_name, $table_name, $req_data, $force_empty=false)
 {
 	$table_root = table_root($db_name, $table_name);
-	list($req_id, $new_data, $ori_data) = update_single_data($table_root, $req_data);
+	list($req_id, $new_data, $ori_data) = update_single_data($table_root, $req_data, $force_empty);
 
 	if (empty($new_data)) {
 		return ['status'=>'error', 'error'=>'update single data error'];
@@ -720,16 +743,16 @@ function create_new_data($db_name, $table_name, $req_data)
 	return ['status'=>'ok', 'ID'=>$req_id, 'reload'=>(count($affected)>0), 'listview'=>$listview_item];
 }
 
-function join_single_data($db_name, $table_name, $data)
+function join_single_data($db_name, $table_name, $data, $force_empty=false)
 {
 	if (data_exists($db_name, $table_name, $data)) {
-		return update_current_data($db_name, $table_name, $data);
+		return update_current_data($db_name, $table_name, $data, $force_empty);
 	} else {
 		return create_new_data($db_name, $table_name, $data);
 	}
 }
 
-function join_multiple_data($db_name, $table_name, $data)
+function join_multiple_data($db_name, $table_name, $data, $force_empty=false)
 {
 	$table_root = table_root($db_name, $table_name);
 
@@ -742,7 +765,7 @@ function join_multiple_data($db_name, $table_name, $data)
 	foreach($data as $sub_data) {
 		if ($req_id = __data_exists($table_root, $schema, $mapper, $sub_data)) {
 			set_data_id($sub_data, $req_id);
-			list($req_id, $new_data, $ori_data) = update_single_data($table_root, $sub_data);
+			list($req_id, $new_data, $ori_data) = update_single_data($table_root, $sub_data, $force_empty);
 
 			if ($new_data) {
 				//共享字段的同步
@@ -772,13 +795,13 @@ function join_multiple_data($db_name, $table_name, $data)
 	return ['status'=>'ok', 'listview'=>$listviews];
 }
 
-function join_new_data($db_name, $table_name, $data)
+function join_new_data($db_name, $table_name, $data, $force_empty=false)
 {
 	//判断是单个数据，还是数组
 	if (is_data($data)) {
-		return join_single_data($db_name, $table_name, $data);
+		return join_single_data($db_name, $table_name, $data, $force_empty);
 	} else {
-		return join_multiple_data($db_name, $table_name, $data);
+		return join_multiple_data($db_name, $table_name, $data, $force_empty);
 	}
 }
 
@@ -1135,7 +1158,6 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 						continue;
 					}
 					$id_input = intval($id_input);
-
 					
 					//找到就是替换并直接退出，找不到就是追加，并抛给下一个流程
 					foreach($listview_data as &$subitem) {
@@ -1275,7 +1297,13 @@ function make_listview_item($table_root, $data_obj)
 
 	$listview = $schema['listview'];
 	$merge_items= merge_fields($data_obj);
-	return new_listview_item($listview, $merge_items, $merged_fields);
+	$res_item = new_listview_item($listview, $merge_items, $merged_fields);
+
+	if ($ID = @$merge_items['ID']) {
+		object_save("{$table_root}/{$ID}.view.json", $res_item);
+	}
+
+	return $res_item;
 }
 
 function new_listview_item($listview, $merge_items, $merged_fields)
@@ -1283,7 +1311,9 @@ function new_listview_item($listview, $merge_items, $merged_fields)
 	$output = [];
 	foreach($listview as $view_item) {
 		$value = @$merge_items[$view_item];
-		if ($value) {
+		if (empty($value)) {
+			$output[] = '';
+		} else {
 			$field_name = @$merged_fields[$view_item];
 			if ($field_name) {
 				if ($field_name === 'ID'){
@@ -1313,8 +1343,6 @@ function new_listview_item($listview, $merge_items, $merged_fields)
 			}
 
 			$output[] = $value;
-		} else {
-			$output[] = '';
 		}
 	}
 	return $output;
@@ -1326,11 +1354,6 @@ function __data_exists($table_root, $schema, $mapper, $data)
 	if (empty($schema)) {
 		return false;
 	}
-	//先平坦化，易于处理
-	$merged_data = merge_fields($data);
-	$merged_fields = merge_fields($schema['fields']);
-	//获得，究竟哪些是能够mapper的key
-	$mapper_fields = get_mapper_fields($merged_fields);
 
 	//查看数据是否存在
 	$check_id_valid = function($item_val) use($mapper, $table_root) {
@@ -1344,17 +1367,10 @@ function __data_exists($table_root, $schema, $mapper, $data)
 		return false;
 	};
 
-	foreach($mapper_fields as $field) {
-		$value = @$merged_data[$field];
-
-		if (!is_array($value)) {
-			$value = [$value];
-		}
-
-		foreach($value as $sub_val) {
-			if ($item_id = call_user_func($check_id_valid, $sub_val)) {
-				return $item_id;
-			}
+	$mapper_keys = get_mapper_keys($schema, $data);
+	foreach($mapper_keys as $sub_val) {
+		if ($item_id = call_user_func($check_id_valid, $sub_val)) {
+			return $item_id;
 		}
 	}
 	return false;
@@ -1518,12 +1534,41 @@ function get_options_fields($merge_fields)
 	return $mappers;
 }
 
+function get_mapper_keys($schema, $data)
+{
+	//先平坦化，易于处理
+	$merged_data = merge_fields($data);
+	$merged_fields = merge_fields($schema['fields']);
+	//获得，究竟哪些是能够mapper的key
+	$mapper_fields = get_mapper_fields($merged_fields);
+
+	$results = [];
+	foreach($mapper_fields as $field) {
+		$value = @$merged_data[$field];
+		if (empty($value)) continue;
+
+		if (is_array($value)) {
+			foreach($value as $sub_val) {
+				$results[] = $sub_val;
+			}
+		} else {
+			$results[] = $value;
+		}
+	}
+	return $results;
+}
+
+function is_mapper_fileld($field_name)
+{
+	global $mapper_types;
+	return in_array($field_name, $mapper_types);
+}
+
 function get_mapper_fields($merge_fields)
 {
 	$mappers = [];
-	global $mapper_types;
 	foreach($merge_fields as $field=>$value) {
-		if (in_array($value, $mapper_types)) {
+		if (is_mapper_fileld($value)) {
 			$mappers[] = $field;
 		}
 	}
@@ -1631,10 +1676,16 @@ function object_read($filename)
 	}
 
 	$data_str = file_get_contents($filename);
-	if ($data_str === null) {
+	if (empty($data_str)) {
 		return [];
 	}
-	return json_decode($data_str, true);
+
+	$res = json_decode($data_str, true);
+	if (empty($res)) {
+		return [];
+	}
+
+	return $res;
 }
 
 function objects_read($db_name, $table_name)
@@ -1647,7 +1698,7 @@ function objects_read($db_name, $table_name)
 		$item_id = $matches[1];
 
 		$data_obj = object_read($file);
-		if (empty($data_obj)) {return;}
+		if (empty($data_obj)) {continue;}
 
 		$merge_items = merge_fields($data_obj);
 		unset($merge_items['ID']);
@@ -2398,7 +2449,7 @@ function wh_event($db, $table, $event, $data=null)
 	$hooks = array_values(array_merge($db_hooks, $table_hooks));
 
 	if (empty($hooks)) {
-		return;
+		return false;
 	}
 
 	if (empty($data)) {
@@ -2422,6 +2473,8 @@ function wh_event($db, $table, $event, $data=null)
 	if (function_exists('wh_checkpoint')) {
 		wh_checkpoint();
 	}
+
+	return true;
 }
 
 /*

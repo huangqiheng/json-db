@@ -30,8 +30,11 @@ function wh_trigger_exit($db, $table, $event, $data)
 	if (!in_array($event, ['update', 'refresh'])) {
 		jsonp_nocache_exit(['status'=>'error', 'error'=>'invalid event type']);
 	}
-	wh_event($db, $table, $event, $data);
-	jsonp_nocache_exit(['status'=>'ok']);
+	if (wh_event($db, $table, $event, $data) === true) {
+		jsonp_nocache_exit(['status'=>'ok']);
+	} else {
+		jsonp_nocache_exit(['status'=>'error']);
+	}
 }
 
 

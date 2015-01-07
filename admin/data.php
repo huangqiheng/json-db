@@ -38,7 +38,8 @@ function create_data_exit($req)
 
 function update_data_exit($req)
 {
-	jsonp_nocache_exit(update_current_data(@$req['db_name'], @$req['table_name'], @$req['data'])); 
+	$force_empty = @$req['force_empty'] === 'true';
+	jsonp_nocache_exit(update_current_data(@$req['db_name'], @$req['table_name'], @$req['data'], $force_empty)); 
 }
 
 

@@ -35,7 +35,11 @@ function refresh_listview(db_name, table_name)
 				var selected = datatables_selected(listview_id);
 				var urls = selected.map(function(item){return item[id_index];});
 				var id = selected[0];
-				post(button.url, {ids:urls}, function(d){
+				post(button.url, {
+					ids:urls,
+					db_name: db_name,
+					table_name: table_name
+				}, function(d){
 					if (d.status === 'ok') {
 						if ((d.listview) && (d.listview.length)) {
 							for(var i in d.listview) {
@@ -45,9 +49,12 @@ function refresh_listview(db_name, table_name)
 						} else {
 							console.log(d);
 						}
+						env.popup(T('SUCCEED'), button.title + ' ' + T('execute succefully'));
+					} else {
+						env.popup(T('ERROR'), button.title + ' ' + T('execute error'));
 					}
 				}, function(e){
-				
+					env.popup(T('ERROR'), button.title + ' ' + T('execute failure'));
 				});
 			});
 		}
@@ -138,6 +145,7 @@ function refresh_listview(db_name, table_name)
 					req_data['data'] = new_data;
 					req_data['db_name'] = db_name;
 					req_data['table_name'] = table_name;
+					req_data['force_empty'] = true;
 					submit_data(req_data, function(d){
 						datatables_update(listview_id, d.listview, id_index);
 						if (d.hasOwnProperty('reload')) {
@@ -189,6 +197,13 @@ function refresh_listview(db_name, table_name)
 
 function datatables_new(listview_id, aDataSet, aoColumns, event)
 {
+
+	if (aDataSet.length > 50000) {
+		aDataSet.length = 50000;
+		env.popup(T('ERROR'), T('Too much datas, faint!'));
+	}
+
+
 	datatables_css();
 	var table_id = get_datatalbe_id(listview_id);
 
@@ -209,10 +224,11 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 
 	var oTable = $('#'+table_id).dataTable( {
 		'bJQueryUI': true,
-		'sPaginationType': 'full_numbers',
+		'sPaginationType': 'input',
 		'iDisplayLength': 25,
-		"bLengthChange": true,
-		"bPaginate": true,
+		'bLengthChange': true,
+		'bPaginate': true,
+		'responsive': true,
 		'aaData': aDataSet,
 		'aaSorting': [[0,'desc']],
 		'bStateSave': true,
@@ -231,18 +247,8 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 		"fnPreDrawCallback": function( oSettings ) {
 			//console.log('fnPreDrawCallback');
 		},
-		'oTableTools': {
-			'sRowSelect': 'multi',
-			"fnPreRowSelect": function(e, nodes) {
-				this.selected_rows  = this.fnGetSelected();
-				return true;
-			},
-			"fnRowSelected": function(nodes) {
-				e = window.event;
-				if (!e.altKey) {
-					this.fnDeselect(this.selected_rows);
-				}
-			},
+		'tableTools': {
+			'sRowSelect': 'os',
 			'aButtons': [
 				{"sExtends": "text", 'fnInit': fn_init('images/export.png',T('export button'),T('export rows to csv for excel')), 
 					"fnClick": function (nButton, oConfig, oFlash) {
@@ -251,6 +257,16 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 				{"sExtends": "text", 'fnInit': fn_init('images/import.png',T('import button'),T('import csv or xml file to table')), 
 					"fnClick": function (nButton, oConfig, oFlash) {
 
+					}},
+				{"sExtends": "text", 'fnInit': fn_init('images/save.png',T('save button'),T('save table as backup file')), 
+					"fnClick": function (nButton, oConfig, oFlash) {
+						var data = {};
+						data.cmd = 'backup_database';
+						data.db_name = get_db_name();
+						data.table_name = get_table_name(),
+						submit_schema(data, function(d){
+							env.popup(T('SUCCEED'), T('Backup database successfully.'));
+						});
 					}},
 				{"sExtends": "select_all", 'fnInit': fn_init('images/check.png',T('select all button'),T('select all rows, even if beening paged'))},
 				{"sExtends": "select_none", 'fnInit': fn_init('images/uncheck.png',T('select none button'),T('unselect all highline rows'))},
@@ -289,23 +305,46 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 				'<option value="50">50</option>'+
 				'<option value="100">100</option>'+
 				'<option value="200">200</option>'+
+				'<option value="500">500</option>'+
 				'<option value="-1">'+T('All')+'</option>'+
 				'</select> '+T('records')
 		}
 
 	});	
 
-	$('#'+table_id).on('click','tr', function(event) {
-		var oTT = TableTools.fnGetInstance(table_id);
-		var obj = $(this);
+	window.fixedheader = new $.fn.dataTable.FixedHeader(oTable);
 
-		if (oTT.fnIsSelected(this)) {
-			oTT.fnDeselect(obj);
-		} else {
-			oTT.fnSelect(obj);
+	$.contextMenu({
+		selector: '#'+table_id,
+		items: {
+			create: {
+				name: '新建',
+				callback: function(key, opt) {
+					$('#ToolTables_listview_table_7').click();
+				}
+			},
+			modify: {
+				name: '修改',
+				callback: function(key, opt) {
+					$('#ToolTables_listview_table_8').click();
+				}
+			},
+			remove: {
+				name: '删除',
+				callback: function(key, opt) {
+					$('#ToolTables_listview_table_9').click();
+				}
+
+			},
+			save: {
+				name: '备份',
+				callback: function(key, opt) {
+					$('#ToolTables_listview_table_2').click();
+				}
+
+			}
 		}
 	});
-
 }
 
 function datatables_delete(listview_id, id_list, id_index)
@@ -403,17 +442,24 @@ function datatables_css()
 	
 	var html_str = hereDoc(function() {/*!
 <style type='text/css'>
+	span.paginate_button, span.paginate_page {
+		padding: 5px !important;
+	}
+	input.paginate_input {
+		width: 50px !important;
+	}
 	div.DTTT_container.ui-buttonset {
 		margin-bottom:0px !important;
+		margin-right:18px !important;
 	}
 	a#ToolTables_listview_table_0 {
 		margin-left: 2px !important;
 	}
-	a#ToolTables_listview_table_1 {
-		margin-right: 8px !important;
+	a#ToolTables_listview_table_2 {
+		margin-right: 18px !important;
 	}
-	a#ToolTables_listview_table_5 {
-		margin-right: 8px !important;
+	a#ToolTables_listview_table_6 {
+		margin-right: 18px !important;
 	}
 	div#listview_table_info {
 		margin-top: 3px;
@@ -443,6 +489,16 @@ function datatables_css()
 	}
 	div.DataTables_sort_wrapper {
 		padding-right: 0px !important;
+		text-shadow: 2px 1px 3px #FFF;
+	}
+	div.ui-widget-header {
+		text-shadow: 3px 3px 3px #FFF;
+	}
+	div#db_captions, div#table_captions {
+		text-shadow: 3px 3px 18px #56FF63;
+	}
+	thead.sorting_asc, thead.sorting_desc {
+		text-shadow: 3px 3px 18px #56FF63;
 	}
 	th.ui-state-default {
 		padding-top: 8px !important;
