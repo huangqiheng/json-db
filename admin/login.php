@@ -1,10 +1,11 @@
 <?php
 
-define('DISABLE_CREATE', true);
-define('DEFAULT_LANGUAGE', 'cn');
-define('DEFAULT_REFERER_FIELD', 'referer');
-define('COOKIE_LIFETIME', 3600*24*365);
-define('DEFAULT_DB_FILE', '/srv/http/json-db/databases/user.db');
+defined('DISABLE_CREATE') or define('DISABLE_CREATE', true);
+defined('DEFAULT_LANGUAGE') or define('DEFAULT_LANGUAGE', 'cn');
+defined('DEFAULT_REFERER_FIELD') or define('DEFAULT_REFERER_FIELD', 'referer');
+defined('COOKIE_LIFETIME') or define('COOKIE_LIFETIME', 3600*24*365);
+defined('DEFAULT_DB_FILE') or define('DEFAULT_DB_FILE', dirname(dirname(__FILE__)).'/databases/user.db');
+defined('LOGIN_MESCRIPT') or define('LOGIN_MESCRIPT', substr(__FILE__, strlen($_SERVER['DOCUMENT_ROOT'])));
 
 class Login
 {
@@ -249,7 +250,7 @@ class Login
 		}
 
 		echo T('Hello').' '.$_SESSION['user_name'].', '.T('you are logged in.').'<br/><br/>';
-		echo '<a href="' . $_SERVER['SCRIPT_NAME'] . '?action=logout">'.T('Log out').'</a>';
+		echo '<a href="' . LOGIN_MESCRIPT . '?action=logout">'.T('Log out').'</a>';
 	}
 
 	private function show_page_login_form()
@@ -263,7 +264,7 @@ class Login
 
 		echo '<h2>'.T('Login').'</h2>';
 
-		echo '<form method="post" action="' . $_SERVER['SCRIPT_NAME'] . '" name="loginform">';
+		echo '<form method="post" action="' . LOGIN_MESCRIPT . '" name="loginform">';
 		echo '<table><tr><td>';
 		echo T('Username');
 		echo '</td><td>';
@@ -279,7 +280,7 @@ class Login
 		echo '</td></tr></table>';
 		echo '</form>';
 
-		echo '<a href="' . $_SERVER['SCRIPT_NAME'] . '?action=register">'.T('Register new account').'</a>';
+		echo '<a href="' . LOGIN_MESCRIPT . '?action=register">'.T('Register new account').'</a>';
 	}
 
 	private function show_page_registration()
@@ -292,7 +293,7 @@ class Login
 
 		echo '<h2>'.T('Registration').'</h2>';
 
-		echo '<form method="post" action="' . $_SERVER['SCRIPT_NAME'] . '?action=register" name="registerform">';
+		echo '<form method="post" action="' . LOGIN_MESCRIPT . '?action=register" name="registerform">';
 		echo '<table><tr><td>';
 		echo T('Username');
 		echo '</td><td>';
@@ -324,7 +325,7 @@ class Login
 		echo '</td></tr></table>';
 		echo '</form>';
 
-		echo '<a href="' . $_SERVER['SCRIPT_NAME'] . '">'.T('Homepage').'</a>';
+		echo '<a href="' . LOGIN_MESCRIPT . '">'.T('Homepage').'</a>';
 	}
 
 	/********************************/
@@ -644,15 +645,14 @@ function login_wrap_referer($url, $referer)
 function denies_with_redirect()
 {
 	global $logined_info;
-	$me_script = substr(__FILE__, strlen($_SERVER['DOCUMENT_ROOT']));
 	$referer = $_SERVER['REQUEST_URI'];
 
 	if ($logined_info === null) {
-		header( 'Location: '.$me_script.'?'.DEFAULT_REFERER_FIELD.'='.$referer) ;
+		header( 'Location: ' . LOGIN_MESCRIPT . '?' . DEFAULT_REFERER_FIELD.'='.$referer) ;
 		exit();
 	}
 
-	$logined_info['logout'] = $me_script.'?action=logout';
+	$logined_info['logout'] = LOGIN_MESCRIPT.'?action=logout';
 	return $logined_info;
 }
 
@@ -688,8 +688,7 @@ function denies_with_json()
 		exit();
 	}
 
-	$me_script = substr(__FILE__, strlen($_SERVER['DOCUMENT_ROOT']));
-	$logined_info['logout'] = $me_script.'?action=logout';
+	$logined_info['logout'] = LOGIN_MESCRIPT.'?action=logout';
 	return $logined_info;
 }
 

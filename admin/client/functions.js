@@ -73,7 +73,7 @@ function check_name_valid(input_str, cb_done)
 		return;
 	}
 
-	jsonp('/admin/valid.php', {
+	jsonp('valid.php', {
 		db_name: get_db_name(),
 		table_name: get_table_name(),
 		what: 'mapper',
@@ -498,7 +498,15 @@ function submit_post(url, data, cb_done)
 
 function get_url(db_name, table_name, filename)
 {
-	return '/databases/'+db_name+'/'+table_name+'/'+filename;
+	var matchs = window.location.href.match(/^http:\/\/([^\/]+)\/([^\/]+\/)admin\/index\.php/);
+
+	if (matchs === null) {
+		return '/databases/'+db_name+'/'+table_name+'/'+filename;
+	} else {
+		var host = matchs[1];
+		var prefix = matchs[2];
+		return '/'+prefix +'databases/'+host+'/'+db_name+'/'+table_name+'/'+filename;
+	}
 }
 
 function empty(mixed_var) {

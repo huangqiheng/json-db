@@ -1631,9 +1631,14 @@ function db_domain()
 	return $_SERVER['HTTP_HOST'];
 }
 
+function doc_root()
+{
+	return dirname(dirname(__FILE__));
+}
+
 function dbs_path()
 {
-	$root_path = $_SERVER['DOCUMENT_ROOT'].'/databases/'.db_domain();
+	$root_path = doc_root().'/databases/'.db_domain();
 	if (!file_exists($root_path)) {
 		mkdir($root_path);
 		init_db_root($root_path);

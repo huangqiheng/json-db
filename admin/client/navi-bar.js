@@ -207,7 +207,7 @@ function render_captions(index, label, value) {
 
 	} else {
 		var img = '<img height="55" width="55" src="' + datarecord.image+ '"/>';
-		var table = '<table style="max-width: '+(this.width-10)+'px; width:100%; font-size:12; border-spacing:0px; background-image: url(/admin/images/gradient_grey.png);background-position-y: -75px;"><tr><td style="width: 70px;" rowspan="2">' + img + 
+		var table = '<table style="max-width: '+(this.width-10)+'px; width:100%; font-size:12; border-spacing:0px; background-image: url(images/gradient_grey.png);background-position-y: -75px;"><tr><td style="width: 70px;" rowspan="2">' + img + 
 			'</td><td><strong>' + datarecord.title+'('+datarecord.name+')'+'</strong></td></tr><tr><td style="color:gray;">' + datarecord.content+ '</td></tr></table>';
 	}
 

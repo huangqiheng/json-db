@@ -79,7 +79,7 @@ function new_schema_window(title, cb_done, init_data)
 			$('#'+key_id).jqxInput({width:right_width, height: 25});
 			$('#'+image_id).jqxInput({width:273, height: 25});
 			$('#'+image_btn_id).jqxDropDownButton({width: 25, height: 25, dropDownHorizontalAlignment: 'right'});
-			$('#'+image_btn_id).css('background-image', 'url(/admin/images/add.png)');
+			$('#'+image_btn_id).css('background-image', 'url(images/add.png)');
 			$('#'+image_btn_id).css('background-size', '100%');
 
 			$('#'+wk_list_id).jqxListBox({source: wk_source, width: right_width, height: 100});
@@ -94,7 +94,7 @@ function new_schema_window(title, cb_done, init_data)
 				env.popup(T('ERROR'), T('Please input url correctly'));
 			}], event_listbox_add);
 
-			jsonp('/admin/options.php', {what: 'logos'}, function(d){
+			jsonp('options.php', {what: 'logos'}, function(d){
 				if (d.status === 'ok') {
 					init_logos_grid(d.items);
 				}
