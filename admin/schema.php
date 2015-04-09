@@ -153,14 +153,14 @@ function create_table_exit($req)
 			'ori_cmd'=> $req]);
 	}
 
-	$filename = "{$filename}/{$req['name']}";
+	$base_path = "{$filename}/{$req['name']}";
 
-	if (file_exists($filename)) {
+	if (file_exists($base_path)) {
 		jsonp_nocache_exit(['status'=>'error', 
 			'error'=>'The request table already exists.',
 			'ori_cmd'=> $req]);
 	} else {
-		mkdir($filename, 0744);
+		mkdir($base_path, 0744);
 	}
 
 	$caption = [];
@@ -191,8 +191,9 @@ function create_table_exit($req)
 	$schema['fields'] = $fields;
 	$schema['onebox'] = $onebox;
 
-	$filename = "{$filename}/schema.json";
-	object_save($filename, $schema);
+	object_save("{$base_path}/schema.json", $schema);
+	object_save("{$base_path}/listview.json", []);
+	object_save("{$base_path}/options.json", []);
 
 	wh_event($req['db_name'], $req['name'], 'create');
 	jsonp_nocache_exit(['status'=>'ok']); 

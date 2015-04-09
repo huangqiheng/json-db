@@ -498,7 +498,7 @@ function submit_post(url, data, cb_done)
 
 function get_url(db_name, table_name, filename)
 {
-	var matchs = window.location.href.match(/^http:\/\/([^\/]+)\/([^\/]+\/)admin\/index\.php/);
+	var matchs = window.location.href.match(/^http:\/\/([^\/]+)\/(([^\/]+\/)+)admin\/index\.php/);
 
 	if (matchs === null) {
 		return '/databases/'+db_name+'/'+table_name+'/'+filename;

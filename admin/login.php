@@ -1,6 +1,6 @@
 <?php
 
-defined('DISABLE_CREATE') or define('DISABLE_CREATE', true);
+defined('DISABLE_CREATE') or define('DISABLE_CREATE', false);
 defined('DEFAULT_LANGUAGE') or define('DEFAULT_LANGUAGE', 'cn');
 defined('DEFAULT_REFERER_FIELD') or define('DEFAULT_REFERER_FIELD', 'referer');
 defined('COOKIE_LIFETIME') or define('COOKIE_LIFETIME', 3600*24*365);

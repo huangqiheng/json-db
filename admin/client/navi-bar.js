@@ -159,6 +159,11 @@ function render_db_selection(d,index,label,value)
 	if (!d) {return d;}
 	var image = 'images/database.png';
 	var counter = env.db_captions.length-env.db_cmd_count;
+
+	if (counter === 0) {
+		return d;
+	}
+
 	return '<table style="border:none; border-spacing:0px; font-size:12;"><tr>'+
 		'<td><img height="16" width="16" src="'+image+'"/></td>'+
 		'<td>x'+ counter +'&nbsp;</td>'+
@@ -172,6 +177,11 @@ function render_table_selection(d,index,label,value)
 	var image = 'images/table.png';
 	var db_name = get_db_name();
 	var captions = env.table_captions;
+
+	if (db_name === '') {
+		return d;
+	}
+
 	var counter = captions[db_name].length - env.table_cmd_count;
 	return '<table style="border:none; border-spacing:0px; font-size:12;"><tr>'+
 		'<td><img height="16" width="16" src="'+image+'"/></td>'+
@@ -375,10 +385,11 @@ function on_create_table(mode, db_name)
 
 function get_index(captions, target_name) 
 {
+	var ret_index = -1;
 	if (captions instanceof Array) {
-		return captions.map(function(e) { return e.name; }).indexOf(target_name);
+		ret_index = captions.map(function(e) { return e.name; }).indexOf(target_name);
 	}
-	return -1;
+	return ret_index;
 }
 
 function get_db_name()
