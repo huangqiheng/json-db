@@ -10,7 +10,7 @@ switch($req['cmd']) {
     case 'create': create_data_exit($req);
     case 'delete': delete_data_exit($req);
     case 'refresh_data': refresh_listview_exit($req);
-    default: jsonp_nocache_exit(['status'=>'error', 'error'=>'unknow command.']);
+    default: jsonp_nocache_exit(array('status'=>'error', 'error'=>'unknow command.'));
 }
 
 function refresh_listview_exit($req)
@@ -19,7 +19,7 @@ function refresh_listview_exit($req)
 	$table_name = @$req['table_name'];
 	$counter = refresh_listview($db_name, $table_name);
 	clean_unmapper_data($db_name, $table_name);
-	jsonp_nocache_exit(['status'=>'ok', 'counter'=>$counter]); 
+	jsonp_nocache_exit(array('status'=>'ok', 'counter'=>$counter)); 
 }
 
 function delete_data_exit($req)

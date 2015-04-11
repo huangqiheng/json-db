@@ -6,22 +6,22 @@ require_once 'config.php';
 	系统常量
 *****************************************/
 
-$mapper_types = [
+$mapper_types = array(
 	'jqxInput-name',
 	'jqxListBox-name'
-];
+);
 
-$options_types = [
+$options_types = array(
 	'jqxComboBox',
 	'jqxCheckBox',
 	'jqxRadioButton'
-];
+);
 
-$id_same_types = [
+$id_same_types = array(
 	'jqxListBox-onebox-id-same'
-];
+);
 
-$id_share_types = [
+$id_share_types = array(
 	'jqxInput',
 	'jqxInput-text',
 	'jqxInput-text-json',
@@ -32,13 +32,13 @@ $id_share_types = [
 	'jqxListBox-images',
 	'jqxListBox-onebox-url',
 	'jqxListBox-onebox-id'
-];
+);
 
-$id_rank_types = [
+$id_rank_types = array(
 	'jqxNumberInput'
-];
+);
 
-$field_types = [
+$field_types = array(
 	'jqxInput',
 	'jqxInput-text',
 	'jqxInput-text-json',
@@ -58,7 +58,7 @@ $field_types = [
 	'jqxDateTimeInput',
 	'jqxInput-id',
 	'jqxInput-time'
-];
+);
 
 define('BACKUP_DIR', '__backup__');
 define('WWWROOT_DIR', '__wwwroot__');
@@ -115,7 +115,7 @@ function and_values()
 		return $default;
 	}
 
-	$res = [];
+	$res = array();
 	foreach($var_arr as $var) {
 		if (!array_key_exists($var, $data)) {
 			continue;
@@ -200,7 +200,7 @@ function items_exit()
 		jsonp_nocache_exit(['status'=>'error', 'error'=>'no time field']);
 	}
 
-	$res = [];
+	$res = array();
 	foreach($var_arr as $var) {
 		if (!array_key_exists($var, $merged_data)) {
 			jsonp_nocache_exit(['status'=>'error', 'error'=>'no field: '.$var]);
@@ -216,7 +216,7 @@ function jsondb_url_exit($url)
 	if (!preg_match('|databases/(\w+?)/(\w+?)/(\d+)\.json$|', $url, $matchs)) {
 		jsonp_nocache_exit(['status'=>'error', 'error'=>'inputed jsondb url invalid']);
 	}
-	return [$matchs[1], $matchs[2], $matchs[3]];
+	return array($matchs[1], $matchs[2], $matchs[3]);
 }
 
 function get_object_exit($db_name, $table_name, $base_name)
@@ -238,17 +238,17 @@ function gen_signature($token)
 	}
 
 	$timestamp = strval(time());
-	$arr = [$token, $timestamp, $nonce];
+	$arr = array($token, $timestamp, $nonce);
 	sort($arr);
 	$signature = sha1(implode('', $arr));
-	return [$timestamp,$nonce,$signature];
+	return array($timestamp,$nonce,$signature);
 }
 
 function valid_signature($token,$timestamp,$nonce,$signature)
 {
 	$timestamp = strval($timestamp);
 	$nonce = trim($nonce);
-	$arr = [$token, $timestamp, $nonce];
+	$arr = array($token, $timestamp, $nonce);
 	sort($arr);
 	$signature_real = sha1(implode('', $arr));
 	return $signature_real === $signature;
@@ -263,7 +263,7 @@ function token_exit($token,$timestamp,$nonce,$signature)
 
 function null_exit()
 {
-	$res = [];
+	$res = array();
 	$var_arr= func_get_args();
 	$req = @$var_arr[0];
 
@@ -312,7 +312,7 @@ function api_valid($db_name, $table_name, $apikey)
 	$table_key = @$table_schema['caption']['key'];
 	$db_key = @$db_schema['caption']['key'];
 
-	$valid_keys = [];
+	$valid_keys = array();
 	empty($table_key) || array_push($valid_keys, $table_key);
 	empty($db_key) || array_push($valid_keys, $db_key);
 
@@ -339,7 +339,7 @@ function get_onebox_keys($schema)
 		}
 	}
 
-	return [$key_title, $key_desc, @$onebox['image']];
+	return array($key_title, $key_desc, @$onebox['image']);
 }
 
 function get_onebox_data($schema, $data)
@@ -372,7 +372,7 @@ function get_onebox_data($schema, $data)
 		}
 	}
 
-	return [$ob_title, $ob_desc, $ob_image];
+	return array($ob_title, $ob_desc, $ob_image);
 }
 
 function onebox_object($schema, $data_file, $data=null)
@@ -404,7 +404,7 @@ function onebox_object($schema, $data_file, $data=null)
 	$file_uri = preg_replace('/\/'.$_SERVER['HTTP_HOST'].'/i', '', $file_uri);
 	$file_uri = $http_prefix.$file_uri;
 
-	$result = [];
+	$result = array();
 	$result['title'] = $ob_title;
 	$result['desc'] = strip_tags($ob_desc);
 	$result['image'] = $ob_image;
@@ -420,19 +420,19 @@ function delete_current_data($db_name, $table_name, $req_list)
 	$table_root = table_root($db_name, $table_name);
 	$schema = object_read("{$table_root}/schema.json");
 	if (empty($schema)) {
-		return ['status'=>'error', 'error'=>'schema file error'];
+		return array('status'=>'error', 'error'=>'schema file error');
 	}
 
 	if (empty($req_list)) {
-		return ['status'=>'error', 'error'=>'input list error'];
+		return array('status'=>'error', 'error'=>'input list error');
 	}
 
 	$listview_file = "{$table_root}/listview.json";
 	$listview_data = object_read($listview_file);
 	$id_index = array_search('ID', $schema['listview']);
 
-	$listview_new = [];
-	$rep_list = [];
+	$listview_new = array();
+	$rep_list = array();
 	foreach($listview_data as $subitem) {
 		$id_cmp = intval($subitem[$id_index]);
 		if (empty($id_cmp)) {
@@ -455,7 +455,7 @@ function delete_current_data($db_name, $table_name, $req_list)
 
 	object_save($listview_file, $listview_new);
 	wh_event($db_name, $table_name, 'delete', $req_list);
-	return ['status'=>'ok', 'id_list'=>$rep_list]; 
+	return array('status'=>'ok', 'id_list'=>$rep_list); 
 }
 
 function append_new_data($db_name, $table_name, $data)
@@ -463,16 +463,16 @@ function append_new_data($db_name, $table_name, $data)
 	$table_root = table_root($db_name, $table_name);
 	$schema = object_read("{$table_root}/schema.json");
 	if (empty($schema)) {
-		return ['status'=>'error', 'error'=>'schema file error'];
+		return array('status'=>'error', 'error'=>'schema file error');
 	}
 
 	if (empty($data)) {
-		return ['status'=>'error', 'error'=>'req data error'];
+		return array('status'=>'error', 'error'=>'req data error');
 	}
 
 	$new_id = get_random_id($table_root);
 	if (!set_data_id($data, $new_id)) {
-		return ['status'=>'error', 'error'=>'no id field'];
+		return array('status'=>'error', 'error'=>'no id field');
 	}
 
 	$data = format_fields($schema, $data);
@@ -484,7 +484,7 @@ function append_new_data($db_name, $table_name, $data)
 	append_listview_json("{$table_root}/listview.json", $listview_item);
 
 	wh_event_file($new_id_file, 'add');
-	return ['status'=>'ok', 'ID'=>$new_id, 'listview'=>$listview_item]; 
+	return array('status'=>'ok', 'ID'=>$new_id, 'listview'=>$listview_item); 
 }
 
 function append_listview_json($file_name, $item)
@@ -541,8 +541,8 @@ function get_empty_val($field_type)
 	if (preg_match('/^jqxInput-text-json/i', $field_type)) {$field_value=json_decode('{}');}
 	if (preg_match('/^jqxComboBox/i', $field_type)) {$field_value='';}
 	if (preg_match('/^jqxRadioButton/i', $field_type)) {$field_value='';}
-	if (preg_match('/^jqxCheckBox/i', $field_type)) {$field_value=[];}
-	if (preg_match('/^jqxListBox/i', $field_type)) {$field_value=[];}
+	if (preg_match('/^jqxCheckBox/i', $field_type)) {$field_value=array();}
+	if (preg_match('/^jqxListBox/i', $field_type)) {$field_value=array();}
 	if (preg_match('/^jqxNumberInput/i', $field_type)) {$field_value='0';}
 	if (preg_match('/^jqxDateTimeInput/i', $field_type)) {$field_value=gm_date(time());}
 	return $field_value;
@@ -559,7 +559,7 @@ function format_fields($schema, $new_data, $ori_data=null, $force_empty=false)
 		//填充和完善新数据
 		$group_obj = @$formated_data[$group];
 		if (empty($group_obj)) {
-			$group_obj = [];
+			$group_obj = array();
 		}
 		foreach($items as $field_name=>$field_type) {
 			$field_value = @$group_obj[$field_name];
@@ -600,17 +600,17 @@ function format_fields($schema, $new_data, $ori_data=null, $force_empty=false)
 function update_single_data($table_root, $data, $force_empty=false)
 {
 	if (empty($data)) {
-		return [null, null, null];
+		return array(null, null, null);
 	}
 
 	$schema = object_read("{$table_root}/schema.json");
 	if (empty($schema)) {
-		return [null, null, null];
+		return array(null, null, null);
 	}
 
 	$req_id = get_data_id($data);
 	if (empty($req_id)) {
-		return [null, null, null];
+		return array(null, null, null);
 	}
 
 	$data_file = "{$table_root}/{$req_id}.json";
@@ -648,7 +648,7 @@ function update_single_data($table_root, $data, $force_empty=false)
 			//有时候存档的数据字段缺失,可以强制填入,一切以schema为准了
 			$new_items = @$ori_data[$req_group];
 			if (empty($new_items)) {
-				$ori_data[$req_group] = [];
+				$ori_data[$req_group] = array();
 			}
 			$ori_data[$req_group][$req_field] = $req_val;
 		}
@@ -672,7 +672,7 @@ function update_single_data($table_root, $data, $force_empty=false)
 	$new_data = $ori_data;
 	object_save($data_file, $new_data);
 
-	return [$req_id, $new_data, $old_data];
+	return array($req_id, $new_data, $old_data);
 }
 
 function is_iterable($var)
@@ -688,17 +688,17 @@ function is_iterable($var)
 function create_single_data($table_root, $data)
 {
 	if (empty($data)) {
-		return [null, null];
+		return array(null, null);
 	}
 
 	$schema = object_read("{$table_root}/schema.json");
 	if (empty($schema)) {
-		return [null, null];
+		return array(null, null);
 	}
 
 	$new_id = get_random_id($table_root);
 	if (!set_data_id($data, $new_id)) {
-		return [null, null];
+		return array(null, null);
 	}
 
 	$new_data = format_fields($schema, $data);
@@ -706,7 +706,7 @@ function create_single_data($table_root, $data)
 
 	wh_event_file($new_id_file, 'add');
 	
-	return [$new_id, object_save($new_id_file, $new_data)];
+	return array($new_id, object_save($new_id_file, $new_data));
 }
 
 function update_current_data($db_name, $table_name, $req_data, $force_empty=false)
@@ -715,7 +715,7 @@ function update_current_data($db_name, $table_name, $req_data, $force_empty=fals
 	list($req_id, $new_data, $ori_data) = update_single_data($table_root, $req_data, $force_empty);
 
 	if (empty($new_data)) {
-		return ['status'=>'error', 'error'=>'update single data error'];
+		return array('status'=>'error', 'error'=>'update single data error');
 	}
 
 	$affected = sync_affected_fields($table_root, $req_id, $ori_data);
@@ -723,7 +723,7 @@ function update_current_data($db_name, $table_name, $req_data, $force_empty=fals
 	refresh_listview($db_name, $table_name, $affected);
 
 	$listview_item = make_listview_item($table_root, $new_data);
-	return ['status'=>'ok', 'ID'=>$req_id, 'reload'=>(count($affected)>0), 'listview'=>$listview_item];
+	return array('status'=>'ok', 'ID'=>$req_id, 'reload'=>(count($affected)>0), 'listview'=>$listview_item);
 }
 
 function create_new_data($db_name, $table_name, $req_data)
@@ -732,7 +732,7 @@ function create_new_data($db_name, $table_name, $req_data)
 	list($req_id, $new_data) = create_single_data($table_root, $req_data);
 
 	if (empty($new_data)) {
-		return ['status'=>'error', 'error'=>'create single data error'];
+		return array('status'=>'error', 'error'=>'create single data error');
 	}
 
 	$affected = sync_affected_fields($table_root, $req_id);
@@ -740,7 +740,7 @@ function create_new_data($db_name, $table_name, $req_data)
 	refresh_listview($db_name, $table_name, $affected);
 
 	$listview_item = make_listview_item($table_root, $new_data);
-	return ['status'=>'ok', 'ID'=>$req_id, 'reload'=>(count($affected)>0), 'listview'=>$listview_item];
+	return array('status'=>'ok', 'ID'=>$req_id, 'reload'=>(count($affected)>0), 'listview'=>$listview_item);
 }
 
 function join_single_data($db_name, $table_name, $data, $force_empty=false)
@@ -758,8 +758,8 @@ function join_multiple_data($db_name, $table_name, $data, $force_empty=false)
 
 	$schema = object_read("{$table_root}/schema.json");
 	$mapper = object_read("{$table_root}/mapper.json");
-	$refresh_files = [];
-	$listviews = [];
+	$refresh_files = array();
+	$listviews = array();
 
 	//批量处理各个数据
 	foreach($data as $sub_data) {
@@ -792,7 +792,7 @@ function join_multiple_data($db_name, $table_name, $data, $force_empty=false)
 	//批量刷新listview
 	refresh_listview($db_name, $table_name, $refresh_files);
 
-	return ['status'=>'ok', 'listview'=>$listviews];
+	return array('status'=>'ok', 'listview'=>$listviews);
 }
 
 function join_new_data($db_name, $table_name, $data, $force_empty=false)
@@ -889,15 +889,15 @@ function is_rank_key($schema, $field_caption, $field_type)
 function sync_affected_fields($table_root, $item_id, $ori_data=null)
 {
 	$item_id = intval($item_id);
-	$affected_files = [];
+	$affected_files = array();
 
 	//找出sameid的访问路径，只取第一个出现的
 	$schema = object_read("{$table_root}/schema.json");
 	$fields = @$schema['fields'];
 	$sameid_group = null;
 	$sameid_key = null;
-	$shared_keys = [];
-	$rank_keys = [];
+	$shared_keys = array();
+	$rank_keys = array();
 	foreach($fields as $group=>$items) {
 		foreach($items as $key=>$value) {
 			if ($sameid_key === null) {
@@ -920,11 +920,11 @@ function sync_affected_fields($table_root, $item_id, $ori_data=null)
 	}
 
 	//枚举出所有的sameid组成员
-	$sameid_objs = [];
-	$onebox_list = [];
+	$sameid_objs = array();
+	$onebox_list = array();
 
-	$checked_ids = [];
-	$uncheck_ids = [$item_id];
+	$checked_ids = array();
+	$uncheck_ids = array($item_id);
 
 	$data_file = "{$table_root}/{$item_id}.json";
 	$new_data = object_read($data_file);
@@ -965,7 +965,7 @@ function sync_affected_fields($table_root, $item_id, $ori_data=null)
 		************************/
 
 		//生成新的onebox清单
-		$new_oneboxs = [];
+		$new_oneboxs = array();
 		foreach($onebox_list as $box_id=>$onebox) {
 			if ($box_id !== $id) {
 				$new_oneboxs[] = $onebox;
@@ -974,7 +974,7 @@ function sync_affected_fields($table_root, $item_id, $ori_data=null)
 		//对比新旧onebox
 		$old_oneboxs = @$data[$sameid_group][$sameid_key];
 		if (empty($old_oneboxs)) {
-			$old_oneboxs = [];
+			$old_oneboxs = array();
 		}
 
 		if (!is_same_oneboxs($old_oneboxs, $new_oneboxs)) {
@@ -1055,7 +1055,7 @@ function sync_affected_fields($table_root, $item_id, $ori_data=null)
 	foreach($rm_ids as $id) {
 		$data_file = "{$table_root}/{$id}.json";
 		$data = object_read($data_file);
-		$data[$sameid_group][$sameid_key] = [];
+		$data[$sameid_group][$sameid_key] = array();
 		object_save($data_file, $data);
 		$affected_files[] = $data_file;
 	}
@@ -1066,24 +1066,24 @@ function sync_affected_fields($table_root, $item_id, $ori_data=null)
 function remove_ids($old_data, $new_data, $sameid_group, $sameid_key)
 {
 	if (empty($old_data)) {
-		return [];
+		return array();
 	}
 	$old_boxs = @$old_data[$sameid_group][$sameid_key];
 	$new_boxs = @$new_data[$sameid_group][$sameid_key];
 
 	if (empty($old_boxs)) {
-		return [];
+		return array();
 	}
 
 	if (empty($new_boxs)) {
-		$new_boxs = [];
+		$new_boxs = array();
 	}
 
-	$old_ids = [];
+	$old_ids = array();
 	foreach($old_boxs as $items) {
 		@$items['id'] || $old_ids[] = $items['id'];
 	}
-	$new_ids = [];
+	$new_ids = array();
 	foreach($new_boxs as $items) {
 		@$items['id'] || $new_ids[] = $items['id'];
 	}
@@ -1135,13 +1135,13 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 	$options_fields = get_options_fields($merged_fields);
 	$id_index = array_search('ID', $listview);
 
-	$listview_data = [];
-	$mapper_data = [];
-	$options_data = [];
+	$listview_data = array();
+	$mapper_data = array();
+	$options_data = array();
 
 	do {
 		if (empty($listview)) {break;}
-		$glob_files = [];
+		$glob_files = array();
 
 		//更新单个文件
 		if ($append_data_file) {
@@ -1239,7 +1239,7 @@ function get_unmapper_list($db_name, $table_name)
 	$mapper_data = object_read("{$data_path}/mapper.json");
 	$valid_ids = array_unique(array_values($mapper_data));
 
-	$total_ids = [];
+	$total_ids = array();
 	foreach(glob("{$data_path}/*.json") as $file) {
 		if (is_dir($file)) {continue;}
 		if (!preg_match('~/(\d+)\.json$~',$file, $matches)){continue;}
@@ -1266,7 +1266,7 @@ function update_options(&$options_data, &$options_fields, &$merged_item)
 
 		$ori_arr = @$options_data[$opt_name];
 		if (empty($ori_arr)) {
-			$ori_arr = [];
+			$ori_arr = array();
 		}
 
 		if (is_array($opt_val)) {
@@ -1308,7 +1308,7 @@ function make_listview_item($table_root, $data_obj)
 
 function new_listview_item($listview, $merge_items, $merged_fields)
 {
-	$output = [];
+	$output = array();
 	foreach($listview as $view_item) {
 		$value = @$merge_items[$view_item];
 		if (empty($value)) {
@@ -1330,7 +1330,7 @@ function new_listview_item($listview, $merge_items, $merged_fields)
 				}
 
 				if (preg_match('/^jqxListBox-onebox/i', $field_name)) {
-					$value_out = [];
+					$value_out = array();
 					foreach($value as $onebox_item) {
 						$value_out[] = $onebox_item['title'];
 					}
@@ -1460,7 +1460,7 @@ function get_mapper_value($db_name, $table_name, $map_key)
 	$data_uri = preg_replace('/\/'.db_domain().'/i', '', $data_uri);
 	$data_url = get_current_url(false).$data_uri;
 
-	return [$map_val, $data_file, $data_url];
+	return array($map_val, $data_file, $data_url);
 }
 
 function get_mapper_values($db_name, $table_name, $map_keys)
@@ -1473,7 +1473,7 @@ function get_mapper_values($db_name, $table_name, $map_keys)
 
 	$db_domain = db_domain();
 	$current_url = get_current_url(false);
-	$results = [];
+	$results = array();
 
 	foreach($map_keys as $ori_map_key) {
 		$map_key= mapper_key($ori_map_key);
@@ -1496,7 +1496,7 @@ function get_mapper_values($db_name, $table_name, $map_keys)
 		$data_uri = preg_replace('/\/'.$db_domain.'/i', '', $data_uri);
 		$data_url = $current_url.$data_uri;
 
-		$result_item = [$map_val, $data_file, $data_url];
+		$result_item = array($map_val, $data_file, $data_url);
 		$results[$ori_map_key] = $result_item;
 	}
 
@@ -1524,7 +1524,7 @@ function mapper_key($input)
 
 function get_options_fields($merge_fields)
 {
-	$mappers = [];
+	$mappers = array();
 	global $options_types;
 	foreach($merge_fields as $field=>$value) {
 		if (in_array($value, $options_types)) {
@@ -1542,7 +1542,7 @@ function get_mapper_keys($schema, $data)
 	//获得，究竟哪些是能够mapper的key
 	$mapper_fields = get_mapper_fields($merged_fields);
 
-	$results = [];
+	$results = array();
 	foreach($mapper_fields as $field) {
 		$value = @$merged_data[$field];
 		if (empty($value)) continue;
@@ -1566,7 +1566,7 @@ function is_mapper_fileld($field_name)
 
 function get_mapper_fields($merge_fields)
 {
-	$mappers = [];
+	$mappers = array();
 	foreach($merge_fields as $field=>$value) {
 		if (is_mapper_fileld($value)) {
 			$mappers[] = $field;
@@ -1577,7 +1577,7 @@ function get_mapper_fields($merge_fields)
 
 function merge_fields($group_obj)
 {
-	$merge_items = [];
+	$merge_items = array();
 	if (!empty($group_obj)) {
 		foreach($group_obj as $group=>$items) {
 			if (!is_iterable($items)) continue;
@@ -1677,17 +1677,17 @@ function object_read($filename)
 	}
 	
 	if (!file_exists($filename)) {
-		return [];
+		return array();
 	}
 
 	$data_str = file_get_contents($filename);
 	if (empty($data_str)) {
-		return [];
+		return array();
 	}
 
 	$res = json_decode($data_str, true);
 	if (empty($res)) {
-		return [];
+		return array();
 	}
 
 	return $res;
@@ -1696,7 +1696,7 @@ function object_read($filename)
 function objects_read($db_name, $table_name)
 {
 	$table_root = table_root($db_name, $table_name);
-	$items = [];
+	$items = array();
 	foreach(glob("{$table_root}/*.json") as $file) {
 		if (is_dir($file)) {continue;}
 		if (!preg_match('~/(\d+)\.json$~',$file, $matches)){continue;}
@@ -1734,7 +1734,7 @@ function object_read_url($req_url, $conn_timeout=7, $timeout=5)
 	$res = curl_get_content($req_url,null,$conn_timeout,$timeout);
 
 	if (empty($res)) {
-		return [];
+		return array();
 	}
 
 	$res = clean_html($res);
@@ -1744,7 +1744,7 @@ function object_read_url($req_url, $conn_timeout=7, $timeout=5)
 	$res_body = @$mm[0];
 
 	if (empty($res_body)) {
-		return [];
+		return array();
 	}
 
 	return json_decode($res_body, true);
@@ -1840,7 +1840,7 @@ function indent_json($json)
 
 function get_db_captions()
 {
-	$result = [];
+	$result = array();
 	$dirs = glob(dbs_path().'/*', GLOB_ONLYDIR);
 	usort($dirs, function($a,$b){return filemtime($b) - filemtime($a);});
 
@@ -1864,7 +1864,7 @@ function get_db_captions()
 
 function get_table_captions($db_name=null)
 {
-	$result = [];
+	$result = array();
 
 	if ($db_name === null) {
 		$db_captions = get_db_captions();
@@ -1950,7 +1950,7 @@ function get_random_id($table_root)
 
 function get_selected_db()
 {
-	return [get_param('db', 'default'), get_param('table', 'default')];
+	return array(get_param('db', 'default'), get_param('table', 'default'));
 }
 
 function json_file($file_name)
@@ -1969,7 +1969,7 @@ function json_file($file_name)
 		return json_decode($json_res, true);
 	} while (false);
 
-	return [];
+	return array();
 }
 
 /*********************************************************
@@ -2292,7 +2292,7 @@ function queue_info($name, $cache_dir=null)
 
 	$buckets = glob(queue_file($name, '*', $cache_dir));
 
-	return [
+	return array(
 		'file_to_enqueue' => $file_to_write,
 		'is_queueing' => file_exists($file_to_write),
 		'time_to_wait' => $time_to_wait,
@@ -2301,7 +2301,7 @@ function queue_info($name, $cache_dir=null)
 		'max_dequeue' => QUEUE_MAX_DEQUEUE,
 		'bucket_count' => count($buckets),
 		'buckets' => $buckets
-	];
+	);
 }
 
 function queue_empty($name, $cache_dir=null)
@@ -2366,7 +2366,7 @@ function queue_out($name, $max=QUEUE_MAX_DEQUEUE, $cache_dir=null)
 
 	$now_writing_id = queue_id();
 
-	$item_ids = [];
+	$item_ids = array();
 	foreach(glob(queue_file($name, '*', $cache_dir)) as $file) {
 		if (is_dir($file)) {continue;}
 		if (!preg_match('~/(\d+)\.'.QUEUE_ITEMS_SUFFIX.'$~',$file, $matches)){continue;}
@@ -2380,7 +2380,7 @@ function queue_out($name, $max=QUEUE_MAX_DEQUEUE, $cache_dir=null)
 		sort($item_ids, SORT_NUMERIC);
 	}
 
-	$output_items = [];
+	$output_items = array();
 	foreach ($item_ids as $id) {
 		$file_name = queue_file($name, $id, $cache_dir);
 		$data_str = file_get_contents($file_name);
@@ -2458,14 +2458,14 @@ function wh_event($db, $table, $event, $data=null)
 	}
 
 	if (empty($data)) {
-		$data = [];
+		$data = array();
 	}
 
 	if (!is_array($data)) {
-		$data = [$data];
+		$data = array($data);
 	}
 
-	$wh_data = [];
+	$wh_data = array();
 	$wh_data['domain'] = db_domain();
 	$wh_data['db'] = $db;
 	$wh_data['table'] = $table;
@@ -2505,7 +2505,7 @@ function wh_handler()
 	$items = queue_out('webhook');
 	if (empty($items)) return;
 
-	$hooks_data = [];
+	$hooks_data = array();
 	foreach($items as $item) {
 		$hooks = $item['hooks'];
 		$domain = $item['domain'];
@@ -2514,23 +2514,23 @@ function wh_handler()
 		$event = $item['event'];
 		foreach($hooks as $hook_url) {
 			//顶层key：webhook的url
-			if (!isset($hooks_data[$hook_url])) {$hooks_data[$hook_url] = [];}
+			if (!isset($hooks_data[$hook_url])) {$hooks_data[$hook_url] = array();}
 			$send_obj = &$hooks_data[$hook_url];
 
 			//第一层key：域名如db.appgame.com
-			if (!isset($send_obj[$domain])) {$send_obj[$domain] = [];}
+			if (!isset($send_obj[$domain])) {$send_obj[$domain] = array();}
 			$domain_obj = &$send_obj[$domain];
 
 			//第二层key：数据库名称如default
-			if (!isset($domain_obj[$db_name])) {$domain_obj[$db_name] = [];}
+			if (!isset($domain_obj[$db_name])) {$domain_obj[$db_name] = array();}
 			$db_obj = &$domain_obj[$db_name];
 
 			//第三层key：数据表名称如default
-			if (!isset($db_obj[$table_name])) {$db_obj[$table_name] = [];}
+			if (!isset($db_obj[$table_name])) {$db_obj[$table_name] = array();}
 			$table_obj = &$db_obj[$table_name];
 
 			//第四层key：事件名称如update、create
-			if (!isset($table_obj[$event])) {$table_obj[$event] = [];}
+			if (!isset($table_obj[$event])) {$table_obj[$event] = array();}
 			$datas = &$table_obj[$event];
 
 			//第五层就是id数组了

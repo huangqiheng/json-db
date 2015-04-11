@@ -6,22 +6,22 @@ $req = get_param();
 list($check_what) = null_exit($req, 'what');
 
 if ($check_what === 'logos') {
-	$outpu_logos = [];
+	$outpu_logos = array();
 	$logo_dir = __DIR__.'/uploads/logo';
 	foreach (glob("{$logo_dir}/*") as $file) {
 		$file_uri = substr($file, strlen($_SERVER['DOCUMENT_ROOT']));
 		$outpu_logos[] = $file_uri;
 	}
-	jsonp_nocache_exit(['status'=>'ok', 'count'=>count($outpu_logos), 'items'=>$outpu_logos]);
+	jsonp_nocache_exit(array('status'=>'ok', 'count'=>count($outpu_logos), 'items'=>$outpu_logos));
 }
 
 if ($check_what === 'values') {
 	list($db, $table, $field) = null_exit($req, 'db', 'table', 'field');
-	$excepts = isset($req['except'])? $req['except'] : [];
-	$filters = isset($req['filters'])? $req['filters'] : [];
+	$excepts = isset($req['except'])? $req['except'] : array();
+	$filters = isset($req['filters'])? $req['filters'] : array();
 	$table_root = table_root($db, $table);
 
-	$res = [];
+	$res = array();
 	$push_val = function($value)use(&$res){
 		if (!in_array($value, $res)) {
 			$res[] = $value;
@@ -70,7 +70,7 @@ if ($check_what === 'values') {
 		}
 	}
 
-	jsonp_nocache_exit(['status'=>'ok', 'count'=>count($res), 'items'=>$res]);
+	jsonp_nocache_exit(array('status'=>'ok', 'count'=>count($res), 'items'=>$res));
 }
 
-jsonp_nocache_exit(['status'=>'error', 'error'=>'command error']);
+jsonp_nocache_exit(array('status'=>'error', 'error'=>'command error'));

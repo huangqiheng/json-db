@@ -74,3 +74,22 @@ chown www-data:www-data ./service/queue/cache -R
 vim /etc/crontab，添加：
 *  *    * * *	www-data /usr/bin/php -q /srv/http/json-db/admin/crontab.php > /dev/null 2>&2
 ```
+
+如果是目录模式，需要ftp同步到网站
+======
+```
+#!/bin/bash
+HOST='112.112.112.112'
+USER='xxxxxx'
+PASS='xxxxxx'
+TARGETFOLDER='/jdb'
+SOURCEFOLDER=$PWD
+
+lftp -f "
+open $HOST
+user $USER $PASS
+lcd $SOURCEFOLDER
+mirror --reverse --delete --exclude-glob *.sh --exclude-glob .* --exclude-glob .git/ --verbose $SOURCEFOLDER $TARGETFOLDER
+bye
+"
+```
