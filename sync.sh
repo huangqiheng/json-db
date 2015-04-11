@@ -1,7 +1,7 @@
 #!/bin/bash
-HOST='112.124.123.89'
-USER='suofeiyavip'
-PASS='sogal5911'
+HOST='112.124.123.222'
+USER='xxxxxx'
+PASS='xxxxxx'
 TARGETFOLDER='/jdb'
 SOURCEFOLDER=$PWD
 
