@@ -1,7 +1,7 @@
 #!/bin/bash
-HOST='112.124.123.222'
-USER='xxxxxx'
-PASS='xxxxxx'
+HOST='112.124.123.89'
+USER='suofeiyavip'
+PASS='sogal5911'
 TARGETFOLDER='/jdb'
 SOURCEFOLDER=$PWD
 
@@ -17,6 +17,9 @@ mirror  --reverse \
 	--exclude-glob .* \
 	--exclude-glob debug.* \
 	--exclude-glob .git/ \
+	--exclude-glob databases/ \
+	--exclude-glob cache/ \
+	--exclude-glob admin/uploads/ \
 	--verbose $SOURCEFOLDER $TARGETFOLDER
 bye
 "

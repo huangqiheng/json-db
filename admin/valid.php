@@ -7,7 +7,7 @@ list($db_name, $table_name, $check_what, $check_is) = null_exit($req, 'db_name',
 
 if ($check_what === 'mapper') {
 	list($mapped_id,$data_file,$data_url) = mapper_value_exit($db_name, $table_name, $check_is);
-	jsonp_nocache_exit(['status'=>'ok', 'id'=>$mapped_id, 'url'=>$data_url]);
+	jsonp_nocache_exit(array('status'=>'ok', 'id'=>$mapped_id, 'url'=>$data_url));
 }
 
-jsonp_nocache_exit(['status'=>'error', 'error'=>'unknow command.']);
+jsonp_nocache_exit(array('status'=>'error', 'error'=>'unknow command.'));

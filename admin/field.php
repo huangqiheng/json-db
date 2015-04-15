@@ -9,7 +9,7 @@ switch($req['cmd']) {
     case 'combo2check': combobox_to_checkbox_exit($req);
     case 'combo2radio': combobox_to_radiobox_exit($req);
     case 'update_fields': update_fields_exit($req);
-    default: jsonp_nocache_exit(['status'=>'error', 'error'=>'unknow command.']);
+    default: jsonp_nocache_exit(array('status'=>'error', 'error'=>'unknow command.'));
 }
 
 function update_fields_exit($req)
@@ -29,12 +29,12 @@ function update_fields_exit($req)
 
 	$schema['listview'] = $listview_req;
 	$schema['fields'] = isset($req['fields'])? $req['fields'] : null;
-	$schema['initials'] = isset($req['initials'])? $req['initials'] : [];
-	$schema['options'] = isset($req['options'])? $req['options'] : [];
-	$schema['buttons'] = isset($req['buttons'])? $req['buttons']: [];
-	$schema['onebox'] = isset($req['onebox'])? $req['onebox'] : [];
-	$schema['mapper'] = isset($req['mapper'])? $req['mapper'] : [];
-	$schema['timers'] = isset($req['timers'])? $req['timers'] : [];
+	$schema['initials'] = isset($req['initials'])? $req['initials'] : array();
+	$schema['options'] = isset($req['options'])? $req['options'] : array();
+	$schema['buttons'] = isset($req['buttons'])? $req['buttons']: array();
+	$schema['onebox'] = isset($req['onebox'])? $req['onebox'] : array();
+	$schema['mapper'] = isset($req['mapper'])? $req['mapper'] : array();
+	$schema['timers'] = isset($req['timers'])? $req['timers'] : array();
 	object_save($schema_file, $schema);
 
 	if (!$is_same) {
@@ -45,7 +45,7 @@ function update_fields_exit($req)
 		cron_jobs_update();
 	}
 
-	jsonp_nocache_exit(['status'=>'ok']); 
+	jsonp_nocache_exit(array('status'=>'ok')); 
 }
 
 function combobox_to_radiobox_exit($req)
@@ -54,8 +54,8 @@ function combobox_to_radiobox_exit($req)
 	$table_name = @$req['table_name'];
 	$field = @$req['field'];
 
-	if (all_empty([$db_name,$table_name,$field])) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'command parameter error.']);
+	if (all_empty(array($db_name,$table_name,$field))) {
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'command parameter error.'));
 	}
 
 	$data_path = table_root($db_name, $table_name);
@@ -74,19 +74,19 @@ function combobox_to_radiobox_exit($req)
 		}
 	}
 
-	if (all_empty([$group_name,$field_type])) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'command parameter field name error.']);
+	if (all_empty(array($group_name,$field_type))) {
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'command parameter field name error.'));
 	}
 
 	if ($field_type !== 'jqxComboBox') {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'the target field not a combobox.']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'the target field not a combobox.'));
 	}
 
 	$schema['fields'][$group_name][$field] = 'jqxRadioButton';
 	object_save("{$data_path}/schema.json", $schema);
 
 	$counter = refresh_listview($db_name, $table_name);
-	jsonp_nocache_exit(['status'=>'ok', 'counter'=>$counter]); 
+	jsonp_nocache_exit(array('status'=>'ok', 'counter'=>$counter)); 
 }
 
 
@@ -97,8 +97,8 @@ function combobox_to_checkbox_exit($req)
 	$field = @$req['field'];
 	$seperator = @$req['seperator'];
 
-	if (all_empty([$db_name,$table_name,$field,$seperator])) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'command parameter error.']);
+	if (all_empty(array($db_name,$table_name,$field,$seperator))) {
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'command parameter error.'));
 	}
 
 	$data_path = table_root($db_name, $table_name);
@@ -117,12 +117,12 @@ function combobox_to_checkbox_exit($req)
 		}
 	}
 
-	if (all_empty([$group_name,$field_type])) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'command parameter field name error.']);
+	if (all_empty(array($group_name,$field_type))) {
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'command parameter field name error.'));
 	}
 
 	if ($field_type !== 'jqxComboBox') {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'the target field not a combobox.']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'the target field not a combobox.'));
 	}
 
 	$schema['fields'][$group_name][$field] = 'jqxCheckBox';
@@ -146,7 +146,7 @@ function combobox_to_checkbox_exit($req)
 	}
 
 	$counter = refresh_listview($db_name, $table_name);
-	jsonp_nocache_exit(['status'=>'ok', 'counter'=>$counter]); 
+	jsonp_nocache_exit(array('status'=>'ok', 'counter'=>$counter)); 
 }
 
 function all_empty($array)

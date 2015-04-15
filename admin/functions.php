@@ -67,6 +67,14 @@ define('WWWROOT_DIR', '__wwwroot__');
 	共享函数
 *****************************************/
 
+function MyErrorHandler($errno, $errstr, $errfile, $errline)
+{
+	jsonp_nocache_exit(array($errno, $errstr, $errfile, $errline));
+}
+
+//$old_error_handler = set_error_handler("MyErrorHandler");
+
+
 function do_hard_work()
 {
 	ignore_user_abort();//关掉浏览器，PHP脚本也可以继续执行.
@@ -158,7 +166,7 @@ function id_exit($db_name, $table_name, $id)
 	if (!preg_match('|^\d+$|', $id)) {
 		$mapped_vals = get_mapper_value($db_name, $table_name, $id);
 		if ($mapped_vals === false) {
-			jsonp_nocache_exit(['status'=>'error', 'error'=>'id not valid']);
+			jsonp_nocache_exit(array('status'=>'error', 'error'=>'id not valid'));
 		}
 		return $mapped_vals[0]; 
 	}
@@ -167,7 +175,7 @@ function id_exit($db_name, $table_name, $id)
 	if (!file_exists($table_root.'/'.$id.'.json')) {
 		$mapped_vals = get_mapper_value($db_name, $table_name, strval($id));
 		if ($mapped_vals === false) {
-			jsonp_nocache_exit(['status'=>'error', 'error'=>'id not exists']);
+			jsonp_nocache_exit(array('status'=>'error', 'error'=>'id not exists'));
 		}
 		return $mapped_vals[0]; 
 	}
@@ -181,29 +189,29 @@ function items_exit()
 	$data = array_shift($var_arr);
 
 	if (empty($data)) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'items_exit no data']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'items_exit no data'));
 	}
 
 	$merged_data = merge_fields($data);
 
 	if (!array_key_exists('ID', $merged_data)) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'no id field']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'no id field'));
 	}
 
 /*
 	if (!array_key_exists('CREATE', $merged_data)) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'no create time field']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'no create time field'));
 	}
 */
 
 	if (!array_key_exists('TIME', $merged_data)) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'no time field']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'no time field'));
 	}
 
 	$res = array();
 	foreach($var_arr as $var) {
 		if (!array_key_exists($var, $merged_data)) {
-			jsonp_nocache_exit(['status'=>'error', 'error'=>'no field: '.$var]);
+			jsonp_nocache_exit(array('status'=>'error', 'error'=>'no field: '.$var));
 		}
 		$res[] = $merged_data[$var];
 	}
@@ -214,7 +222,7 @@ function items_exit()
 function jsondb_url_exit($url)
 {
 	if (!preg_match('|databases/(\w+?)/(\w+?)/(\d+)\.json$|', $url, $matchs)) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'inputed jsondb url invalid']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'inputed jsondb url invalid'));
 	}
 	return array($matchs[1], $matchs[2], $matchs[3]);
 }
@@ -223,7 +231,7 @@ function get_object_exit($db_name, $table_name, $base_name)
 {
 	$res = get_object($db_name, $table_name, $base_name);
 	if (empty($res)) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>$base_name.' object not exists.']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>$base_name.' object not exists.'));
 	}
 	return $res;
 }
@@ -257,7 +265,7 @@ function valid_signature($token,$timestamp,$nonce,$signature)
 function token_exit($token,$timestamp,$nonce,$signature)
 {
 	if (!valid_signature($token,$timestamp,$nonce,$signature)) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'token validation error']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'token validation error'));
 	}
 }
 
@@ -272,14 +280,14 @@ function null_exit()
 			$key = $var_arr[$i];
 			$var = @$req[$key];
 			if (empty($var)) {
-				jsonp_nocache_exit(['status'=>'error', 'error'=>'input parameters invalid']);
+				jsonp_nocache_exit(array('status'=>'error', 'error'=>'input parameters invalid'));
 			}
 			$res[] = $var;
 		}
 	} else {
 		foreach($var_arr as $var) {
 			if (empty($var)) {
-				jsonp_nocache_exit(['status'=>'error', 'error'=>'input parameters invalid']);
+				jsonp_nocache_exit(array('status'=>'error', 'error'=>'input parameters invalid'));
 			}
 			$res[] = $var;
 		}
@@ -290,7 +298,7 @@ function null_exit()
 function api_exit($db_name, $table_name, $apikey)
 {
 	if (!api_valid($db_name, $table_name, $apikey)) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'api key error']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'api key error'));
 	}
 }
 
@@ -1192,8 +1200,10 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 			$glob_files = glob("{$data_path}/*.json");
 		}
 
+/*
 		$listview_maker = function($file)use(&$schema, &$listview, &$merged_fields, &$listview_data,
 				&$mapper_data, &$mapper_fields, &$options_data, &$options_fields) {
+
 			$data_obj = object_read($file);
 			if (empty($data_obj)) {return;}
 
@@ -1210,6 +1220,7 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 			unset($merge_items);
 			unset($new_listview);
 		};
+*/
 
 		ini_set('memory_limit', '1024M');
 
@@ -1217,7 +1228,20 @@ function refresh_listview($db_name, $table_name, $append_data_file=null)
 			if (is_dir($file)) {continue;}
 			if (!preg_match('~/(\d+)\.json$~',$file, $matches)){continue;}
 			$item_id = $matches[1];
-			call_user_func($listview_maker, $file);
+			//call_user_func($listview_maker, $file);
+
+			$data_obj = object_read($file);
+			if (empty($data_obj)) {continue;}
+
+			$merge_items = merge_fields($data_obj);
+
+			//生成listview
+			$new_listview = new_listview_item($listview, $merge_items, $merged_fields);
+			array_unshift($listview_data, $new_listview);
+			//生成mapper
+			update_mappers($schema, $mapper_data, $mapper_fields, $merge_items);
+			//更新options
+			update_options($options_data, $options_fields, $merge_items);
 		}
 
 	}while(false);
@@ -1355,22 +1379,15 @@ function __data_exists($table_root, $schema, $mapper, $data)
 		return false;
 	}
 
-	//查看数据是否存在
-	$check_id_valid = function($item_val) use($mapper, $table_root) {
+	$mapper_keys = get_mapper_keys($schema, $data);
+	foreach($mapper_keys as $sub_val) {
+		$item_val = $sub_val;
 		$map_key= mapper_key($item_val);
 		if ($map_val = @$mapper[md5($map_key)]) {
 			$map_file = "{$table_root}/{$map_val}.json";
 			if (file_exists($map_file)) {
 				return $map_val;
 			}
-		}
-		return false;
-	};
-
-	$mapper_keys = get_mapper_keys($schema, $data);
-	foreach($mapper_keys as $sub_val) {
-		if ($item_id = call_user_func($check_id_valid, $sub_val)) {
-			return $item_id;
 		}
 	}
 	return false;
@@ -1429,7 +1446,7 @@ function mapper_value_exit($db_name, $table_name, $map_key)
 {
 	$result = get_mapper_value($db_name, $table_name, $map_key);
 	if ($result === false) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'no valid mapped id']);
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'no valid mapped id'));
 	}
 	return $result;
 }
@@ -1838,11 +1855,17 @@ function indent_json($json)
 	return $result;
 }
 
+
+function filemtime_sort($a,$b)
+{
+	return filemtime($b) - filemtime($a);
+}
+
 function get_db_captions()
 {
 	$result = array();
 	$dirs = glob(dbs_path().'/*', GLOB_ONLYDIR);
-	usort($dirs, function($a,$b){return filemtime($b) - filemtime($a);});
+	usort($dirs, 'filemtime_sort');
 
 	foreach ($dirs as $db_path) { 
 		$db_name = basename($db_path);
@@ -1874,7 +1897,7 @@ function get_table_captions($db_name=null)
 		return $result;
 	} else {
 		$dirs = glob(dbs_path()."/{$db_name}/*", GLOB_ONLYDIR);
-		usort($dirs, function($a,$b){return filemtime($b) - filemtime($a);});
+		usort($dirs, 'filemtime_sort');
 
 		foreach ($dirs as $table_path) { 
 			$table_name = basename($table_path);
@@ -1928,7 +1951,7 @@ function get_param($name=null, $default='default')
 
 function get_basetime()
 {
-	return mktime(0,0,0,7,21,2012);
+	return mktime(0,0,0,0,0,2015);
 }
 
 function get_random_id($table_root)
@@ -1936,15 +1959,21 @@ function get_random_id($table_root)
 	$maxid_file = "{$table_root}/maxid.json";
 	$schema_file = "{$table_root}/schema.json";
 
-        $mutex = sem_get(ftok($schema_file, 'r'), 1);
-	sem_acquire($mutex);
+	$has_lock = function_exists('sem_get');
+
+	if ($has_lock) {
+		$mutex = sem_get(ftok($schema_file, 'r'), 1);
+		sem_acquire($mutex);
+	}
 
 	($max_id = @file_get_contents($maxid_file)) || ($max_id = 0);
 	$ran_val = intval((microtime(true)-get_basetime()) * 1000);
 	$res_val = ($ran_val > $max_id)? $ran_val : ++$max_id;
 	file_put_contents($maxid_file, $res_val);
 
-	sem_release($mutex);
+	if ($has_lock) {
+		sem_release($mutex);
+	}
 	return $res_val;
 }
 
@@ -2445,11 +2474,11 @@ function wh_event($db, $table, $event, $data=null)
 	$table_root = table_root($db, $table);
 	$db_schema = object_read(dirname($table_root).'/schema.json');
 	$db_hooks = @$db_schema['caption']['hooks'];
-	!empty($db_hooks) or ($db_hooks=[]);
+	!empty($db_hooks) or ($db_hooks=array());
 
 	$table_schema = object_read("{$table_root}/schema.json");
 	$table_hooks = @$table_schema['caption']['hooks'];
-	!empty($table_hooks) or ($table_hooks=[]);
+	!empty($table_hooks) or ($table_hooks=array());
 
 	$hooks = array_values(array_merge($db_hooks, $table_hooks));
 
@@ -2473,7 +2502,7 @@ function wh_event($db, $table, $event, $data=null)
 	$wh_data['event'] = $event;
 	$wh_data['hooks'] = $hooks;
 
-	queue_in('webhook', [$wh_data]);
+	queue_in('webhook', array($wh_data));
 
 	if (function_exists('wh_checkpoint')) {
 		wh_checkpoint();

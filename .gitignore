@@ -3,6 +3,7 @@
 *.swo
 test.php
 config.php
+sync.sh
 debug.php
 databases/*
 /admin/uploads/*

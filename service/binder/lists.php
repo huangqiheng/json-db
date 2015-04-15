@@ -14,11 +14,11 @@ $list_item = @$req['caption'];
 $map_key = mapper_key(@$req['mapper']);
 
 if (!api_valid($db_name, $table_name, @$req['apikey'])) {
-	jsonp_nocache_exit(['status'=>'error', 'error'=>'api key error']);
+	jsonp_nocache_exit(array('status'=>'error', 'error'=>'api key error'));
 }
 
 if (empty($map_key)) {
-	jsonp_nocache_exit(['status'=>'error', 'error'=>'not mapper in parameter']);
+	jsonp_nocache_exit(array('status'=>'error', 'error'=>'not mapper in parameter'));
 }
 
 $table_root = table_root($db_name, $table_name);

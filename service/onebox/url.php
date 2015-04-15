@@ -19,7 +19,7 @@ function process_onebox_result($req_url, $res_type)
 		return html_nocache_exit(onebox_output($res_obj));
 	} else {
 		if ($res_type === 'json') {
-			return  jsonp_nocache_exit(['status'=>'error', 'error'=>'no handler']);
+			return  jsonp_nocache_exit(array('status'=>'error', 'error'=>'no handler'));
 		} else {
 			return  html_nocache_exit($req_url);
 		}

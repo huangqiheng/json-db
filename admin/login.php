@@ -29,8 +29,6 @@ class Login
 			$this->db_file = DEFAULT_DB_FILE;
 		}
 
-		$this->password_init();
-
 		if ($this->is_call_me()) {
 			$this->run();
 		}
@@ -53,14 +51,14 @@ class Login
 
 	public function logined()
 	{
-		if (session_status() !== PHP_SESSION_ACTIVE) {
+		if (is_session_started() === FALSE) {
 			if (!$this->is_call_me()) {
 				$this->session_start_expired();
 			}
 		}
 		$result = null;
 		if (!empty($_SESSION['user_name']) && ($_SESSION['user_is_logged_in'])) {
-			$result = [];
+			$result = array();
 			$result['user_name'] = $_SESSION['user_name'];
 			$result['user_email'] = $_SESSION['user_email'];
 		} else {
@@ -69,7 +67,7 @@ class Login
 
 		$userdata = $this->get_userdata($result['user_name']);
 		if (empty($userdata)) {
-			if (session_status() == PHP_SESSION_ACTIVE) {
+			if (is_session_started() === FALSE) {
 				session_destroy();
 			}
 			$this->user_is_logged_in = false;
@@ -140,7 +138,7 @@ class Login
 	{
 		$userdata = $this->get_userdata($_POST['user_name']);
 		if ($userdata) {
-			if ($this->password_verify($_POST['user_password'], $userdata[PASS_INDEX])) {
+			if (password_verify($_POST['user_password'], $userdata[PASS_INDEX])) {
 				$_SESSION['user_name'] = $userdata[USER_INDEX];
 				$_SESSION['user_email'] = $userdata[MAIL_INDEX];
 				$_SESSION['user_is_logged_in'] = true;
@@ -208,13 +206,13 @@ class Login
 		$user_name = htmlentities($_POST['user_name'], ENT_QUOTES);
 		$user_email = htmlentities($_POST['user_email'], ENT_QUOTES);
 		$user_password = $_POST['user_password_new'];
-		$user_password_hash = $this->password_hash($user_password, PASSWORD_DEFAULT);
+		$user_password_hash = password_hash($user_password, PASSWORD_DEFAULT);
 		$userdata = $this->get_userdata($user_name);
 
 		if ($userdata) {
 			$this->feedback = T('Sorry, that username is already taken. Please choose another one.');
 		} else {
-			$new_data = [USER_INDEX=>$user_name, PASS_INDEX=>$user_password_hash, MAIL_INDEX=>$user_email];
+			$new_data = array(USER_INDEX=>$user_name, PASS_INDEX=>$user_password_hash, MAIL_INDEX=>$user_email);
 			$user_datas = $this->userdata();
 			array_unshift($user_datas, $new_data);
 			$this->userdata($user_datas);
@@ -226,7 +224,7 @@ class Login
 
 	private function referer_jump()
 	{
-		$check_urls = [@$_SERVER['HTTP_REFERER'], @$_SERVER['REQUEST_URI']];
+		$check_urls = array(@$_SERVER['HTTP_REFERER'], @$_SERVER['REQUEST_URI']);
 
 		foreach($check_urls as $url) {
 			$query_str = parse_url($url, PHP_URL_QUERY);
@@ -426,202 +424,76 @@ class Login
 	public function object_read($filename)
 	{
 		if (!file_exists($filename)) {
-			return [];
+			return array();
 		}
 
 		$data_str = file_get_contents($filename);
-		if ($data_str === null) {
-			return [];
+		if (empty($data_str)) {
+			return array();
 		}
 		return json_decode($data_str, true);
 	}
-
-	private function password_init()
-	{
-		if (!defined('PASSWORD_DEFAULT')) {
-			define('PASSWORD_BCRYPT', 1);
-			define('PASSWORD_DEFAULT', PASSWORD_BCRYPT);
-		}
-	}
-
-	private function password_verify($password, $hash) {
-		if (!function_exists('crypt')) {
-			trigger_error("Crypt must be loaded for password_verify to function", E_USER_WARNING);
-			return false;
-		}
-		$ret = crypt($password, $hash);
-		if (!is_string($ret) || strlen($ret) != strlen($hash) || strlen($ret) <= 13) {
-			return false;
-		}
-
-		$status = 0;
-		for ($i = 0; $i < strlen($ret); $i++) {
-			$status |= (ord($ret[$i]) ^ ord($hash[$i]));
-		}
-
-		return $status === 0;
-	}
-
-	private function password_hash($password, $algo, array $options = array()) 
-	{
-		if (!function_exists('crypt')) {
-			trigger_error("Crypt must be loaded for password_hash to function", E_USER_WARNING);
-			return null;
-		}
-		if (!is_string($password)) {
-			trigger_error("password_hash(): Password must be a string", E_USER_WARNING);
-			return null;
-		}
-		if (!is_int($algo)) {
-			trigger_error("password_hash() expects parameter 2 to be long, " . gettype($algo) . " given", E_USER_WARNING);
-			return null;
-		}
-		switch ($algo) {
-			case PASSWORD_BCRYPT:
-				// Note that this is a C constant, but not exposed to PHP, so we don't define it here.
-				$cost = 10;
-				if (isset($options['cost'])) {
-					$cost = $options['cost'];
-					if ($cost < 4 || $cost > 31) {
-						trigger_error(sprintf("password_hash(): Invalid bcrypt cost parameter specified: %d", $cost), E_USER_WARNING);
-						return null;
-					}
-				}
-				// The length of salt to generate
-				$raw_salt_len = 16;
-				// The length required in the final serialization
-				$required_salt_len = 22;
-				$hash_format = sprintf("$2y$%02d$", $cost);
-				break;
-			default:
-				trigger_error(sprintf("password_hash(): Unknown password hashing algorithm: %s", $algo), E_USER_WARNING);
-				return null;
-		}
-		if (isset($options['salt'])) {
-			switch (gettype($options['salt'])) {
-				case 'NULL':
-				case 'boolean':
-				case 'integer':
-				case 'double':
-				case 'string':
-					$salt = (string) $options['salt'];
-					break;
-				case 'object':
-					if (method_exists($options['salt'], '__tostring')) {
-						$salt = (string) $options['salt'];
-						break;
-					}
-				case 'array':
-				case 'resource':
-				default:
-					trigger_error('password_hash(): Non-string salt parameter supplied', E_USER_WARNING);
-					return null;
-			}
-			if (strlen($salt) < $required_salt_len) {
-				trigger_error(sprintf("password_hash(): Provided salt is too short: %d expecting %d", strlen($salt), $required_salt_len), E_USER_WARNING);
-				return null;
-			} elseif (0 == preg_match('#^[a-zA-Z0-9./]+$#D', $salt)) {
-				$salt = str_replace('+', '.', base64_encode($salt));
-			}
-		} else {
-			$buffer = '';
-			$buffer_valid = false;
-			if (function_exists('mcrypt_create_iv') && !defined('PHALANGER')) {
-				$buffer = mcrypt_create_iv($raw_salt_len, MCRYPT_DEV_URANDOM);
-				if ($buffer) {
-					$buffer_valid = true;
-				}
-			}
-			if (!$buffer_valid && function_exists('openssl_random_pseudo_bytes')) {
-				$buffer = openssl_random_pseudo_bytes($raw_salt_len);
-				if ($buffer) {
-					$buffer_valid = true;
-				}
-			}
-			if (!$buffer_valid && is_readable('/dev/urandom')) {
-				$f = fopen('/dev/urandom', 'r');
-				$read = strlen($buffer);
-				while ($read < $raw_salt_len) {
-					$buffer .= fread($f, $raw_salt_len - $read);
-					$read = strlen($buffer);
-				}
-				fclose($f);
-				if ($read >= $raw_salt_len) {
-					$buffer_valid = true;
-				}
-			}
-			if (!$buffer_valid || strlen($buffer) < $raw_salt_len) {
-				$bl = strlen($buffer);
-				for ($i = 0; $i < $raw_salt_len; $i++) {
-					if ($i < $bl) {
-						$buffer[$i] = $buffer[$i] ^ chr(mt_rand(0, 255));
-					} else {
-						$buffer .= chr(mt_rand(0, 255));
-					}
-				}
-			}
-			$salt = str_replace('+', '.', base64_encode($buffer));
-		}
-		$salt = substr($salt, 0, $required_salt_len);
-
-		$hash = $hash_format . $salt;
-
-		$ret = crypt($password, $hash);
-
-		if (!is_string($ret) || strlen($ret) <= 13) {
-			return false;
-		}
-
-		return $ret;
-	}
 }
 
-$Language_data = [
-	'Hello' => 		['cn'=>'您好'],
-	'you are logged in.' => ['cn'=>'您已经是登陆状态了。'],
-	'Log out' => 		['cn'=>'登出'],
-	'Login' =>		['cn'=>'登陆'],
-	'Username' =>		['cn'=>'账户'],
-	'Password' =>		['cn'=>'密码'],
-	'email' =>		['cn'=>'电子邮件'],
-	'Log in' =>						['cn'=>'登陆'],
-	'Register new account'=>				['cn'=>'注册新账户'],
-	'Registration'=>					['cn'=>'注册'],
-	'Register' =>						['cn'=>'注册'],
-	'only letters and numbers, 2 to 64 characters' =>	['cn'=>'只允许字符和数字，2到64个字节'],
-	'User\'s email'=>					['cn'=>'用户的电子邮件'],
-	'Repeat password' =>					['cn'=>'再输密码'],
-	'Re enter password' =>					['cn'=>'请再次输入上面输过的密码'],
-	'Homepage' => 						['cn'=>'返回主界面'],
-	'You were just logged out.' =>				['cn'=>'您刚刚登出了。'],
-	'Your account not exists' => 				['cn'=>'你的账户不存在'],
-	'Username field was empty.' =>				['cn'=>'用户名字段不能为空。'],
-	'Password field was empty.' =>				['cn'=>'密码字段不能为空。'],
-	'Wrong password.' =>					['cn'=>'密码错误。'],
-	'This user does not exist.' =>				['cn'=>'这个用户名不存在。'],
-	'Empty Username' =>					['cn'=>'用户名是空的'],
-	'Empty Password' => 					['cn'=>'密码是空的'],
-	'Password and password repeat are not the same'=>	['cn'=>'两次输入的密码并不相同'],
-	'Password has a minimum length of 6 characters'=>	['cn'=>'密码长度少于6个字符'],
-	'Email cannot be empty'	=>				['cn'=>'电子邮件地址不能为空'],
-	'Email cannot be longer than 64 characters' =>		['cn'=>'电子邮件不能长于64个字符'],
-	'Your email address is not in a valid email format' =>	['cn'=>'你的电子邮件地址不符合邮件格式'],
-	'An unknown error occurred.' =>				['cn'=>'发生了未知错误'],
+	
+function is_session_started()
+{
+	if ( php_sapi_name() !== 'cli' ) {
+		if ( version_compare(phpversion(), '5.4.0', '>=') ) {
+			return session_status() === PHP_SESSION_ACTIVE ? TRUE : FALSE;
+		} else {
+			return session_id() === '' ? FALSE : TRUE;
+		}
+	}
+	return FALSE;
+}
+
+$Language_data = array(
+	'Hello' => 		array('cn'=>'您好'),
+	'you are logged in.' => array('cn'=>'您已经是登陆状态了。'),
+	'Log out' => 		array('cn'=>'登出'),
+	'Login' =>		array('cn'=>'登陆'),
+	'Username' =>		array('cn'=>'账户'),
+	'Password' =>		array('cn'=>'密码'),
+	'email' =>		array('cn'=>'电子邮件'),
+	'Log in' =>						array('cn'=>'登陆'),
+	'Register new account'=>				array('cn'=>'注册新账户'),
+	'Registration'=>					array('cn'=>'注册'),
+	'Register' =>						array('cn'=>'注册'),
+	'only letters and numbers, 2 to 64 characters' =>	array('cn'=>'只允许字符和数字，2到64个字节'),
+	'User\'s email'=>					array('cn'=>'用户的电子邮件'),
+	'Repeat password' =>					array('cn'=>'再输密码'),
+	'Re enter password' =>					array('cn'=>'请再次输入上面输过的密码'),
+	'Homepage' => 						array('cn'=>'返回主界面'),
+	'You were just logged out.' =>				array('cn'=>'您刚刚登出了。'),
+	'Your account not exists' => 				array('cn'=>'你的账户不存在'),
+	'Username field was empty.' =>				array('cn'=>'用户名字段不能为空。'),
+	'Password field was empty.' =>				array('cn'=>'密码字段不能为空。'),
+	'Wrong password.' =>					array('cn'=>'密码错误。'),
+	'This user does not exist.' =>				array('cn'=>'这个用户名不存在。'),
+	'Empty Username' =>					array('cn'=>'用户名是空的'),
+	'Empty Password' => 					array('cn'=>'密码是空的'),
+	'Password and password repeat are not the same'=>	array('cn'=>'两次输入的密码并不相同'),
+	'Password has a minimum length of 6 characters'=>	array('cn'=>'密码长度少于6个字符'),
+	'Email cannot be empty'	=>				array('cn'=>'电子邮件地址不能为空'),
+	'Email cannot be longer than 64 characters' =>		array('cn'=>'电子邮件不能长于64个字符'),
+	'Your email address is not in a valid email format' =>	array('cn'=>'你的电子邮件地址不符合邮件格式'),
+	'An unknown error occurred.' =>				array('cn'=>'发生了未知错误'),
 	'The setting error on Permission of  "databases" folder'=>
-				['cn'=>'databases目录的访问权限设置不当。'],
+				array('cn'=>'databases目录的访问权限设置不当。'),
 	'Private password stored as hash in database(min. 6 characters)'=>
-				['cn'=>'个人密码（最少6个字符），服务器不会保存明文密码'],
+				array('cn'=>'个人密码（最少6个字符），服务器不会保存明文密码'),
 	'Username cannot be shorter than 2 or longer than 64 characters' => 				
-				['cn'=>'用户名不能少于2个字符，或者大于64个字符'],
+				array('cn'=>'用户名不能少于2个字符，或者大于64个字符'),
 	'Username does not fit the name scheme: only a-Z and numbers are allowed, 2 to 64 characters'=> 
-				['cn'=>'用户名不符合规则：只能a-Z字符和数字，2到64个字符数'],
+				array('cn'=>'用户名不符合规则：只能a-Z字符和数字，2到64个字符数'),
 	'Sorry, that username is already taken. Please choose another one.' =>				
-				['cn'=>'非常抱歉，你输入的用户名已经被其他人拥有，请再选另外一个。'],
+				array('cn'=>'非常抱歉，你输入的用户名已经被其他人拥有，请再选另外一个。'),
 	'Your account has been created successfully. You can log in now.' =>				
-				['cn'=>'您的账户已经成功创建了。您现在能够登陆了。'],
+				array('cn'=>'您的账户已经成功创建了。您现在能够登陆了。'),
 	'Sorry, system had shutdown the registration of new user.' =>				
-				['cn'=>'非常抱歉，系统已经关闭注册了。'],
-];
+				array('cn'=>'非常抱歉，系统已经关闭注册了。'),
+);
 
 function T($ori)
 {
@@ -630,7 +502,6 @@ function T($ori)
 	return ($output)? $output : $ori;
 }
 
-$logined_info = (new Login())->logined();
 
 function login_wrap_referer($url, $referer)
 {
@@ -661,7 +532,7 @@ function denies_with_json()
 	global $logined_info;
 	if ($logined_info === null) {
 		header('Content-Type: application/json; charset=utf-8');
-		$data = ['status'=>'error', 'error'=>'you need to login first.'];
+		$data = array('status'=>'error', 'error'=>'you need to login first.');
 		$json = json_encode($data);
 
 		if(!isset($_GET['callback'])) {
@@ -684,7 +555,7 @@ function denies_with_json()
 			exit();
 		}
 
-		echo json_encode(['status'=>'error', 'error'=>'callback function name error.']);
+		echo json_encode(array('status'=>'error', 'error'=>'callback function name error.'));
 		exit();
 	}
 
@@ -692,4 +563,384 @@ function denies_with_json()
 	return $logined_info;
 }
 
+/*--------------------------------------------------------------------
+		passwordHash
+---------------------------------------------------------------------*/
 
+if (!function_exists('password_hash')){
+    function password_hash($password, $algo=PASSWORD_DEFAULT, $options=array()){
+        $crypt = NEW PhpPasswordLib();
+        $crypt->setAlgorithm($algo);
+        
+        $debug  = isset($options['debug'])
+                ? $options['debug']
+                : NULL;
+        
+        $password = $crypt->generateCryptPassword($password, $options, $debug);
+        
+        return $password;
+    }
+}
+if (!function_exists('password_verify')){
+    function password_verify($password, $hash){
+        return (crypt($password, $hash) === $hash);
+    }
+}
+if (!function_exists('password_needs_rehash')){
+    function password_needs_rehash($hash, $algo, $options=array()){
+        $crypt = NEW PhpPasswordLib();
+        return !$crypt->verifyCryptSetting($hash, $algo, $options);
+    }
+}
+if (!function_exists('password_get_info')){
+    function password_get_info($hash){
+        $crypt = NEW PhpPasswordLib();
+        return $crypt->getInfo($hash);
+    }
+}
+
+if (!defined('PASSWORD_BCRYPT')) define('PASSWORD_BCRYPT', 1);
+// Note that SHA hashes are not implemented in password_hash() or password_verify() in PHP 5.5
+// and are not recommended for use. Recommend only the default BCrypt option
+if (!defined('PASSWORD_SHA256')) define('PASSWORD_SHA256', -1);
+if (!defined('PASSWORD_SHA512')) define('PASSWORD_SHA512', -2);
+if (!defined('PASSWORD_DEFAULT')) define('PASSWORD_DEFAULT', PASSWORD_BCRYPT);
+
+class PhpPasswordLib{
+    
+    CONST BLOWFISH_CHAR_RANGE = './0123456789ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    CONST BLOWFISH_CRYPT_SETTING = '$2a$'; 
+    CONST BLOWFISH_CRYPT_SETTING_ALT = '$2y$'; // Available from PHP 5.3.7
+    CONST BLOWFISH_ROUNDS = 10;
+    CONST BLOWFISH_NAME = 'bcrypt';
+    
+    // Note that SHA hashes are not implemented in password_hash() or password_verify() in PHP 5.5
+    // and are not recommended for use. Recommend only the default BCrypt option
+    CONST SHA256_CHAR_RANGE = './0123456789ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    CONST SHA256_CRYPT_SETTING = '$5$';
+    CONST SHA256_ROUNDS = 5000;
+    CONST SHA256_NAME = 'sha256';
+    
+    CONST SHA512_CHAR_RANGE = './0123456789ABCDEFGHIJKLMONPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    CONST SHA512_CRYPT_SETTING = '$6$';
+    CONST SHA512_ROUNDS = 5000;
+    CONST SHA512_NAME = 'sha512';
+    
+    
+    /**
+     * Default Crypt Algorithm
+     * 
+     * @var INT
+     */
+    private $algorithm = PASSWORD_BCRYPT;
+    
+    
+    /**
+     * Name of the current algorithm
+     *
+     * @var STRING
+     */
+    private $algoName;
+    
+    
+    /**
+     * Setting for PHP Crypt function, defines algorithm
+     * 
+     * Default setting is '$2a$' : BCrypt
+     * 
+     * @var STRING
+     */
+    protected $cryptSetting;
+    
+    
+    /**
+     * Setting for PHP Crypt function, defines processing cost
+     * 
+     * Default setting is '08$' for BCrypt rounds
+     * 
+     * @var INT
+     */
+    protected $rounds;
+    
+    
+    /**
+     * Salt Character Count for Crypt Functions
+     * 
+     * @var INT
+     */
+    protected $addSaltChars;
+    
+    
+    /**
+     * Salt Character Range for Crypt Functions
+     * 
+     * @var STRING 
+     */
+    protected $saltCharRange;
+    
+    
+    /**
+     * Class Constructor
+     */
+    public function __construct(){
+        // Initialise default algorithm
+        $this->setAlgorithm($this->algorithm);
+    }
+    
+    
+    /**
+     * Generate Crypt Password
+     * 
+     * @param STRING $password The password to encode
+     * @param ARRAY $options Cost value, and Salt if required
+     * @param BOOL $debug If true will return time to calculate hash
+     * @return STRING The encoded password
+     */
+    public function generateCryptPassword($password, $options = array(), $debug = FALSE){
+        $startTime  = microtime(TRUE);
+        if (isset($options['cost'])) $this->setCost($options['cost']);
+        $salt       = $this->cryptSalt(@$options['salt']);
+        $crypt      = crypt($password, $salt);
+        $endTime    = microtime(TRUE);
+        if ($debug){
+            $calcTime = $endTime - $startTime;
+            return $calcTime;
+        }
+        return $crypt;
+    }
+    
+    
+    /**
+     * Generate Crypt Salt
+     * 
+     * Generates a salt suitable for Crypt using the defined crypt settings
+     * 
+     * @param STRING $salt Override random salt with predefined value
+     * @return STRING
+     */
+    public function cryptSalt($salt=NULL){
+        if (empty($salt)){
+            for ($i = 0; $i<$this->addSaltChars; $i++){
+                $salt .= $this->saltCharRange[rand(0,(strlen($this->saltCharRange)-1))];
+            }
+        }
+        $salt = $this->cryptSetting.$this->rounds.$salt.'$';
+        return $salt;
+    }
+    
+    
+    /**
+     * Set Crypt Setting
+     * 
+     * @param type $setting
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib
+     */
+    public function cryptSetting($setting){
+        $this->cryptSetting = $setting;
+        return $this;
+    }
+    
+    
+    /**
+     * Salt Character Count
+     * 
+     * @param INT $count Number of characters to set
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib|boolean
+     */
+    public function addSaltChars($count){
+        if (is_int($count)){
+            $this->addSaltChars = $count;
+            return $this;
+        } else {
+            return FALSE;
+        }
+    }
+    
+    
+    /**
+     * Salt Character Range
+     * 
+     * @param STRING $chars
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib|boolean
+     */
+    public function saltCharRange($chars){
+        if (is_string($chars)){
+            $this->saltCharRange = $chars;
+            return $this;
+        } else {
+            return FALSE;
+        }
+    }
+    
+    
+    /**
+     * Set Crypt Algorithm
+     * 
+     * @param INT $algo
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib
+     */
+    public function setAlgorithm($algo=NULL){
+        switch ($algo){
+            case PASSWORD_SHA256:
+                $this->algorithm = PASSWORD_SHA256;
+                $this->cryptSetting(self::SHA256_CRYPT_SETTING);
+                $this->setCost(self::SHA256_ROUNDS);
+                $this->addSaltChars(16);
+                $this->saltCharRange(self::SHA256_CHAR_RANGE);
+                $this->algoName = self::SHA256_NAME;
+                break;
+            case PASSWORD_SHA512:
+                $this->algorithm = PASSWORD_SHA512;
+                $this->cryptSetting(self::SHA512_CRYPT_SETTING);
+                $this->setCost(self::SHA512_ROUNDS);
+                $this->addSaltChars(16);
+                $this->saltCharRange(self::SHA512_CHAR_RANGE);
+                $this->algoName = self::SHA512_NAME;
+                break;
+            case PASSWORD_BCRYPT:
+            default:
+                $this->algorithm = PASSWORD_BCRYPT;
+                if (version_compare(PHP_VERSION, '5.3.7') >= 1){
+                    // Use improved Blowfish algorithm if supported
+                    $this->cryptSetting(self::BLOWFISH_CRYPT_SETTING_ALT);
+                } else {
+                    $this->cryptSetting(self::BLOWFISH_CRYPT_SETTING);
+                }
+                $this->setCost(self::BLOWFISH_ROUNDS);
+                $this->addSaltChars(22);
+                $this->saltCharRange(self::BLOWFISH_CHAR_RANGE);
+                $this->algoName = self::BLOWFISH_NAME;
+                break;
+        }
+        return $this;
+    }
+    
+    
+    /**
+     * Set Cost
+     * 
+     * @todo implement
+     * 
+     * @return \Antnee\PhpPasswordLib\PhpPasswordLib
+     */
+    public function setCost($rounds){
+        switch ($this->algorithm){
+            case PASSWORD_BCRYPT:
+                $this->rounds = $this->setBlowfishCost($rounds);
+                break;
+            case PASSWORD_SHA256:
+            case PASSWORD_SHA512:
+                $this->rounds = $this->setShaCost($rounds);
+                break;
+        }
+        return $this;
+    }
+    
+    
+    /**
+     * Set Blowfish hash cost
+     * 
+     * Minimum 4, maximum 31. Value is base-2 log of actual number of rounds, so
+     * 4 = 16, 8 = 256, 16 = 65,536 and 31 = 2,147,483,648
+     * Defaults to 8 if value is out of range or incorrect type
+     * 
+     * @param int $rounds
+     * @return STRING
+     */
+    private function setBlowfishCost($rounds){
+        if (!is_int($rounds) || $rounds < 4 || $rounds > 31){
+            $rounds = $rounds = self::BLOWFISH_ROUNDS;
+        }
+        return sprintf("%02d", $rounds)."$";
+    }
+    
+    
+    /**
+     * Set SHA hash cost
+     * 
+     * Minimum 1000, maximum 999,999,999
+     * Defaults to 5000 if value is out of range or incorrect type
+     * 
+     * @param INT $rounds
+     * @return STRING
+     */
+    private function setShaCost($rounds){
+        if (!is_int($rounds) || $rounds < 1000 || $rounds > 999999999){
+            switch ($this->algorithm){
+                case PASSWORD_SHA256:
+                    $rounds = self::SHA256_ROUNDS;
+                case PASSWORD_SHA512:
+                default:
+                    $rounds = self::SHA512_ROUNDS;
+            }
+        }
+        return "rounds=" . $rounds ."$";
+    }
+    
+    
+    /**
+     * Get hash info
+     *
+     * @param STRING $hash
+     * @return ARRAY
+     */
+    public function getInfo($hash){
+        $params = explode("$", $hash);
+        if (count($params) < 4) return FALSE;
+        
+        switch ($params['1']){
+            case '2a':
+            case '2y':
+            case '2x':
+                $algo = PASSWORD_BCRYPT;
+                $algoName = self::BLOWFISH_NAME;
+                break;
+            case '5':
+                $algo = PASSWORD_SHA256;
+                $algoName = self::SHA256_NAME;
+                break;
+            case '6':
+                $algo = PASSWORD_SHA512;
+                $algoName = self::SHA512_NAME;
+                break;
+            default:
+                return FALSE;
+        }
+        
+        $cost = preg_replace("/[^0-9,.]/", "", $params['2']);
+        
+        return array(
+            'algo' => $algo,
+            'algoName' => $algoName,
+            'options' => array(
+                'cost' => $cost
+            ),
+        );
+    }
+    
+    
+    /**
+     * Verify Crypt Setting
+     * 
+     * Checks that the hash provided is encrypted at the current settings or not,
+     * returning BOOL accordingly
+     * 
+     * @param STRING $hash
+     * @return BOOL
+     */
+    public function verifyCryptSetting($hash, $algo, $options=array()){
+        $this->setAlgorithm($algo);
+        if (isset($options['cost'])) $this->setCost($options['cost']);
+        
+        $setting = $this->cryptSetting.$this->rounds;
+        
+        return (substr($hash, 0, strlen($setting)) === $setting);
+    }
+}
+
+/*--------------------------
+	入口
+--------------------------*/
+
+$login_obj = new Login();
+$logined_info = $login_obj->logined();

@@ -7,7 +7,7 @@ list($check_what) = null_exit($req, 'what');
 
 if ($check_what === 'logos') {
 	$outpu_logos = array();
-	$logo_dir = __DIR__.'/uploads/logo';
+	$logo_dir = dirname(__FILE__).'/uploads/logo';
 	foreach (glob("{$logo_dir}/*") as $file) {
 		$file_uri = substr($file, strlen($_SERVER['DOCUMENT_ROOT']));
 		$outpu_logos[] = $file_uri;
@@ -22,11 +22,6 @@ if ($check_what === 'values') {
 	$table_root = table_root($db, $table);
 
 	$res = array();
-	$push_val = function($value)use(&$res){
-		if (!in_array($value, $res)) {
-			$res[] = $value;
-		}
-	};
 
 	foreach (glob("{$table_root}/*") as $file) {
 		if (is_dir($file)) {continue;}
@@ -44,9 +39,7 @@ if ($check_what === 'values') {
 
 		if (count($filters)) {
 			$filter_source = '';
-			array_walk_recursive($data_obj, function($item, $key)use(&$filter_source){
-				$filter_source .= ' | '.$item;
-			});
+			array_walk_recursive($data_obj, 'walk_cb', $filter_source);
 
 			$is_matched_all = true;
 			foreach($filters as $filter) {
@@ -63,14 +56,23 @@ if ($check_what === 'values') {
 
 		if (is_array($values)) {
 			foreach($values as $value) {
-				call_user_func($push_val, $value);
+				if (!in_array($value, $res)) {
+					$res[] = $value;
+				}
 			}
 		} else {
-			call_user_func($push_val, $value);
+			if (!in_array($value, $res)) {
+				$res[] = $value;
+			}
 		}
 	}
 
 	jsonp_nocache_exit(array('status'=>'ok', 'count'=>count($res), 'items'=>$res));
+}
+
+function walk_cb($item, $key, &$filter_source)
+{
+	$filter_source .= ' | '.$item;
 }
 
 jsonp_nocache_exit(array('status'=>'error', 'error'=>'command error'));

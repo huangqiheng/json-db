@@ -39,28 +39,28 @@ function jsondb_logger($priority, $msg_title, $msg_data=null)
 	if ($invalid) return 'null';
 
 	$log_url = 'http://'.$log_host.':'.$log_port.'/service/log/write.php';
-        $headers = ['Content-Type: multipart/form-data; charset=utf-8'];
+        $headers = array('Content-Type: multipart/form-data; charset=utf-8');
 	$headers[] = 'Host: '.$log_domain;
 
-	$data = [
+	$data = array(
 		'db_name' => $log_db_name,
 		'table_name' => $log_table_name,
 		'apikey' => $log_apikey,
-		'data' => [
-			'general' => [
+		'data' => array(
+			'general' => array(
 				'ID' => '',
 				'TIME' => gm_date(time()),
 				'CREATE' => gm_date(time())
-			],
-			'log' => [
+			),
+			'log' => array(
 				'ident' => $log_ident,
 				'facility' => $log_facility,
 				'priority'=> $priority,
                                 'title' => $msg_title,
                                 'data' => $msg_data
-			]
-		]
-	];
+			)
+		)
+	);
 
 	http_build_query_for_curl($data, $post_data);
 

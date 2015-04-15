@@ -161,7 +161,7 @@ function get_listview_column($db_name, $table_name, $field_name)
 	$listview_data = object_read("{$table_root}/listview.json");
 	$id_index = array_search($field_name, $schema['listview']);
 
-	$rep_list = [];
+	$rep_list = array();
 	foreach($listview_data as $subitem) {
 		$id_cmp = $subitem[$id_index];
 		if (empty($id_cmp)) {

@@ -13,19 +13,19 @@ if (is_direct_call()) {
 
 	if (!empty($items)) {
 		if (enqueue_items($name, $items)) {
-			jsonp_nocache_exit(['status'=>'ok']);
+			jsonp_nocache_exit(array('status'=>'ok'));
 		} else {
-			jsonp_nocache_exit(['status'=>'error', 'error'=>'enqueue to file error']);
+			jsonp_nocache_exit(array('status'=>'error', 'error'=>'enqueue to file error'));
 		}
 	} else {
 		if ($items = dequeue_items($name, @$req['max'])) {
-			jsonp_nocache_exit(['status'=>'ok', 'count'=>count($items), 'items'=>$items]);
+			jsonp_nocache_exit(array('status'=>'ok', 'count'=>count($items), 'items'=>$items));
 		} else {
 			if (file_exists(current_queuing_file($name))) {
 				$time_to_wait = TIME_INTERVAL - intval(time()) % TIME_INTERVAL;
-				jsonp_nocache_exit(['status'=>'error', 'error'=>'wait for queue item', 'wait_time'=>$time_to_wait]);
+				jsonp_nocache_exit(array('status'=>'error', 'error'=>'wait for queue item', 'wait_time'=>$time_to_wait));
 			} else {
-				jsonp_nocache_exit(['status'=>'error', 'error'=>'empty queue']);
+				jsonp_nocache_exit(array('status'=>'error', 'error'=>'empty queue'));
 			}
 		}
 	}
@@ -70,7 +70,7 @@ function __dequeue_items($name, $max = MAX_DEQUEUE_COUNT)
 {
 	$now_writing_id = now_name();
 
-	$item_ids = [];
+	$item_ids = array();
 	foreach(glob(get_queue_file($name, '*')) as $file) {
 		if (is_dir($file)) {continue;}
 		if (!preg_match('~/(\d+)\.'.ITEMS_SUFFIX.'$~',$file, $matches)){continue;}
@@ -82,7 +82,7 @@ function __dequeue_items($name, $max = MAX_DEQUEUE_COUNT)
 
 	sort($item_ids, SORT_NUMERIC);
 
-	$output_items = [];
+	$output_items = array();
 	foreach ($item_ids as $id) {
 		$file_name = get_queue_file($name, $id);
 		$data_str = file_get_contents($file_name);

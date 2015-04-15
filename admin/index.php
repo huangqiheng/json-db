@@ -4,10 +4,12 @@ require_once 'functions.php';
 $user_info = denies_with_redirect();
 $user_email = $user_info['user_email'];
 
+/*
 if (!preg_match('|@appgame\.com$|i', $user_email)) {
 	header('Location: /index.php');
 	exit();
 }
+*/
 
 header('Content-Type: text/html; charset=utf-8');
 
@@ -74,6 +76,7 @@ set_language('cn');
 env.web_root = "<?php echo $web_root; ?>";
 env.init_db = "<?php echo $init_db; ?>";
 env.init_table = "<?php echo $init_table; ?>";
+env.port_mode = <?php echo PORT_MODE?'true':'false'; ?>;
 
 if ((env.init_db === 'default') && (env.init_table === 'default')) {
 	env.init_db = get_cookie('init_db');

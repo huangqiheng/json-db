@@ -11,7 +11,7 @@ $req = get_param();
 list($db_name, $tables, $apikey) = null_exit($req, 'db', 'tables', 'apikey');
 
 if (!is_array($tables)) {
-	jsonp_nocache_exit(['status'=>'error', 'error'=>'tables must be array']);
+	jsonp_nocache_exit(array('status'=>'error', 'error'=>'tables must be array'));
 }
 
 $results = [];
@@ -22,5 +22,5 @@ foreach ($tables as $table_name) {
 	$results[$table_name] = objects_read($db_name, $table_name);
 }
 
-jsonp_nocache_exit(['status'=>'ok', 'md5'=>md5(json_encode($results)), 'count'=>count($results), 'items'=>$results]); 
+jsonp_nocache_exit(array('status'=>'ok', 'md5'=>md5(json_encode($results)), 'count'=>count($results), 'items'=>$results)); 
 

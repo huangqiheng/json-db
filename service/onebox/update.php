@@ -10,7 +10,7 @@ $table_path = table_root($db_name, $table_name);
 $schema = object_read("{$table_path}/schema.json");
 $fields = $schema['fields'];
 
-$onebox_url_routes = [];
+$onebox_url_routes = array();
 foreach($fields as $group_name=>$group_data) {
 	foreach($group_data as $field_name=>$field_type) {
 		if (preg_match('/^jqxListBox-onebox/i', $field_type)) {
@@ -41,7 +41,7 @@ foreach(glob("{$table_path}/*.json") as $file) {
 		if (empty($oneboxs)) {
 			continue;
 		}
-		$new_oneboxs = [];
+		$new_oneboxs = array();
 		foreach($oneboxs as $onebox) {
 			$url = $onebox['url'];
 			if (empty($url)) continue;
@@ -61,7 +61,7 @@ foreach(glob("{$table_path}/*.json") as $file) {
 			$ori_ctime = __strtotime($ctime_str);
 			$ctime = gm_date(min($new_ctime, $ori_ctime));
 
-			$new_onebox = [];
+			$new_onebox = array();
 			$new_onebox['title'] = $res_obj['title'];
 			$new_onebox['desc'] = $res_obj['description'];
 			$new_onebox['image'] = $res_obj['image'];

@@ -79,17 +79,30 @@ vim /etc/crontab，添加：
 ======
 ```
 #!/bin/bash
-HOST='112.112.112.112'
-USER='xxxxxx'
-PASS='xxxxxx'
+HOST='112.124.123.89'
+USER='suofeiyavip'
+PASS='sogal5911'
 TARGETFOLDER='/jdb'
 SOURCEFOLDER=$PWD
 
-lftp -f "
+echo $(date)
+
+lftp -e "
 open $HOST
 user $USER $PASS
 lcd $SOURCEFOLDER
-mirror --reverse --delete --exclude-glob *.sh --exclude-glob .* --exclude-glob .git/ --verbose $SOURCEFOLDER $TARGETFOLDER
+mirror  --reverse \
+	--delete \
+	--exclude-glob *.sh \
+	--exclude-glob .* \
+	--exclude-glob debug.* \
+	--exclude-glob .git/ \
+	--exclude-glob databases/ \
+	--exclude-glob cache/ \
+	--exclude-glob admin/uploads/ \
+	--verbose $SOURCEFOLDER $TARGETFOLDER
 bye
 "
+
+echo $(date)
 ```

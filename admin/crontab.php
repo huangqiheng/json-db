@@ -9,7 +9,7 @@ if (is_cron_calling()) {
 	$status_changed = false;
 	$status = json_decode(file_get_contents(cron_status_file()), true);
 	if (empty($status)) {
-		$status = [];
+		$status = array();
 		$status['webhook_last_time'] = 0;
 		$status_changed = true;
 	}
@@ -32,7 +32,7 @@ if (is_cron_calling()) {
 		$minutes = $job['minutes'];
 
 		if (!array_key_exists($key, $status)) {
-			$new_status = [];
+			$new_status = array();
 			$new_status['url'] = $url;
 			$new_status['minutes'] = $minutes;
 			$new_status['last_check_time'] = 0;
@@ -109,9 +109,9 @@ function cron_jobs()
 
 function cron_jobs_get()
 {
-	$result = [];
+	$result = array();
 	$db_root = realpath(__DIR__.'/../databases');
-	$saved_urls = [];
+	$saved_urls = array();
 	foreach(glob("{$db_root}/*/*/*/schema.json") as $file) {
 		if (!preg_match('~/([^\/]+)/([^\/]+)/([^\/]+)/schema\.json$~',$file, $matches)){
 			continue;

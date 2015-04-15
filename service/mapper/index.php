@@ -17,7 +17,7 @@ if ($direct === 'true') {
 }
 
 if ($direct === 'false') {
-	jsonp_nocache_exit(['status'=>'ok', 'ID'=>$map_val, 'data_file'=>$data_url]); 
+	jsonp_nocache_exit(array('status'=>'ok', 'ID'=>$map_val, 'data_file'=>$data_url)); 
 }
 
 header("Location: {$data_url}");

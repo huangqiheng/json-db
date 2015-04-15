@@ -27,13 +27,13 @@ if (is_direct_called(__FILE__)) {
 function wh_trigger_exit($db, $table, $event, $data)
 {
 	denies_with_json();
-	if (!in_array($event, ['update', 'refresh'])) {
-		jsonp_nocache_exit(['status'=>'error', 'error'=>'invalid event type']);
+	if (!in_array($event, array('update', 'refresh'))) {
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'invalid event type'));
 	}
 	if (wh_event($db, $table, $event, $data) === true) {
-		jsonp_nocache_exit(['status'=>'ok']);
+		jsonp_nocache_exit(array('status'=>'ok'));
 	} else {
-		jsonp_nocache_exit(['status'=>'error']);
+		jsonp_nocache_exit(array('status'=>'error'));
 	}
 }
 

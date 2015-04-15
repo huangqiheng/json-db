@@ -498,11 +498,20 @@ function submit_post(url, data, cb_done)
 
 function get_url(db_name, table_name, filename)
 {
+	//如果是port模式
+	if (env.port_mode) {
+		var matchs = window.location.href.match(/^http:\/\/[^\/]+(\/.+)\/admin\/index\.php/);
+		console.log(matchs);
+		return matchs[1] + '/port.php?db='+db_name+'&table='+table_name+'&opt=read&file='+filename;
+	}
+
 	var matchs = window.location.href.match(/^http:\/\/([^\/]+)\/(([^\/]+\/)+)admin\/index\.php/);
 
+	//判读是否是域名模式，还是目录模式
 	if (matchs === null) {
 		return '/databases/'+db_name+'/'+table_name+'/'+filename;
 	} else {
+		//这是目录模式
 		var host = matchs[1];
 		var prefix = matchs[2];
 		return '/'+prefix +'databases/'+host+'/'+db_name+'/'+table_name+'/'+filename;
