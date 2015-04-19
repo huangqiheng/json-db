@@ -312,7 +312,7 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 
 	});	
 
-	window.fixedheader = new $.fn.dataTable.FixedHeader(oTable);
+	//window.fixedheader = new $.fn.dataTable.FixedHeader(oTable);
 
 	$.contextMenu({
 		selector: '#'+table_id,

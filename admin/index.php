@@ -47,7 +47,6 @@ $init_table = get_param('table', 'default');
 	@import "client/datatables/jquery.dataTables.min.css";
 	@import "client/datatables/dataTables.tableTools.min.css";
 	@import "client/datatables/dataTables.responsive.css";
-	@import "client/datatables/dataTables.fixedHeader.css";
 	@import "client/datatables/dataTables.jqueryui.css";
 	@import "client/datatables/jquery-ui.css";
 	@import "client/contextMenu/jquery.contextMenu.css";
@@ -57,7 +56,6 @@ $init_table = get_param('table', 'default');
 <script type="text/javascript" language="javascript" src="client/datatables/dataTables.scroller.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/datatables/dataTables.pagination.input.js"></script>
 <script type="text/javascript" language="javascript" src="client/datatables/dataTables.responsive.min.js"></script>
-<script type="text/javascript" language="javascript" src="client/datatables/dataTables.fixedHeader.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/datatables/dataTables.jqueryui.js"></script>
 
 <!--加载自己的js-->

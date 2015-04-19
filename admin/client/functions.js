@@ -501,7 +501,6 @@ function get_url(db_name, table_name, filename)
 	//如果是port模式
 	if (env.port_mode) {
 		var matchs = window.location.href.match(/^http:\/\/[^\/]+(\/.+)\/admin\/index\.php/);
-		console.log(matchs);
 		return matchs[1] + '/port.php?db='+db_name+'&table='+table_name+'&opt=read&file='+filename;
 	}
 
