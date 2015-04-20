@@ -222,8 +222,6 @@ function user_conf(key,val)
 		}
 		user_data[key] = val;
 
-		console.log(user_data);
-
 		user_data = json_encode(user_data);
 		var cvalue = base64_encode(user_data);
 		set_cookie('user_conf', cvalue, 365);

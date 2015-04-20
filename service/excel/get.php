@@ -15,9 +15,29 @@ foreach($columns as $column) {
 		$exporter->addRow(array_keys($column)); 
 		$has_header = true;
 	}
-	$exporter->addRow($column); 
+
+	$datas = array();
+	foreach($column as $key=>$val) {
+		if (is_array($val)) {
+			$unicode_str = json_encode($val);
+			$datas[] = decodeUnicode($unicode_str);
+		} else {
+			$datas[] = $val;
+		}
+	}
+
+	$exporter->addRow($datas); 
 }
 
 $exporter->finalize(); //完成页脚，发送剩余数据到浏览器
 
 
+function decodeUnicode($str)
+{
+    return preg_replace_callback('/\\\\u([0-9a-f]{4})/i',
+        create_function(
+            '$matches',
+            'return mb_convert_encoding(pack("H*", $matches[1]), "UTF-8", "UCS-2BE");'
+        ),
+        $str);
+}
