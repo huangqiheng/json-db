@@ -198,6 +198,38 @@ function cp(old)
 	return $.extend(true, {}, old);
 }
 
+function user_conf(key,val)
+{
+	if (typeof val === 'undefined') {
+		var user_data = get_cookie('user_conf');
+		if (empty(user_data)) {
+		} else {
+			user_data = base64_decode(user_data);
+			user_data = json_decode(user_data);
+			if (user_data.hasOwnProperty(key)) {
+				return user_data[key];
+
+			}
+		}
+		return null;
+	} else {
+		var user_data = get_cookie('user_conf');
+		if (empty(user_data)) {
+			user_data = {};
+		} else {
+			user_data = base64_decode(user_data);
+			user_data = json_decode(user_data);
+		}
+		user_data[key] = val;
+
+		console.log(user_data);
+
+		user_data = json_encode(user_data);
+		var cvalue = base64_encode(user_data);
+		set_cookie('user_conf', cvalue, 365);
+	}
+}
+
 
 function set_cookie(cname,cvalue,exdays)
 {
@@ -564,4 +596,118 @@ function empty(mixed_var) {
 function is_url(url_str)
 {
 	return url_str.match(/(http|ftp|https):\/\/[\w-]+(\.[\w-]+)+([\w.,@?^=%&amp;:\/~+#-]*[\w@?^=%&amp;\/~+#-])?/g);
+}
+
+function base64_decode (data) 
+{
+	var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+	var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+	    ac = 0,
+	    dec = "",
+	    tmp_arr = [];
+
+	if (!data) {
+		return data;
+	}
+
+	data += '';
+	do { // unpack four hexets into three octets using index points in b64
+		h1 = b64.indexOf(data.charAt(i++));
+		h2 = b64.indexOf(data.charAt(i++));
+		h3 = b64.indexOf(data.charAt(i++));
+		h4 = b64.indexOf(data.charAt(i++));
+
+		bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
+
+		o1 = bits >> 16 & 0xff;
+		o2 = bits >> 8 & 0xff;
+		o3 = bits & 0xff;
+
+		if (h3 == 64) {
+			tmp_arr[ac++] = String.fromCharCode(o1);
+		} else if (h4 == 64) {
+			tmp_arr[ac++] = String.fromCharCode(o1, o2);
+		} else {
+			tmp_arr[ac++] = String.fromCharCode(o1, o2, o3);
+		}
+	} while (i < data.length);
+	dec = tmp_arr.join('');
+	return dec;
+}
+
+function base64_encode (data) 
+{
+	var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+	var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+	    ac = 0,
+	    enc = "",
+	    tmp_arr = [];
+
+	if (!data) {
+		return data;
+	}
+
+	do { // pack three octets into four hexets
+		o1 = data.charCodeAt(i++);
+		o2 = data.charCodeAt(i++);
+		o3 = data.charCodeAt(i++);
+
+		bits = o1 << 16 | o2 << 8 | o3;
+
+		h1 = bits >> 18 & 0x3f;
+		h2 = bits >> 12 & 0x3f;
+		h3 = bits >> 6 & 0x3f;
+		h4 = bits & 0x3f;
+
+		// use hexets to index into b64, and append result to encoded string
+		tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+	} while (i < data.length);
+
+	enc = tmp_arr.join('');
+	var r = data.length % 3;
+	return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
+}
+
+function empty(mixed_var) {
+	//  discuss at: http://phpjs.org/functions/empty/
+	// original by: Philippe Baumann
+	//    input by: Onno Marsman
+	//    input by: LH
+	//    input by: Stoyan Kyosev (http://www.svest.org/)
+	// bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+	// improved by: Onno Marsman
+	// improved by: Francesco
+	// improved by: Marc Jansen
+	// improved by: Rafal Kukawski
+	//   example 1: empty(null);
+	//   returns 1: true
+	//   example 2: empty(undefined);
+	//   returns 2: true
+	//   example 3: empty([]);
+	//   returns 3: true
+	//   example 4: empty({});
+	//   returns 4: true
+	//   example 5: empty({'aFunc' : function () { alert('humpty'); } });
+	//   returns 5: false
+
+	var undef, key, i, len;
+	var emptyValues = [undef, null, false, 0, '', '0'];
+
+	for (i = 0, len = emptyValues.length; i < len; i++) {
+		if (mixed_var === emptyValues[i]) {
+			return true;
+		}
+	}
+
+	if (typeof mixed_var === 'object') {
+		for (key in mixed_var) {
+			// TODO: should we check for own properties only?
+			//if (mixed_var.hasOwnProperty(key)) {
+			return false;
+			//}
+		}
+		return true;
+	}
+
+	return false;
 }

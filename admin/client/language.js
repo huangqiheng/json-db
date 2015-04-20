@@ -79,6 +79,9 @@ var langdata = {
     'REFRESH_BTN':				{en:'refresh table button', cn:'刷新表格按钮'},
     'REFRESH_BTN_DESC':				{en:'refresh the whole table, selection will be unselect', 
     						 cn:'刷新表格数据，所有选择将会被取消，如果表格数据错误，请点击导航菜单的“整理表格”'},
+
+    'hide button': 				{cn:'隐藏导航栏按钮'},
+    'hide navigation bar': 			{cn:'隐藏上方的导航栏，减少误操作，也更简洁美观些，推荐。'},
     'import button': 				{cn:'导入按钮'},
     'import csv or xml file to table': 		{cn:'导入csv或者xml格式到数据表中'},
     'export button': 				{cn:'导出按钮'},

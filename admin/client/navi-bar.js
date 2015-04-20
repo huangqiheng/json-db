@@ -164,7 +164,7 @@ function render_db_selection(d,index,label,value)
 		return d;
 	}
 
-	return '<table style="border:none; border-spacing:0px; font-size:12;"><tr>'+
+	return '<table style="border:none; font-size:12;"><tr>'+
 		'<td><img height="16" width="16" src="'+image+'"/></td>'+
 		'<td>x'+ counter +'&nbsp;</td>'+
 		'<td>'+ label + '</td>'+
@@ -183,7 +183,7 @@ function render_table_selection(d,index,label,value)
 	}
 
 	var counter = captions[db_name].length - env.table_cmd_count;
-	return '<table style="border:none; border-spacing:0px; font-size:12;"><tr>'+
+	return '<table style="border:none; font-size:12;"><tr>'+
 		'<td><img height="16" width="16" src="'+image+'"/></td>'+
 		'<td>x'+ counter +'&nbsp;</td>'+
 		'<td>'+ label+ '</td><td id="counter_table_datas"></td>'+

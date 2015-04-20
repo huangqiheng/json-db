@@ -562,11 +562,13 @@ function addItem_jqxListBox_images(p, init_val, height, width)
 		}
 	};
 
-	if (init_value instanceof Array) {
-		enq_source(init_value);
-	} else {
-		var init_values = init_value.split(',');
-		enq_source(init_value.split(','));
+	if (init_value) {
+		if (init_value instanceof Array) {
+			enq_source(init_value);
+		} else {
+			var init_values = init_value.split(',');
+			enq_source(init_value.split(','));
+		}
 	}
 
 	var render = function (data, finish)

@@ -1710,7 +1710,7 @@ function object_read($filename)
 	return $res;
 }
 
-function objects_read($db_name, $table_name)
+function objects_read($db_name, $table_name, $with_id=false)
 {
 	$table_root = table_root($db_name, $table_name);
 	$items = array();
@@ -1723,7 +1723,10 @@ function objects_read($db_name, $table_name)
 		if (empty($data_obj)) {continue;}
 
 		$merge_items = merge_fields($data_obj);
-		unset($merge_items['ID']);
+
+		if (!$with_id) {
+			unset($merge_items['ID']);
+		}
 		unset($merge_items['CREATE']);
 		unset($merge_items['TIME']);
 		$items[] = $merge_items;

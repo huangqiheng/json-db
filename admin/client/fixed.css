@@ -1,0 +1,72 @@
+
+span.paginate_button, span.paginate_page {
+	padding: 5px !important;
+}
+input.paginate_input {
+	width: 50px !important;
+}
+div.DTTT_container.ui-buttonset {
+	margin-bottom:0px !important;
+	margin-right:18px !important;
+}
+a#ToolTables_listview_table_0 {
+	margin-left: 2px !important;
+	margin-right: 5px;
+}
+a#ToolTables_listview_table_3 {
+	margin-right: 18px !important;
+}
+a#ToolTables_listview_table_7 {
+	margin-right: 18px !important;
+}
+div#listview_table_info {
+	margin-top: 3px;
+}
+div.ui-toolbar {
+	padding: 2px !important;
+}
+table.dataTable {
+	font-size:12px !important;
+	width:100% !important; 
+}
+div.dataTables_filter input {
+	width: 260px !important;
+	height: 23px !important;
+}
+div#listview_table_length {
+	width: 180px !important;
+	margin-top: 2px;
+}
+div#listview_table_filter {
+	width: 320px !important;
+	margin-top: 2px;
+}
+.DataTables_sort_icon { 
+	display:none !important;
+}
+div.DataTables_sort_wrapper {
+	padding-right: 0px !important;
+	text-shadow: 2px 1px 3px #FFF;
+}
+div.ui-widget-header {
+	text-shadow: 3px 3px 3px #FFF;
+}
+div#db_captions, div#table_captions {
+	text-shadow: 3px 3px 18px #56FF63;
+}
+thead.sorting_asc, thead.sorting_desc {
+	text-shadow: 3px 3px 18px #56FF63;
+}
+th.ui-state-default {
+	padding-top: 8px !important;
+	padding-bottom: 8px !important;
+	padding-left: 0px !important;
+	padding-right: 0px !important;
+}
+table.display td {
+	padding-top: 3px !important;
+	padding-bottom: 3px !important;
+	padding-left: 3px !important;
+	padding-right: 3px !important;
+}
+

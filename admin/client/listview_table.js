@@ -195,6 +195,35 @@ function refresh_listview(db_name, table_name)
 	};
 }
 
+function toggle_navi(is_init)
+{
+	is_init = typeof is_init !== 'undefined' ? is_init : false;
+	var ishide = (user_conf('hide_navi') === true);
+
+	if (is_init) {
+		if (ishide) {
+			var img_url = 'images/double_up.png';
+			$('#navibar_row').hide();
+		} else {
+			var img_url = 'images/double_down.png';
+			$('#navibar_row').show();
+		}
+		return img_url;
+	} else {
+		if (ishide) {
+			var img_url = 'images/double_down.png';
+			$('#navibar_row').show();
+		} else {
+			var img_url = 'images/double_up.png';
+			$('#navibar_row').hide();
+		}
+
+		user_conf('hide_navi', !ishide);
+		$('#ToolTables_listview_table_0 img').attr('src', img_url);
+
+	}
+}
+
 function datatables_new(listview_id, aDataSet, aoColumns, event)
 {
 
@@ -204,7 +233,6 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 	}
 
 
-	datatables_css();
 	var table_id = get_datatalbe_id(listview_id);
 
 	var table_obj = $('#'+table_id);
@@ -224,7 +252,7 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 
 	var oTable = $('#'+table_id).dataTable( {
 		'bJQueryUI': true,
-		'sPaginationType': 'input',
+		'sPaginationType': 'full_numbers',
 		'iDisplayLength': 25,
 		'bLengthChange': true,
 		'bPaginate': true,
@@ -250,9 +278,19 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 		'tableTools': {
 			'sRowSelect': 'os',
 			'aButtons': [
+				{"sExtends": "text", 
+					'fnInit': function (node) {
+						var img_url = toggle_navi(true);
+						fn_init(img_url,T('hide button'),T('hide navigation bar'))(node);
+					},
+					"fnClick": function (nButton, oConfig, oFlash) {
+						toggle_navi();
+					}},
 				{"sExtends": "text", 'fnInit': fn_init('images/export.png',T('export button'),T('export rows to csv for excel')), 
 					"fnClick": function (nButton, oConfig, oFlash) {
-
+						var db_name = get_db_name();
+						var table_name = get_table_name();
+						$.fileDownload(env.web_root + '/service/excel/get.php?db=' + db_name + '&table=' + table_name);
 					}},
 				{"sExtends": "text", 'fnInit': fn_init('images/import.png',T('import button'),T('import csv or xml file to table')), 
 					"fnClick": function (nButton, oConfig, oFlash) {
@@ -261,7 +299,7 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 				{"sExtends": "text", 'fnInit': fn_init('images/save.png',T('save button'),T('save table as backup file')), 
 					"fnClick": function (nButton, oConfig, oFlash) {
 						var data = {};
-						data.cmd = 'backup_database';
+						data.cmd = 'backup_table';
 						data.db_name = get_db_name();
 						data.table_name = get_table_name(),
 						submit_schema(data, function(d){
@@ -431,88 +469,3 @@ function get_datatalbe_id(listview_id)
 	return listview_id + '_table';
 }
 
-
-function datatables_css()
-{
-	if (window.datatables_css_init === undefined) {
-		window.datatables_css_init = true;
-	} else {
-		return;
-	}
-	
-	var html_str = hereDoc(function() {/*!
-<style type='text/css'>
-	span.paginate_button, span.paginate_page {
-		padding: 5px !important;
-	}
-	input.paginate_input {
-		width: 50px !important;
-	}
-	div.DTTT_container.ui-buttonset {
-		margin-bottom:0px !important;
-		margin-right:18px !important;
-	}
-	a#ToolTables_listview_table_0 {
-		margin-left: 2px !important;
-	}
-	a#ToolTables_listview_table_2 {
-		margin-right: 18px !important;
-	}
-	a#ToolTables_listview_table_6 {
-		margin-right: 18px !important;
-	}
-	div#listview_table_info {
-		margin-top: 3px;
-	}
-	a.fg-button {
-		height: 18px !important;
-	}
-	div.ui-toolbar {
-		padding: 2px !important;
-	}
-	table.dataTable {
-		font-size:12px !important;
-		width:100% !important; 
-	}
-	div.dataTables_filter input {
-		width: 260px !important;
-		height: 23px !important;
-	}
-	div#listview_table_length {
-		width: 180px !important;
-	}
-	div#listview_table_filter {
-		width: 320px !important;
-	}
-	.DataTables_sort_icon { 
-		display:none !important;
-	}
-	div.DataTables_sort_wrapper {
-		padding-right: 0px !important;
-		text-shadow: 2px 1px 3px #FFF;
-	}
-	div.ui-widget-header {
-		text-shadow: 3px 3px 3px #FFF;
-	}
-	div#db_captions, div#table_captions {
-		text-shadow: 3px 3px 18px #56FF63;
-	}
-	thead.sorting_asc, thead.sorting_desc {
-		text-shadow: 3px 3px 18px #56FF63;
-	}
-	th.ui-state-default {
-		padding-top: 8px !important;
-		padding-bottom: 8px !important;
-		padding-left: 0px !important;
-		padding-right: 0px !important;
-	}
-	table.display td {
-		padding-top: 3px !important;
-		padding-bottom: 3px !important;
-		padding-left: 3px !important;
-		padding-right: 3px !important;
-	}
-</style>
-	*/});
-	$('body').append(html_str);
-}

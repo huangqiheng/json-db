@@ -8,9 +8,10 @@ switch($req['cmd']) {
     case 'new_database': create_database_exit($req);
     case 'edit_database': edit_database_exit($req);
     case 'backup_database': backup_database_exit($req);
+    case 'del_database': del_database_exit($req);
     case 'new_table': create_table_exit($req);
     case 'edit_table': edit_table_exit($req);
-    case 'del_database': del_database_exit($req);
+    case 'backup_table': backup_database_exit($req);
     case 'del_table': del_table_exit($req);
     case 'key_data': get_keydata_exit($req);
     default: jsonp_nocache_exit(array('status'=>'error', 'error'=>'unknow command.'));

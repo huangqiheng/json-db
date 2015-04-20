@@ -15,7 +15,6 @@ header('Content-Type: text/html; charset=utf-8');
 
 $db_captions = get_db_captions();
 $table_captions = get_table_captions(); 
-$web_root = "http://{$_SERVER['SERVER_NAME']}";
 $init_db = get_param('db', 'default');
 $init_table = get_param('table', 'default');
 
@@ -29,8 +28,10 @@ $init_table = get_param('table', 'default');
 <!--加载jquery-->
 <script type="text/javascript" language="javascript" src="client/jquery/jquery-1.11.1.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/jquery/md5.min.js"></script>
+<script type="text/javascript" language="javascript" src="client/jquery/jquery.fileDownload.js"></script>
 <script type="text/javascript" language="javascript" src="client/contextMenu/jquery.contextMenu.js"></script>
 <script type="text/javascript" language="javascript" src="client/contextMenu/jquery.ui.position.js"></script>
+
 
 <!--加载gritter-->
 <link rel="stylesheet" href="client/gritter/jquery.gritter.css" type="text/css" />
@@ -50,6 +51,8 @@ $init_table = get_param('table', 'default');
 	@import "client/datatables/dataTables.jqueryui.css";
 	@import "client/datatables/jquery-ui.css";
 	@import "client/contextMenu/jquery.contextMenu.css";
+
+	@import "client/fixed.css";
 </style>
 <script type="text/javascript" language="javascript" src="client/datatables/jquery.dataTables.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/datatables/dataTables.tableTools.min.js"></script>
@@ -71,7 +74,10 @@ $init_table = get_param('table', 'default');
 <script type="text/javascript" charset="utf-8">
 window.env = {};
 set_language('cn');
-env.web_root = "<?php echo $web_root; ?>";
+
+var match = window.location.href.match(/^((https?\:\/\/[^\/]+)\/.*)\/admin\/index\.php$/);
+env.www_root = match[2];
+env.web_root = match[1];
 env.init_db = "<?php echo $init_db; ?>";
 env.init_table = "<?php echo $init_table; ?>";
 env.port_mode = <?php echo PORT_MODE?'true':'false'; ?>;
@@ -122,7 +128,7 @@ $(window).resize(function () {
 </head>
 <body background="images/bg_tile.jpg">
 <table style="width:100%; font-size:12px;">
-<tr><td>
+<tr id="navibar_row"><td>
 	<div id="db_captions" style="float:left;"></div>
 	<div id="table_captions" style="float:left;"></div>
 	<div id="config_btn" style="float:left; padding:0px"><img height="25" width="25" src="images/setting.png"/></div>
