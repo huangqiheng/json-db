@@ -530,7 +530,7 @@ function get_url(db_name, table_name, filename)
 {
 	//如果是port模式
 	if (env.port_mode) {
-		return env.www_root + '/port.php?db='+db_name+'&table='+table_name+'&opt=read&file='+filename;
+		return env.jsondb_root + '/port.php?db='+db_name+'&table='+table_name+'&opt=read&file='+filename;
 	}
 
 	var matchs = window.location.href.match(/^http:\/\/([^\/]+)\/(([^\/]+\/)+)admin\/index\.php/);

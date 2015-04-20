@@ -82,7 +82,7 @@ if (match === null) {
 } else {
 	env.is_subpath = true;
 }
-env.web_root = match[1];
+env.jsondb_root = match[1];
 env.www_root = match[2];
 env.init_db = "<?php echo $init_db; ?>";
 env.init_table = "<?php echo $init_table; ?>";

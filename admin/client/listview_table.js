@@ -177,8 +177,10 @@ function refresh_listview(db_name, table_name)
 		var set_records_counter=function(data) {
 			var counter_str = '('+data.length+T('records')+')';
 			$('#counter_table_datas').html('<div id="counter_datasize" style="text-align:right;">'+counter_str+'</div>');
+/*
 			var out_width = $('#counter_datasize').outerWidth();
 			$('#counter_datasize').css('width', out_width+10);
+*/
 		};
 
 		json(data_url, function(data){
@@ -290,7 +292,7 @@ function datatables_new(listview_id, aDataSet, aoColumns, event)
 					"fnClick": function (nButton, oConfig, oFlash) {
 						var db_name = get_db_name();
 						var table_name = get_table_name();
-						$.fileDownload(env.web_root + '/service/excel/get.php?db=' + db_name + '&table=' + table_name);
+						$.fileDownload(env.jsondb_root+ '/service/excel/get.php?db=' + db_name + '&table=' + table_name);
 					}},
 				{"sExtends": "text", 'fnInit': fn_init('images/import.png',T('import button'),T('import csv or xml file to table')), 
 					"fnClick": function (nButton, oConfig, oFlash) {
