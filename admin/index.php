@@ -76,8 +76,15 @@ window.env = {};
 set_language('cn');
 
 var match = window.location.href.match(/^((https?\:\/\/[^\/]+)\/.*)\/admin\/index\.php$/);
-env.www_root = match[2];
+if (match === null) {
+	env.is_subpath = false;
+	match = window.location.href.match(/^((https?\:\/\/[^\/]+))\/admin\/index\.php$/);
+} else {
+	env.is_subpath = true;
+}
+console.log(match);
 env.web_root = match[1];
+env.www_root = match[2];
 env.init_db = "<?php echo $init_db; ?>";
 env.init_table = "<?php echo $init_table; ?>";
 env.port_mode = <?php echo PORT_MODE?'true':'false'; ?>;

@@ -47,6 +47,10 @@ nginx 配置
 				set $is_public 0;
 			}
 
+                        if ($uri ~ ^/port.php) {
+                                set $is_public 0;
+                        }
+
 			if ($is_public = 1) {
 				rewrite ^/(.*)$ /databases/$http_host/__wwwroot__/$1 break;
 			}
@@ -80,8 +84,8 @@ vim /etc/crontab，添加：
 ```
 #!/bin/bash
 HOST='112.124.123.89'
-USER='suofeiyavip'
-PASS='sogal5911'
+USER='xxxx'
+PASS='xxxx'
 TARGETFOLDER='/jdb'
 SOURCEFOLDER=$PWD
 
