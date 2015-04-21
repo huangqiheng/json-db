@@ -1,6 +1,6 @@
 <?php
-require_once 'login.php';
 require_once 'config.php';
+require_once 'login.php';
 
 /*****************************************
 	系统常量
