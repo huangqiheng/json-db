@@ -1,3 +1,121 @@
+function cp_table_window(title, cb_done)
+{
+	var time = new Date().getTime();
+	var window_id = 'win_'+time.toString(); 
+	var ok_id = window_id+'_ok';
+	var no_id = window_id+'_no';
+	var witchdb_id = window_id+'_witchdb';
+	var notify_id = window_id+'_notify';
+	var this_windows_class = 'cp_windows';
+	var id_radiobtn_yes = window_id+'_radio_yes';
+	var id_radiobtn_no = window_id+'_radio_no';
+
+	$('body').append([
+            '<div id="'+window_id+'" class="'+this_windows_class+'">',
+                '<div>',
+                    '<img width="20" height="20" src="images/new-table.png" alt="" style="float:left;" /><strong style="font-size:16px;">'+title+'</strong></div>',
+                '<div>',
+                    '<div align="center"><p><table>',
+			'<tr><td align="right">'+T('Copy to')+':</td><td><div id="'+witchdb_id+'" /></td></tr>',
+			'<tr><td align="right">'+T('Delete src')+':</td><td>',
+				'<div id="'+id_radiobtn_yes+'" style="float: left;">'+T('Yes')+'</div>',
+				'<div id="'+id_radiobtn_no+'" style="float: left; margin-left:30px;">'+T('No')+'</div>',
+			'</tr>',
+                    '</table></div>',
+                    '<div>',
+		    '<div id="'+notify_id+'" style="color:red; text-align:center;"></div>',
+                    '<div style="float:right; margin-top:15px; margin-right:40px;">',
+                        '<input type="button" id="'+ok_id+'" value="'+T('OK')+'" style="margin-right: 10px" />',
+                        '<input type="button" id="'+no_id+'" value="'+T('Cancel')+'" />',
+                    '</div>',
+                    '</div>',
+                '</div>',
+            '</div>'].join(''));
+
+
+	var win_count = $('.'+this_windows_class).length;
+
+	$('#'+window_id).jqxWindow({height: 250, width: 450,
+		position: {x:win_count*30+200, y:50+win_count*41},
+		resizable: false, isModal: true, modalOpacity: 0.3,
+		cancelButton: $('#'+no_id),
+		initContent: function () {
+			var arr = env.db_captions.filter(function(value){
+					return (is_operate_item(value.name)!==true);
+			});
+
+			var db_dataAdapter = new $.jqx.dataAdapter({
+				localdata: arr,
+				datatype: "array"
+			});
+
+
+			var copy_from = get_db_name();
+			var copy_table = get_table_name();
+
+			$('#'+witchdb_id).jqxDropDownList({
+				selectedIndex:env.db_index, 
+				placeHolder: T('Please Choose DB:'),
+				//autoOpen: true,
+				source:db_dataAdapter,
+				autoDropDownHeight: true,
+				displayMember: "title", 
+				valueMember: "name", 
+				dropDownWidth:280, 
+				itemHeight: -1, height: 25, width: 280,
+				renderer: function (index, label, value) {
+					var data = this.records;
+					var datarecord = data[index];
+					var img = '<img height="55" width="55" src="' + datarecord.image+ '"/>';
+					var table = '<table style="max-width: '+(this.width-10)+'px; width:100%; font-size:12; border-spacing:0px; background-image: url(images/gradient_grey.png);background-position-y: -75px;"><tr><td style="width: 70px;" rowspan="2">' + img + 
+						'</td><td><strong>' + datarecord.title+'('+datarecord.name+')'+'</strong></td></tr><tr><td style="color:gray;">' + datarecord.content+ '</td></tr></table>';
+					return table;
+				},
+				selectionRenderer: function (d,index,label,value) {
+					if (!d) {return d;}
+					var image = 'images/database.png';
+					var counter = env.db_captions.length-env.db_cmd_count;
+
+					if (counter === 0) {
+						return d;
+					}
+
+					return '<table style="border:none; font-size:12;"><tr>'+
+						'<td><img height="16" width="16" src="'+image+'"/></td>'+
+						'<td>x'+ counter +'&nbsp;</td>'+
+						'<td>'+ label + '</td>'+
+						'</tr></table>';
+				}
+			});
+
+
+			$('#'+id_radiobtn_yes).jqxRadioButton({groupName:'id_radiobtn', checked: false});
+			$('#'+id_radiobtn_no).jqxRadioButton({groupName:'id_radiobtn', checked: true});
+
+			$('#'+ok_id).jqxButton({width: 65, height:35});
+			$('#'+no_id).jqxButton({width: 65, height:35});
+			$('#'+ok_id).on('click', function(e){
+				var db_dest = $('#'+witchdb_id).jqxDropDownList('val');
+				var checked = $('#'+id_radiobtn_yes).jqxRadioButton('checked');
+				cb_done({
+					'db_name': copy_from,
+					'table_name': copy_table,
+					'db_dest': db_dest,
+					'remove_src': checked
+				});
+				$('#'+window_id).jqxWindow('close');
+			});
+
+			$('#'+window_id).on('close', function (event) {  
+				if (event.target.id === window_id) {
+					$('#'+window_id).jqxWindow('destroy'); 
+				}
+			}); 
+		}
+	});
+}
+
+
 function new_schema_window(title, cb_done, init_data)
 {
 	var time = new Date().getTime();
@@ -10,7 +128,6 @@ function new_schema_window(title, cb_done, init_data)
 	var key_id = window_id+'_key';
 	var image_id = window_id+'_image';
 	var image_btn_id = window_id+'_imgbtn';
-	var image_grid_id = window_id+'_imggrid';
 
 	var wk_list_id = window_id+'_wk_list';
 	var wk_input_id = window_id+'_wk_input';
@@ -35,7 +152,7 @@ function new_schema_window(title, cb_done, init_data)
 			'<tr><td align="right" style="vertical-align:top;">'+T('desc')+':</td><td><textarea id="'+content_id+'"></textarea></td></tr>',
 			'<tr><td align="right">'+T('seckey')+':</td><td><input type="text" id="'+key_id+'" /></td></tr>',
 			'<tr><td align="right">'+T('image')+':</td><td><input type="text" id="'+image_id+'" style="float:left;"/>',
-				'<div id="'+image_btn_id+'" style="float:left;"><div id="'+image_grid_id+'"></div></div></td></tr>',
+				'<div id="'+image_btn_id+'" style="float:left;"></div></td></tr>',
 			'<tr><td align="right" style="vertical-align:top;">'+T('webhook')+':</td><td>',
 				'<div id="'+wk_list_id+'"></div>',
 				'<input id="'+wk_input_id+'" style="float:left" />',
@@ -78,9 +195,15 @@ function new_schema_window(title, cb_done, init_data)
 			$('#'+content_id).jqxInput({width:right_width, height: 50});
 			$('#'+key_id).jqxInput({width:right_width, height: 25});
 			$('#'+image_id).jqxInput({width:273, height: 25});
-			$('#'+image_btn_id).jqxDropDownButton({width: 25, height: 25, dropDownHorizontalAlignment: 'right'});
+			$('#'+image_btn_id).jqxButton({width: 25, height: 25});
 			$('#'+image_btn_id).css('background-image', 'url(images/add.png)');
 			$('#'+image_btn_id).css('background-size', '100%');
+			$('#'+image_btn_id).css('padding', '0px');
+			$('#'+image_btn_id).on('click', function(e){
+				get_uploaded_file('logo', T('Upload file to server'), function(url){
+					$('#'+image_id).val(url);
+				});
+			});
 
 			$('#'+wk_list_id).jqxListBox({source: wk_source, width: right_width, height: 100});
 			$('#'+wk_input_id).jqxInput({width: (right_width-(btn_width+2)*2), height: btn_height,placeHolder: T('Please input webhook url')});
@@ -93,12 +216,6 @@ function new_schema_window(title, cb_done, init_data)
 				cb(input_str);
 				env.popup(T('ERROR'), T('Please input url correctly'));
 			}], event_listbox_add);
-
-			jsonp('options.php', {what: 'logos'}, function(d){
-				if (d.status === 'ok') {
-					init_logos_grid(d.items);
-				}
-			});
 
 			if (init_data) {
 				if (!init_data.hasOwnProperty('key') || (init_data.key == '') || (!init_data.key)) {
@@ -158,93 +275,6 @@ function new_schema_window(title, cb_done, init_data)
 			}); 
 		}
 	});
-
-	function init_logos_grid(urls) 
-	{
-		$('#'+image_btn_id).bind('open', function () { 
-			var url2img = function(url){
-				return '<img height="64" width="64" src="'+url+'">';
-			};
-
-			var make_array_data = function(urls) 
-			{
-				var items = [];
-				for(var i in urls) {
-					items.push(url2img(urls[i]));
-				}
-
-				var data = Array();
-				while (items.length > 0) {
-					var line = {};
-					line['1'] = items.shift();
-					line['2'] = items.shift();
-					line['3'] = items.shift();
-					line['4'] = items.shift();
-					line['5'] = items.shift();
-					line['6'] = items.shift();
-					line['7'] = items.shift();
-					line['8'] = items.shift();
-					data.push(line);
-				};
-				return data;
-			};
-
-			var source = $('#'+image_grid_id).jqxGrid('source');
-			var localdatas = make_array_data(urls);
-			source._source.localdata = localdatas;
-			source.dataBind();
-		});
-		$('#'+image_btn_id).bind('close', function () { 
-			$('#'+image_grid_id).jqxGrid('clearselection');
-		});
-
-		$('#'+image_grid_id).jqxGrid({
-			width: 560,
-			columnsresize: true,
-			showemptyrow: false,
-			autoheight: true,
-			autorowheight: true,
-			showheader: false,
-			selectionmode: 'singlecell',
-			columns: [
-				{text: '1', columntype: 'textbox', datafield: '1', width: 70 },
-				{text: '2', columntype: 'textbox', datafield: '2', width: 70 },
-				{text: '3', columntype: 'textbox', datafield: '3', width: 70 },
-				{text: '4', columntype: 'textbox', datafield: '4', width: 70 },
-				{text: '5', columntype: 'textbox', datafield: '5', width: 70 },
-				{text: '6', columntype: 'textbox', datafield: '6', width: 70 },
-				{text: '7', columntype: 'textbox', datafield: '7', width: 70 },
-				{text: '8', columntype: 'textbox', datafield: '8', width: 70 }
-			],
-			source : new $.jqx.dataAdapter({
-				localdata: [],
-				datafields:
-				[
-					{name: '1', type: 'string'},
-					{name: '2', type: 'string'},
-					{name: '3', type: 'string'},
-					{name: '4', type: 'string'},
-					{name: '5', type: 'string'},
-					{name: '6', type: 'string'},
-					{name: '7', type: 'string'},
-					{name: '8', type: 'string'}
-				],
-				datatype: "array"
-			})
-		});
-
-		$('#'+image_grid_id).on('cellselect', function (event) {
-			var value = $('#'+image_grid_id).jqxGrid('getcellvalue', event.args.rowindex, event.args.datafield);
-			if (value == '') {return;} 
-
-			var patt = new RegExp(/src="(.+)"/);
-			var result = patt.exec(value);
-			var img_url = $.trim(result[1]);
-
-			$('#'+image_id).val(img_url);
-			$('#'+image_btn_id).jqxDropDownButton('close'); 
-		});
-	}
 
 
 	function focus_on_blank(id_arr) {

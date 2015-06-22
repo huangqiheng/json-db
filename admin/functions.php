@@ -61,6 +61,7 @@ $field_types = array(
 );
 
 define('BACKUP_DIR', '__backup__');
+define('GLOBAL_DIR', '__global__');
 define('WWWROOT_DIR', '__wwwroot__');
 
 /*****************************************
@@ -269,6 +270,29 @@ function token_exit($token,$timestamp,$nonce,$signature)
 	}
 }
 
+function one_null()
+{
+	$var_arr= func_get_args();
+	$req = @$var_arr[0];
+
+	if (is_array($req)) {
+		for($i=1; $i<count($var_arr); $i++) {
+			$key = $var_arr[$i];
+			$var = @$req[$key];
+			if (empty($var)) {
+				return true;
+			}
+		}
+	} else {
+		foreach($var_arr as $var) {
+			if (empty($var)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 function null_exit()
 {
 	$res = array();
@@ -280,7 +304,7 @@ function null_exit()
 			$key = $var_arr[$i];
 			$var = @$req[$key];
 			if (empty($var)) {
-				jsonp_nocache_exit(array('status'=>'error', 'error'=>'input parameters invalid'));
+				jsonp_nocache_exit(array('status'=>'error', 'error'=>'input parameters invalid 2'));
 			}
 			$res[] = $var;
 		}
@@ -1631,8 +1655,10 @@ function db_root($db_name)
 
 function init_db_root($root_path)
 {
-	mkdir($root_path.'/'.BACKUP_DIR);
-	mkdir($root_path.'/'.WWWROOT_DIR);
+	@mkdir($root_path.'/'.BACKUP_DIR);
+	@mkdir($root_path.'/'.GLOBAL_DIR);
+	@mkdir($root_path.'/'.WWWROOT_DIR);
+
 	$index_file = $root_path.'/'.WWWROOT_DIR.'/index.php';
 	$index = '<h>welcome to json-db homepage.</h>';
 	object_save($index_file, $index);
@@ -1651,6 +1677,18 @@ function db_domain()
 function doc_root()
 {
 	return dirname(dirname(__FILE__));
+}
+
+function base_path($path)
+{
+	return substr($path, strlen(doc_root()));
+}
+
+function force_directory($dir)
+{
+	if (!file_exists($dir)) {
+		mkdir($dir, 0777, true);
+	}
 }
 
 function dbs_path()

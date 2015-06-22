@@ -58,16 +58,16 @@ $init_table = get_param('table', 'default');
 <script type="text/javascript" language="javascript" src="client/datatables/dataTables.tableTools.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/datatables/dataTables.scroller.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/datatables/dataTables.pagination.input.js"></script>
-<script type="text/javascript" language="javascript" src="client/datatables/dataTables.responsive.min.js"></script>
 <script type="text/javascript" language="javascript" src="client/datatables/dataTables.jqueryui.js"></script>
 
 <!--加载自己的js-->
 <script type="text/javascript" language="javascript" src="client/functions.js"></script>
 <script type="text/javascript" language="javascript" src="client/navi-bar.js"></script>
-<script type="text/javascript" language="javascript" src="client/listview_table.js"></script>
+<script type="text/javascript" language="javascript" src="client/listview-table.js"></script>
 <script type="text/javascript" language="javascript" src="client/schema-window.js"></script>
 <script type="text/javascript" language="javascript" src="client/fields-window.js"></script>
 <script type="text/javascript" language="javascript" src="client/data-window.js"></script>
+<script type="text/javascript" language="javascript" src="client/uploads-window.js"></script>
 <script type="text/javascript" language="javascript" src="client/language.js"></script>
 
 <!--动态生成的js变量-->
@@ -109,8 +109,12 @@ env.db_last_unselect = env.db_index;
 env.table_last_unselect = env.table_index;
 env.popup = function (title, content){$.gritter.add({title: title, text: content});};
 env.db_cmd_count = 4;
-env.table_cmd_count = 4;
+env.table_cmd_count = 5;
 env.last_refresh_time = 0;
+
+if (env.table_index === -1) {
+	env.table_index = env.db_last_unselect;
+}
 
 var nav_btn_width = 30;
 var nav_btn_height = 25;
@@ -139,6 +143,7 @@ $(window).resize(function () {
 	<div id="table_captions" style="float:left;"></div>
 	<div id="config_btn" style="float:left; padding:0px"><img height="25" width="25" src="images/setting.png"/></div>
 	<div id="refresh_btn" style="float:left; padding:0px"><img height="25" width="25" src="images/refresh.png"/></div>
+	<div id="upload_btn" style="float:left; padding:0px"><img height="25" width="25" src="images/upload.png"/></div>
 	<div id="custom_btns" style="float:left; padding:0px;">
 	</div>
 	<div id="user_info" style="float:right; padding:4px; color: white;"></div>

@@ -488,7 +488,7 @@ function render_onebox_url_html(url, image, title, desc)
 
 function render_onebox_id(data, finish)
 {
-	jsonp('/service/onebox/name.php', {
+	jsonp(env.jsondb_root + '/service/onebox/name.php', {
 		name:data[0], 
 		db_name: get_db_name(),
 		table_name: get_table_name(),
@@ -518,7 +518,7 @@ function render_onebox_id(data, finish)
 
 function render_onebox_url(data, finish)
 {
-	jsonp('/service/onebox/url.php', 
+	jsonp(env.jsondb_root + '/service/onebox/url.php', 
 		{url:data[0], type:'json'}, function(d){
 		if (d.status === 'ok') {
 			var html = render_onebox_url_html(d.ori_url, d.image, d.title, d.description);

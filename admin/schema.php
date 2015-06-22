@@ -9,10 +9,13 @@ switch($req['cmd']) {
     case 'edit_database': edit_database_exit($req);
     case 'backup_database': backup_database_exit($req);
     case 'del_database': del_database_exit($req);
+
     case 'new_table': create_table_exit($req);
     case 'edit_table': edit_table_exit($req);
     case 'backup_table': backup_database_exit($req);
     case 'del_table': del_table_exit($req);
+    case 'copy_table': cp_table_exit($req);
+
     case 'key_data': get_keydata_exit($req);
     default: jsonp_nocache_exit(array('status'=>'error', 'error'=>'unknow command.'));
 }
@@ -83,6 +86,125 @@ function del_table_exit($req)
 	wh_event($req['db_name'], $req['table_name'], 'destroy');
 	jsonp_nocache_exit(array('status'=>'ok')); 
 }
+
+function get_bkable_table($db_name, $table_name)
+{
+	$table_root = table_root($db_name, $table_name);
+
+	if (!file_exists($table_root)) {
+		return $table_name;
+	}
+
+	$db_root = db_root($db_name);
+	$num = 1;
+	do {
+		$bkto_table = $table_name . '_' . sprintf("%02d", $num++);
+		$bkto_path = $db_root . '/' . $bkto_table;
+
+		if ($num >= 100) {
+			return false;
+		}
+	} while (file_exists($bkto_path)); 
+
+	return $bkto_table;
+}
+
+
+function cp_table_exit($req)
+{
+	$from_db = $req['db_name'];
+	$from_table = $req['table_name'];
+	$copyto_db = $req['db_dest'];
+	$is_remove = (@$req['remove_src'] === 'true');
+
+	null_exit($from_db, $from_table, $copyto_db);
+
+	$table_root = table_root($from_db, $from_table);
+
+	if (!file_exists($table_root)) {
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'src table error')); 
+	}
+
+	$copyto_table = get_bkable_table($copyto_db, $from_table);
+	if ($copyto_table === false) {
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'too mach same tables')); 
+	}
+
+	$copyto_root = table_root($copyto_db, $copyto_table);
+
+	if (smartCopy($table_root, $copyto_root) === false) {
+		jsonp_nocache_exit(array('status'=>'error', 'error'=>'copy exec error')); 
+	}
+
+	wh_event($copyto_db, $copyto_table, 'create');
+
+	if ($is_remove) {
+		rmdir_Rf($table_root);
+		wh_event($from_db, $from_table, 'destroy');
+	}
+
+	jsonp_nocache_exit(array('status'=>'ok')); 
+}
+
+function smartCopy($source, $dest, $options=array('folderPermission'=>0755,'filePermission'=>0755)) 
+{ 
+	$result=false; 
+
+	if (is_file($source)) { 
+		if ($dest[strlen($dest)-1]=='/') { 
+			if (!file_exists($dest)) { 
+				cmfcDirectory::makeAll($dest,$options['folderPermission'],true); 
+			} 
+			$__dest=$dest."/".basename($source); 
+		} else { 
+			$__dest=$dest; 
+		} 
+		$result=copy($source, $__dest); 
+		chmod($__dest,$options['filePermission']); 
+
+	} elseif(is_dir($source)) { 
+		if ($dest[strlen($dest)-1]=='/') { 
+			if ($source[strlen($source)-1]=='/') { 
+				//Copy only contents 
+			} else { 
+				//Change parent itself and its contents 
+				$dest=$dest.basename($source); 
+				@mkdir($dest); 
+				chmod($dest,$options['filePermission']); 
+			} 
+		} else { 
+			if ($source[strlen($source)-1]=='/') { 
+				//Copy parent directory with new name and all its content 
+				@mkdir($dest,$options['folderPermission']); 
+				chmod($dest,$options['filePermission']); 
+			} else { 
+				//Copy parent directory with new name and all its content 
+				@mkdir($dest,$options['folderPermission']); 
+				chmod($dest,$options['filePermission']); 
+			} 
+		} 
+
+		$dirHandle=opendir($source); 
+		while($file=readdir($dirHandle)) 
+		{ 
+			if($file!="." && $file!="..") 
+			{ 
+				if(!is_dir($source."/".$file)) { 
+					$__dest=$dest."/".$file; 
+				} else { 
+					$__dest=$dest."/".$file; 
+				} 
+				//echo "$source/$file ||| $__dest<br />"; 
+				$result=smartCopy($source."/".$file, $__dest, $options); 
+			} 
+		} 
+		closedir($dirHandle); 
+
+	} else { 
+		$result=false; 
+	} 
+	return $result; 
+} 
 
 function create_database_exit($req)
 {

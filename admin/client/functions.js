@@ -1,3 +1,16 @@
+function url_valid(url,cb_done)
+{
+	$.ajax({
+		type: 'HEAD',
+		url: url,
+		success: function() {
+			cb_done(true);
+		},
+		error: function() {
+			cb_done(false);
+		}
+	});
+}
 
 function get_listbox_values(listbox_id)
 {
@@ -198,14 +211,46 @@ function cp(old)
 	return $.extend(true, {}, old);
 }
 
+function loc_variable(contain_id, group, key, value)
+{
+	var varid = contain_id+'_'+group+'_'+key; 
+	//这是读取
+	if (typeof value === 'undefined') {
+		var var_elmt = $('#'+varid);
+		if(var_elmt.length === 0){
+			return null;
+		}
+		return var_elmt.text();
+	//这是写入新值
+	} else {
+		var var_elmt = $('#'+varid);
+		if(var_elmt.length === 0){
+			$('#'+contain_id).append('<div id="'+varid+'">'+value+'</div>');
+		} else {
+			var_elmt.text(value);
+		}
+		return $('#'+varid).text();
+	}
+}
+
+
+function basejson_encode(obj)
+{
+	return base64_encode(json_encode(obj));
+}
+
+function basejson_decode(base64str)
+{
+	return json_decode(base64_decode(base64str));
+}
+
 function user_conf(key,val)
 {
 	if (typeof val === 'undefined') {
 		var user_data = get_cookie('user_conf');
 		if (empty(user_data)) {
 		} else {
-			user_data = base64_decode(user_data);
-			user_data = json_decode(user_data);
+			user_data = basejson_decode(user_data);
 			if (user_data.hasOwnProperty(key)) {
 				return user_data[key];
 
@@ -217,17 +262,20 @@ function user_conf(key,val)
 		if (empty(user_data)) {
 			user_data = {};
 		} else {
-			user_data = base64_decode(user_data);
-			user_data = json_decode(user_data);
+			user_data = basejson_decode(user_data);
 		}
 		user_data[key] = val;
 
-		user_data = json_encode(user_data);
-		var cvalue = base64_encode(user_data);
+		var cvalue = basejson_encode(user_data);
 		set_cookie('user_conf', cvalue, 365);
 	}
 }
 
+function rand_str()
+{
+	var time = new Date().getTime();
+	return time.toString(); 
+}
 
 function set_cookie(cname,cvalue,exdays)
 {
@@ -530,7 +578,11 @@ function get_url(db_name, table_name, filename)
 {
 	//如果是port模式
 	if (env.port_mode) {
-		return env.jsondb_root + '/port.php?db='+db_name+'&table='+table_name+'&opt=read&file='+filename;
+		if (table_name === null) {
+			return env.jsondb_root + '/port.php?db='+db_name+'&opt=read&file='+filename;
+		} else {
+			return env.jsondb_root + '/port.php?db='+db_name+'&table='+table_name+'&opt=read&file='+filename;
+		}
 	}
 
 	var matchs = window.location.href.match(/^http:\/\/([^\/]+)\/(([^\/]+\/)+)admin\/index\.php/);
@@ -540,9 +592,17 @@ function get_url(db_name, table_name, filename)
 		//这是目录模式
 		var host = matchs[1];
 		var prefix = matchs[2];
-		return '/'+prefix +'databases/'+host+'/'+db_name+'/'+table_name+'/'+filename;
+		if (table_name === null) {
+			return '/'+prefix +'databases/'+host+'/'+db_name+'/'+filename;
+		} else {
+			return '/'+prefix +'databases/'+host+'/'+db_name+'/'+table_name+'/'+filename;
+		}
 	} else {
-		return '/databases/'+db_name+'/'+table_name+'/'+filename;
+		if (table_name === null) {
+			return '/databases/'+db_name+'/'+filename;
+		} else {
+			return '/databases/'+db_name+'/'+table_name+'/'+filename;
+		}
 	}
 }
 
@@ -708,3 +768,36 @@ function empty(mixed_var) {
 
 	return false;
 }
+
+function findBaseName(url) 
+{
+	var fileName = url.substring(url.lastIndexOf('/') + 1);
+	var dot = fileName.lastIndexOf('.');
+	return dot == -1 ? fileName : fileName.substring(0, dot);
+}
+
+function SaveToDisk(fileURL, fileName) 
+{
+	// for non-IE
+	if (!window.ActiveXObject) {
+		var save = document.createElement('a');
+		save.href = fileURL;
+		save.target = '_blank';
+		save.download = fileName || 'unknown';
+
+		var event = document.createEvent('Event');
+		event.initEvent('click', true, true);
+		save.dispatchEvent(event);
+		(window.URL || window.webkitURL).revokeObjectURL(save.href);
+	}
+
+	// for IE
+	else if ( !! window.ActiveXObject && document.execCommand)     {
+		var _window = window.open(fileURL, '_blank');
+		_window.document.close();
+		_window.document.execCommand('SaveAs', true, fileName || fileURL)
+			_window.close();
+	}
+}
+
+
