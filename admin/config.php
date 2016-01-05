@@ -4,5 +4,5 @@
 define('PORT_MODE', true);
 
 //禁止注册
-define('DISABLE_CREATE', true);
+define('DISABLE_CREATE', false);
 

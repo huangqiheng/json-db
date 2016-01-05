@@ -38,6 +38,10 @@ nginx 配置
 				break;
 			}
 
+			if ($uri ~ /databases/) {
+				break;
+			}
+
 			rewrite ^/(.*)$ /databases/$http_host/__wwwroot__/$1 break;
 		}
 
