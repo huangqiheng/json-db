@@ -15,8 +15,7 @@ Class LogDB extends Jsondb {
 		'caption' => array(
 			'title' => 'OMP代理网关日志',
 			'content' => '拦截腾讯MTA消息',
-			'image' => 'http://mta.qq.com/mta/resource/imgcache/images/logo.png',
-			"key" => "40360c4fb7d448978947772de1b9ceb2"),
+			'image' => 'http://mta.qq.com/mta/resource/imgcache/images/logo.png'),
 		'fields' => array( 
 			'general' => array(
 				'ID' => 'jqxInput-id',
@@ -29,11 +28,37 @@ Class LogDB extends Jsondb {
 				'data' => 'jqxInput-text-json')),
 		'listview' => array('ID', 'title'))
 	);
+
+	private $ident = 'proxy';
+	private $facility = 'index';
+
+	public function set($ident, $facility) {
+		$this->ident = $ident;
+		$this->facility = $facility;
+	}
+
+	public function log($priority, $msg_title, $msg_data=null) {
+		$data = array(
+			'general' => array(
+				'ID' => jsondb_id($this->db_name, $this->table_name),
+				'TIME' => jsondb_date()),
+			'log' => array(
+				'ident' => $this->ident,
+				'facility' => $this->facility,
+				'priority'=> $priority,
+				'title' => $msg_title,
+				'data' => $msg_data)
+		);
+		return $this->data(null, $data);
+	}
+
+
 }
 
 $testdb = new LogDB();
 
-echo $testdb->debug();
+$testdb->log('notify', 'test_title');
+echo $testdb->views(null, true);
 
 exit;
 
@@ -73,10 +98,6 @@ class Jsondb {
 				}
 			}
 		}
-	}
-
-	function debug() {
-		return jsondb_root();
 	}
 
 	function views($table_name=null, $force_update=false) {
@@ -322,7 +343,9 @@ function set_data($db_name, $table_name, $mapper_key, $data)
 	foreach($mappers as $mapper_name) {
 		$map_str .= "\"{$mapper_name}\":{$ID},";
 	}
-	data_object($db_name, $table_name, $ID.'.map.json', $map_str, false);
+	if (!empty($map_str)) {
+		data_object($db_name, $table_name, $ID.'.map.json', $map_str, false);
+	}
 
 	//(2)更新新的视图片段
 	$data_view = data_view($db_name, $table_name, $data);
