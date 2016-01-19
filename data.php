@@ -1,31 +1,34 @@
 <?php
 
+/***********************************************
+	日志类
+************************************************/
+
 Class LogDB extends Jsondb {
 	public $domain_name = 'jsondb.gw';
 	public $db_name = 'gateway';
 	public $table_name = 'proxy';
 	public $schema_db = array(
-		'caption' => array(
-		'title' => '代理网关日志数据库',
-		'content' => '拦截非https数据日志',
-		'image' => 'http://www.doctorcom.com/statics/images/style2012/logo.jpg'
-	));
+	    'caption' => array(
+		    'title' => '日志数据库',
+		    'content' => '分级显示系统日志，轻量级Web显示',
+		    'image' => 'http://www.doctorcom.com/statics/images/style2012/logo.jpg'));
 	public $schema_tables = array(
 	    'proxy' => array(
 		'caption' => array(
-			'title' => 'OMP代理网关日志',
-			'content' => '拦截腾讯MTA消息',
-			'image' => 'http://mta.qq.com/mta/resource/imgcache/images/logo.png'),
+		    'title' => '代理网关日志',
+		    'content' => '拦截腾讯MTA消息',
+		    'image' => 'http://mta.qq.com/mta/resource/imgcache/images/logo.png'),
 		'fields' => array( 
-			'general' => array(
-				'ID' => 'jqxInput-id',
-				'TIME' => 'jqxInput-time'),
-			'log' => array(
-				'ident' => 'jqxInput',
-				'facility' => 'jqxInput',
-				'priority' => 'jqxInput',
-				'title' => 'jqxInput',
-				'data' => 'jqxInput-text-json')),
+		    'general' => array(
+			    'ID' => 'jqxInput-id',
+			    'TIME' => 'jqxInput-time'),
+		    'log' => array(
+			    'ident' => 'jqxInput',
+			    'facility' => 'jqxInput',
+			    'priority' => 'jqxInput',
+			    'title' => 'jqxInput',
+			    'data' => 'jqxInput-text-json')),
 		'listview' => array('ID', 'title'))
 	);
 
@@ -52,15 +55,12 @@ Class LogDB extends Jsondb {
 		return $this->data(null, $data);
 	}
 
-
+	public function error($caption,$data=null){$this->log('error',$caption,$data);}
+	public function warn($caption,$data=null){$this->log('warn',$caption,$data);}
+	public function info($caption,$data=null){$this->log('info',$caption,$data);}
+	public function debug($caption,$data=null){$this->log('debug',$caption,$data);}
+	public function trace($caption,$data=null){$this->log('trace',$caption,$data);}
 }
-
-$testdb = new LogDB();
-
-$testdb->log('notify', 'test_title');
-echo $testdb->views(null, true);
-
-exit;
 
 /***********************************************
 	对象接口 
@@ -175,6 +175,75 @@ function jsondb_data($db_name, $table_name, $mapper_key, $data=null)
 	}
 }
 
+function jsondb_commit($db_name, $table_name)
+{
+	$json_files = glob(jsondb_file($db_name, $table_name, '*.json'));
+
+	$ids = [];
+	$views = [];
+	$maps = [];
+	foreach($json_files as $file) {
+		if (is_dir($file)) {continue;}
+		if (preg_match('~/(\d+)\.json$~',$file, $matches)){
+			$ids[] = intval($matches[1]);
+			continue;
+		}
+		if (preg_match('~/(\d+)\.view\.json$~',$file, $matches)){
+			$views[] = intval($matches[1]);
+			continue;
+		}
+		if (preg_match('~/(\d+)\.map\.json$~',$file, $matches)){
+			$maps[] = intval($matches[1]);
+		}
+	}
+
+	//处理列表显示
+	$lack_views = array_diff($ids, $views);
+	$lack_views_rm = array_diff($views, $ids);
+	foreach($lack_views as $ID) {
+		$data_view = data_view($db_name, $table_name, $ID);
+		if (empty($data_view)) {
+			$lack_views_rm[] = $ID;
+			continue;
+		}
+		$data_str = json_encode($data_view) . ',';
+		data_object($db_name, $table_name, $ID.'.view.json', $data_str, false);
+	}
+	foreach($lack_views_rm as $ID) {
+		$file = jsondb_file($db_name, $table_name, $ID.'.view.json');
+		unlink($file);
+	}
+
+	//处理映射表数据
+	$lack_maps = array_diff($ids, $maps);
+	$lack_maps_rm = array_diff($maps, $ids);
+	foreach($lack_maps as $ID) {
+		$data_mapper = data_mapper($db_name, $table_name, $ID);
+		$data_str = json_encode($data_mapper) . ',';
+		data_object($db_name, $table_name, $ID.'.map.json', $data_str, false);
+	}
+	foreach($lack_maps_rm as $ID) {
+		$file = jsondb_file($db_name, $table_name, $ID.'.map.json');
+		unlink($file);
+	}
+
+	//生成新的listview
+	$items = update_aggregate_file($db_name, $table_name, '*.view.json', 'listview.json');
+
+	//从大到小排序
+	usort($items, function($a, $b){
+		$a_val = intval($a[0]);
+		$b_val = intval($b[0]);
+		if ($a_val === $b_val) return 0;
+		return ($a_val > $b_val)? -1 : 1;
+	});
+
+	$filename = jsondb_file($db_name, $table_name, 'listview.json');
+	file_put_contents($filename, json_encode($items));
+
+	return $items;
+}
+
 
 function jsondb_views($db_name, $table_name, $force_update=false)
 {
@@ -183,76 +252,9 @@ function jsondb_views($db_name, $table_name, $force_update=false)
 	}
 
 	if ($force_update) {
-		$json_files = glob(jsondb_file($db_name, $table_name, '*.json'));
-
-		$ids = [];
-		$views = [];
-		$maps = [];
-		foreach($json_files as $file) {
-			if (is_dir($file)) {continue;}
-			if (preg_match('~/(\d+)\.json$~',$file, $matches)){
-				$ids[] = intval($matches[1]);
-				continue;
-			}
-			if (preg_match('~/(\d+)\.view\.json$~',$file, $matches)){
-				$views[] = intval($matches[1]);
-				continue;
-			}
-			if (preg_match('~/(\d+)\.map\.json$~',$file, $matches)){
-				$maps[] = intval($matches[1]);
-			}
-		}
-
-		//处理列表显示
-		$lack_views = array_diff($ids, $views);
-		$lack_views_rm = array_diff($views, $ids);
-		foreach($lack_views as $ID) {
-			$data_view = data_view($db_name, $table_name, $ID);
-			if (empty($data_view)) {
-				$lack_views_rm[] = $ID;
-				continue;
-			}
-			$data_str = json_encode($data_view) . ',';
-			data_object($db_name, $table_name, $ID.'.view.json', $data_str, false);
-		}
-		foreach($lack_views_rm as $ID) {
-			$file = jsondb_file($db_name, $table_name, $ID.'.view.json');
-			unlink($file);
-		}
-
-		//处理映射表数据
-		$lack_maps = array_diff($ids, $maps);
-		$lack_maps_rm = array_diff($maps, $ids);
-		foreach($lack_maps as $ID) {
-			$data_mapper = data_mapper($db_name, $table_name, $ID);
-			$data_str = json_encode($data_mapper) . ',';
-			data_object($db_name, $table_name, $ID.'.map.json', $data_str, false);
-		}
-		foreach($lack_maps_rm as $ID) {
-			$file = jsondb_file($db_name, $table_name, $ID.'.map.json');
-			unlink($file);
-		}
-
-		//生成新的listview
-		$items = update_aggregate_file($db_name, $table_name, '*.view.json', 'listview.json');
-
-		//从大到小排序
-		usort($items, function($a, $b){
-			$a_val = intval($a[0]);
-			$b_val = intval($b[0]);
-			if ($a_val === $b_val) return 0;
-			return ($a_val > $b_val)? -1 : 1;
-		});
-
-		$filename = jsondb_file($db_name, $table_name, 'listview.json');
-		file_put_contents($filename, json_encode($items));
-		return $items;
+		return jsondb_commit($db_name, $table_name);
 	} else {
-		$filename = jsondb_file($db_name, $table_name, 'listview.json');
-		if (($data_str = file_get_contents($filename)) === null) {
-			return [];
-		}
-		return json_decode($data_str, true);
+		return data_object($db_name, $table_name, 'listview.json');
 	}
 }
 
