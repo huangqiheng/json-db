@@ -444,7 +444,15 @@ function get_table_name()
 
 	var db_name = get_db_name();
 	var caption = env.table_captions[db_name];
-	return caption[env.table_index].name;
+	var table_name = caption[env.table_index].name;
+
+	//Wed Jan 20 11:45:22 PST 2016
+	if (is_operate_item(table_name)) {
+		env.table_index = 0;
+		var table_name = caption[env.table_index].name;
+	}
+
+	return table_name;
 }
 
 function get_table_desc(db_name, table_name)

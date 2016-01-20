@@ -1838,8 +1838,6 @@ function get_remote_json($req_url,$conn_timeout=7, $timeout=5)
 	return $res_obj;
 }
 
-
-
 function prety_json($obj)
 {
 	return indent_json(json_encode($obj));

@@ -1,119 +1,179 @@
 <?php
 
+
 /***********************************************
-	日志类
+	日志对象
 ************************************************/
+/*
+$schemas = array(
+      array(
+	    'name' => 'gateway',
+	    'title' => '日志数据库',
+	    'content' => '分级显示系统日志，轻量级Web显示',
+	    'image' => 'http://www.doctorcom.com/statics/images/style2012/logo.jpg'),
+      array(
+	    'name' => 'proxy',
+	    'title' => '代理网关日志',
+	    'content' => '拦截消息',
+	    'image' => 'http://mta.qq.com/mta/resource/imgcache/images/logo.png')
+);
 
-Class LogDB extends Jsondb {
-	public $domain_name = 'jsondb.gw';
-	public $db_name = 'gateway';
-	public $table_name = 'proxy';
-	public $schema_db = array(
-	    'caption' => array(
-		    'title' => '日志数据库',
-		    'content' => '分级显示系统日志，轻量级Web显示',
-		    'image' => 'http://www.doctorcom.com/statics/images/style2012/logo.jpg'));
-	public $schema_tables = array(
-	    'proxy' => array(
-		'caption' => array(
-		    'title' => '代理网关日志',
-		    'content' => '拦截腾讯MTA消息',
-		    'image' => 'http://mta.qq.com/mta/resource/imgcache/images/logo.png'),
-		'fields' => array( 
-		    'general' => array(
-			    'ID' => 'jqxInput-id',
-			    'TIME' => 'jqxInput-time'),
-		    'log' => array(
-			    'ident' => 'jqxInput',
-			    'facility' => 'jqxInput',
-			    'priority' => 'jqxInput',
-			    'title' => 'jqxInput',
-			    'data' => 'jqxInput-text-json')),
-		'listview' => array('ID', 'title'))
-	);
+$log_db = new LogDB($schemas);
+$log_db->info('asdfasdf');
+print_r($log_db->commit());
+*/
 
-	private $ident = 'proxy';
-	private $facility = 'index';
+Class LogDB extends Jsondb 
+{
 
-	public function set($ident, $facility) {
-		$this->ident = $ident;
-		$this->facility = $facility;
-	}
+function __construct($schemas, $table_name=null, $domain_name=null) 
+{
+	(count($schemas)<2) and trigger_error('input schemas error.');
 
-	public function log($priority, $msg_title, $msg_data=null) {
-		$data = array(
-			'general' => array(
-				'ID' => jsondb_id($this->db_name, $this->table_name),
-				'TIME' => jsondb_date()),
-			'log' => array(
-				'ident' => $this->ident,
-				'facility' => $this->facility,
-				'priority'=> $priority,
-				'title' => $msg_title,
-				'data' => $msg_data)
+	if ($schema_db = array_shift($schemas)) {
+		$this->db_name = $schema_db['name'];
+		$this->schema_db = array(); 
+		$this->schema_db['caption'] = array(
+		    'title' => $schema_db['title'],
+		    'content' => $schema_db['content'],
+		    'image' => $schema_db['image']
 		);
-		return $this->data(null, $data);
 	}
 
-	public function error($caption,$data=null){$this->log('error',$caption,$data);}
-	public function warn($caption,$data=null){$this->log('warn',$caption,$data);}
-	public function info($caption,$data=null){$this->log('info',$caption,$data);}
-	public function debug($caption,$data=null){$this->log('debug',$caption,$data);}
-	public function trace($caption,$data=null){$this->log('trace',$caption,$data);}
+	$this->schema_tables = array();
+	foreach($schemas as $item) {
+		$name = $item['name'];
+		$this->schema_tables[$name] = array(
+			'caption' => array(
+			    'title' => $item['title'],
+			    'content' => $item['content'],
+			    'image' => $item['image']),
+			'fields' => array( 
+			    'general' => array(
+				'ID' => 'jqxInput-id',
+				'TIME' => 'jqxInput-time',
+				'CREATE' => 'jqxInput-time'),
+			    'log' => array(
+				'ident' => 'jqxInput',
+				'facility' => 'jqxInput',
+				'priority' => 'jqxInput',
+				'title' => 'jqxInput',
+				'data' => 'jqxInput-text-json')),
+			'listview' => array('ID', 'title'));
+	}
+
+	parent::__construct($this->db_name, $table_name, $domain_name);
+}
+
+private $ident = 'identify';
+private $facility = 'facility';
+
+function set($table_name, $ident=null, $facility=null) 
+{
+	$this->table_name = $table_name;
+	$ident and ($this->ident = $ident);
+	$facility and ($this->facility = $facility);
+}
+
+function log($priority, $msg_title, $msg_data=null) 
+{
+	if (empty($this->table_name)) {
+		$keys = array_keys($this->schema_tables);
+		$this->table_name = array_shift($keys);
+	}
+
+	$data = array(
+		'general' => array(
+			'ID' => jsondb_id($this->db_name, $this->table_name),
+			'TIME' => jsondb_date(),
+			'CREATE' => jsondb_date()),
+		'log' => array(
+			'ident' => $this->ident,
+			'facility' => $this->facility,
+			'priority'=> $priority,
+			'title' => $msg_title,
+			'data' => $msg_data)
+	);
+	return $this->data(null, $data);
+}
+
+function error($caption,$data=null){return $this->log('error',$caption,$data);}
+function warn($caption,$data=null){return $this->log('warn',$caption,$data);}
+function info($caption,$data=null){return $this->log('info',$caption,$data);}
+function debug($caption,$data=null){return $this->log('debug',$caption,$data);}
+function trace($caption,$data=null){return $this->log('trace',$caption,$data);}
 }
 
 /***********************************************
 	对象接口 
 ************************************************/
 
-class Jsondb {
-	public $domain_name = null; 
-	public $db_name; 
-	public $table_name = null;
-	public $schema_db = null;
-	public $schema_tables = null;
+class Jsondb 
+{
 
-	function __construct($db_name=null, $table_name=null, $domain_name=null) {
-		$db_name and ($this->db_name= $db_name);
-		$table_name and ($this->table_name = $table_name);
-		$domain_name and ($this->domain_name = $domain_name);
+public $domain_name = null; 
+public $db_name; 
+public $table_name = null;
+public $schema_db = null;
+public $schema_tables = null;
 
-		empty($this->db_name) and trigger_error('db_name not set.');
+function __construct($db_name=null, $table_name=null, $domain_name=null) 
+{
+	$db_name and ($this->db_name= $db_name);
+	$table_name and ($this->table_name = $table_name);
+	$domain_name and ($this->domain_name = $domain_name);
 
-		//主动设置域名,如果为空，则是当前域名。作为库调用时，要明确设置
-		jsondb_root($this->domain_name, true);
-
-		//如果发现子类设置了schema，对于新库则初始化数据库
-		if ($this->schema_db) {
-			if (empty(jsondb_schema($this->db_name))) {
-				jsondb_schema($this->db_name, null, $this->schema_db);
-			}
-		}
-
-		//初始化数据表schema
-		if ($this->schema_tables) {
-			foreach($this->schema_tables as $name=>$schema) {
-				if (empty(jsondb_schema($this->db_name, $name))) {
-					jsondb_schema($this->db_name, $name, $schema);
-				}
-			}
+	if (empty($table_name)) {
+		if (array_key_exists('default', $this->schema_tables)) {
+			$this->table_name = 'default';
 		}
 	}
 
-	function views($table_name=null, $force_update=false) {
-		$table_name and ($this->table_name = $table_name);
-		return jsondb_views($this->db_name, $this->table_name, $force_update);
+	empty($this->db_name) and trigger_error('db_name not set.');
+
+	//主动设置域名,如果为空，则是当前域名。作为库调用时，要明确设置
+	jsondb_root($this->domain_name, true);
+
+	//如果发现子类设置了schema，对于新库则初始化数据库
+	if ($this->schema_db) {
+		if (empty(jsondb_schema($this->db_name))) {
+			jsondb_schema($this->db_name, null, $this->schema_db);
+		}
 	}
 
-	function data($mapper_key, $data=null, $table_name=null) {
-		$table_name and ($this->table_name = $table_name);
-		return jsondb_data($this->db_name, $this->table_name, $mapper_key, $data);
+	//初始化数据表schema
+	if ($this->schema_tables) {
+		foreach($this->schema_tables as $name=>$schema) {
+			if (empty(jsondb_schema($this->db_name, $name))) {
+				jsondb_schema($this->db_name, $name, $schema);
+			}
+		}
 	}
+}
 
-	function url($base_name, $table_name=null) {
-		$table_name and ($this->table_name = $table_name);
-		return jsondb_url($this->db_name, $this->table_name, $base_name);
-	}
+function views($table_name=null, $force_update=false) 
+{
+	$table_name and ($this->table_name = $table_name);
+	return jsondb_views($this->db_name, $this->table_name, $force_update);
+}
+
+function commit($table_name=null) 
+{
+	$table_name and ($this->table_name = $table_name);
+	return jsondb_commit($this->db_name, $this->table_name);
+}
+
+function data($mapper_key, $data=null, $table_name=null) 
+{
+	$table_name and ($this->table_name = $table_name);
+	return jsondb_data($this->db_name, $this->table_name, $mapper_key, $data);
+}
+
+function url($base_name, $table_name=null) 
+{
+	$table_name and ($this->table_name = $table_name);
+	return jsondb_url($this->db_name, $this->table_name, $base_name);
+}
 }
 
 
@@ -526,7 +586,7 @@ function data_object($db_name, $table_name, $base_name, $data=null, $encode=true
 	//写入操作
 	if ($data) {
 		if ($encode) {
-			$data = json_encode($data);
+			$data = prety_json($data);
 		}
 
 		$base_dir = dirname($filename);
@@ -554,6 +614,62 @@ function data_object($db_name, $table_name, $base_name, $data=null, $encode=true
 
 		return $res;
 	}
+}
+
+function prety_json($obj)
+{
+	return indent_json(json_encode($obj));
+}
+
+function indent_json($json) 
+{
+	$result      = '';
+	$pos         = 0;
+	$strLen      = strlen($json);
+	$indentStr   = '  ';
+	$newLine     = "\n";
+	$prevChar    = '';
+	$outOfQuotes = true;
+
+	for ($i=0; $i<=$strLen; $i++) {
+
+		// Grab the next character in the string.
+		$char = substr($json, $i, 1);
+
+		// Are we inside a quoted string?
+		if ($char == '"' && $prevChar != '\\') {
+			$outOfQuotes = !$outOfQuotes;
+
+			// If this character is the end of an element,
+			// output a new line and indent the next line.
+		} else if(($char == '}' || $char == ']') && $outOfQuotes) {
+			$result .= $newLine;
+			$pos --;
+			for ($j=0; $j<$pos; $j++) {
+				$result .= $indentStr;
+			}
+		}
+
+		// Add the character to the result string.
+		$result .= $char;
+
+		// If the last character was the beginning of an element,
+		// output a new line and indent the next line.
+		if (($char == ',' || $char == '{' || $char == '[') && $outOfQuotes) {
+			$result .= $newLine;
+			if ($char == '{' || $char == '[') {
+				$pos ++;
+			}
+
+			for ($j = 0; $j < $pos; $j++) {
+				$result .= $indentStr;
+			}
+		}
+
+		$prevChar = $char;
+	}
+
+	return $result;
 }
 
 function get_confs($db_name=null, $table_name=null, $key_field=null)
